@@ -26,7 +26,7 @@ function verifyOtp($userId, $otpCode, $purpose) {
   $stmt = $pdo->prepare(
     "SELECT * FROM otp_tb
     WHERE user_id = :user_id AND otp_code = :otp_code AND purpose = :purpose
-    ORDER BY id DESC
+    ORDER BY otp_id DESC
     LIMIT 1"
   );
   $stmt->execute([
