@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+:root {
+  --clr-primary: #fcfaf8;
+  --clr-secondary: #1f1f1f;
+  --clr-dark-green: #42756C;
+  --clr-med-green: #457B70;
+  --clr-soft-green: #76BAAB;
+  --clr-orange: #F39164;
+}
+
+@layer components {
+  .container-2xl {
+    @apply mx-auto px-4 max-w-[1540px];
+  }
+
+  .container-xl {
+    @apply mx-auto px-4 max-w-[1400px];
+  }
+
+  .container-lg {
+    @apply mx-auto px-4 max-w-[1200px];
+  }
+
+  .container-md {
+    @apply mx-auto px-4 max-w-[800px];
+  }
+
+  .container-sm {
+    @apply mx-auto px-4 max-w-[500px];
+  }
+}
