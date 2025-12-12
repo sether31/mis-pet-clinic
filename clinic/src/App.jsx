@@ -3,6 +3,8 @@ import { routes } from "./routes/routes"
 
 export default function App() {
   return (
-    <RouterProvider router={routes} />
+    <div className="text-[var(--clr-secondary)] bg-[var(--clr-primary)] text-base">
+      <RouterProvider router={routes} />
+    </div>
   )
 }
