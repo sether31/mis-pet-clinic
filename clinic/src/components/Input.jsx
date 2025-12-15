@@ -6,7 +6,7 @@ import { FaRegEyeSlash } from 'react-icons/fa';
 import { FaRegEye } from 'react-icons/fa';
 
 
-export default function Input({ icon, type="text", error, ...props }) {
+export default function Input({ label, labelStyle, id, icon, type="text", isImportant = false, isOptional = false, error, ...props }) {
   const [showPass, setShowPass] = useState(false)
 
   const borderColor =
@@ -18,13 +18,31 @@ export default function Input({ icon, type="text", error, ...props }) {
 
   return (
     <div className="flex flex-col gap-1 w-full">
+      {/* label */}
+      {label && (
+        <label
+          htmlFor={id || undefined}
+          className={`text-base font-medium text-gray-700 ${labelStyle}`}
+        >
+          {label}{" "}
+          {isImportant && <span className="text-red-500">*</span>}
+          {isOptional && <span className="text-gray-500">(optional)</span>}
+        </label>
+      )}
+
+      {/* input */}
       <div
         className={`flex items-center justify-between gap-2 px-3 py-2 border rounded-lg bg-white ${borderColor}`}
       >
         {type !== "password" ? (
           <div className='flex items-center gap-2 w-full'>
             {icon && <span>{icon}</span>}
-            <input type={type} {...props} className="flex-1 bg-transparent outline-none" />
+            <input 
+              id={id || undefined}
+              type={type} 
+              className="flex-1 bg-transparent outline-none" 
+              {...props} 
+             />
           </div>
         ) : (
           // password
@@ -32,9 +50,10 @@ export default function Input({ icon, type="text", error, ...props }) {
             <div className='flex items-center gap-2 w-full'>
               {icon && <span>{icon}</span>}
               <input 
+                id={id || undefined}
                 type={showPass ? "text" : "password"} 
-                {...props} 
                 className="flex-1 bg-transparent outline-none w-full" 
+                {...props} 
               />
             </div>
             
