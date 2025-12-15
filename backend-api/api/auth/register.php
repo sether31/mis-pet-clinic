@@ -4,9 +4,9 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type");
 
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/../service/MailService.php';
-require_once __DIR__ . '/../service/Otp.php'; 
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../service/MailService.php';
+require_once __DIR__ . '/../../service/Otp.php'; 
 
 try {
     $pdo = (new Database())->pdo;
@@ -15,7 +15,6 @@ try {
     $email = trim($dataInput['email'] ?? '');
     if(!$email) {
       throw new Exception("Email is required");
-      exit;
     }
 
     // Check email
@@ -23,7 +22,6 @@ try {
     $stmt->execute([$email]);
     if($stmt->rowCount() > 0) {
       throw new Exception("Email already in use");
-      exit;
     }
 
     // temporary id

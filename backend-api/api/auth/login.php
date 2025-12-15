@@ -4,10 +4,10 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET");
 header("Access-Control-Allow-Headers: Content-Type");
 
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/../service/Jwt.php';
-require_once __DIR__ . '/../service/Otp.php';
-require_once __DIR__ . '/../service/MailService.php';
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../service/Jwt.php';
+require_once __DIR__ . '/../../service/Otp.php';
+require_once __DIR__ . '/../../service/MailService.php';
 
 $pdo = (new Database())->pdo;
 
