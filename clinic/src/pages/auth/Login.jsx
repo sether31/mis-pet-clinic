@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom'
 import { delay, motion } from 'framer-motion';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 // icons
 import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
@@ -63,8 +65,14 @@ export default function Login() {
     setLoading(true);
     
     let newErrors = {};
-    if(!form.email.trim()) newErrors.email = "Email is required";
-    if(!form.password.trim()) newErrors.password = "Password is required";
+    if(!form.email.trim()){
+      newErrors.email = "Email is required";
+      toast.error(newErrors.email);
+    }
+    if(!form.password.trim()) {
+      newErrors.password = "Password is required";
+      toast.error(newErrors.password);
+    }
     setErrors(newErrors);
     if(Object.keys(newErrors).length > 0) {
       setLoading(false);
@@ -72,7 +80,7 @@ export default function Login() {
     } 
 
     try {
-      const res = await fetch(`${API_URL}/api/login.php`, {
+      const res = await fetch(`${API_URL}/api/auth/login.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -85,6 +93,7 @@ export default function Login() {
       if(data.success) {
         setUserId(data.user_id);
         setShowOTP(true);
+        toast.success(data.message);
       } else {
         if(data.message === "Invalid user") {
           setErrors(prev => ({ ...prev, email: data.message }));
@@ -93,9 +102,11 @@ export default function Login() {
         } else {
           setErrors(prev => ({ ...prev, password: data.message }));
         }
+        toast.error(data.message);
       }
     } catch(error) {
       console.log("Fetch error:", error);
+      toast.error("Something went wrong");
     }
     setLoading(false);
   }
@@ -103,7 +114,7 @@ export default function Login() {
   const handleOTPComplete = async (otp) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}i/api/verifyOtp.php`, {
+      const res = await fetch(`${API_URL}/api/auth/loginOtp.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, otp })
@@ -111,15 +122,23 @@ export default function Login() {
       const data = await res.json();
 
       if(data.success) {
-        alert("OTP verified! You are logged in.");
+        toast.success(data.message)
+        setErrors({});
+        setForm({
+          email: "",
+          password: "",
+          platform: "web"
+        });
         setLoading(false);
+        setShowOTP(false);
       } else {
         setErrors(prev => ({ ...prev, otp: data.message }));
+        toast.error(data.message)
       }
     } catch(error) {
       console.log("OTP verify error:", error);
+      toast.error(error);
     }
-    await wait(1000);
     setLoading(false);
   };
 
@@ -246,6 +265,8 @@ export default function Login() {
           error={errors.otp} 
         />
       )}
+
+      <ToastContainer position="top-right" autoClose={3000} />
 
       {loading && (
         <FullScreenLoader />

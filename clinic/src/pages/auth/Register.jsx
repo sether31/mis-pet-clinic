@@ -270,7 +270,7 @@ export default function Register() {
 
     await wait(1000);
     try {
-      const res = await fetch(`${API_URL}/api/register.php`, {
+      const res = await fetch(`${API_URL}/api/auth/register.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
@@ -314,7 +314,7 @@ export default function Register() {
     });
 
     try {
-      const res = await fetch(`${API_URL}/api/registerOtp.php`, {
+      const res = await fetch(`${API_URL}/api/auth/registerOtp.php`, {
         method: "POST",
         body: fd
       });
@@ -335,6 +335,7 @@ export default function Register() {
       }
     } catch(e) {
       console.error(e);
+      toast.error("Something went wrong");
     }
 
     setLoading(false);
