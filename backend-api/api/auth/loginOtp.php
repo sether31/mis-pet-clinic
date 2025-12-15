@@ -18,18 +18,16 @@ try {
   $otpCode = $data['otp'] ?? null;
 
   if(!$userId || !$otpCode) {
-    echo json_encode(["success" => false, "message" => "User ID and OTP are required"]);
-    exit;
+    throw new Exception("User ID and OTP are required");
   }
 
   if(!verifyOtp($userId, $otpCode, 'login')) {
-    echo json_encode(["success" => false, "message" => "Invalid or expired OTP"]);
-    exit;
+    throw new Exception("Invalid or expired OTP");
   }
 
   // get user 
   $stmtUser = $pdo->prepare(
-    "SELECT u.user_id, u.email, u.name, r.role_name
+    "SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name
     FROM user_tb u
     JOIN roles_tb r ON u.role_id = r.role_id
     WHERE u.user_id = :user_id"
@@ -37,11 +35,16 @@ try {
   $stmtUser->execute([":user_id" => $userId]);
   $user = $stmtUser->fetch();
 
+  if(!$user) {
+    throw new Exception("User not found");
+  }
+
   $payload = [
     "user_id" => $user['user_id'],
+    "role" => $user['role_name'],
     "email" => $user['email'],
-    "name" => $user['name'],
-    "role" => $user['role_name']
+    "fname" => $user['first_name'],
+    "lname" => $user['last_name']
   ];
 
   $accessToken = createJWT($payload, 3600);
@@ -54,11 +57,10 @@ try {
     "refresh_token" => $refreshToken
   ]);
 
-} catch(Exception $e) {
+} catch(Throwable $e) {
   echo json_encode([
     "success" => false,
-    "message" => "Server error",
-    "error" => $e->getMessage()
+    "message" => $e->getMessage()
   ]);
   exit;
 }

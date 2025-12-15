@@ -24,17 +24,17 @@ if(!$email || !$password || !$platform) {
 
 // check roles
 $allowedRoles = $platform === "web" ?
-  ['super_admin', 'clinic_admin', 'staff', 'veterinarian'] :
+  ['clinic_admin', 'staff', 'veterinarian', 'groomer'] :
   ['pet_owner'];
 
 $stmt = $pdo->prepare(
-  "SELECT u.user_id, u.email, u.name, u.password, u.role_id, r.role_name
+  "SELECT u.user_id, u.email, u.first_name, u.last_name, u.password, u.role_id, r.role_name
   FROM user_tb u
   JOIN roles_tb r ON u.role_id = r.role_id
   WHERE u.email = :email"
 );
 $stmt->execute([
-  ":email"=> $email
+  ":email" => $email
 ]);
 $user = $stmt->fetch();
 
@@ -59,7 +59,7 @@ $otpData = generateOtp($user['user_id'], 'login', 5);
 sendMailOTP(
   $user['email'],
   $otpData['otp'],
-  $user['name'],
+  $user['first_name'],
   'login',
   $otpData['expires_at']
 );

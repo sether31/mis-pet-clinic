@@ -16,15 +16,12 @@ try {
 
   if(!$tempUserId || !$otp) {
     throw new Exception("User ID and OTP are required");
-    exit;
   }
 
   // check otp
   if(!verifyOtp($tempUserId, $otp, 'register')) {
     throw new Exception("Invalid or expired OTP");
-    exit;
   }
-
 
   // create user
   $stmtUser = $pdo->prepare(
@@ -157,8 +154,6 @@ try {
     $branchId
   ]);
 
-  $pdo->commit();
-
   // delete temp id in otp
   cleanupOtp($tempUserId, 'register');
 
@@ -167,11 +162,7 @@ try {
     "message" => "Registration completed. Please wait for admin approval."
   ]);
 
-} catch (Exception $e) {
-  if($pdo->inTransaction()) {
-    $pdo->rollBack();
-  }
-
+} catch(Exception $e) {
   echo json_encode([
     "success" => false,
     "message" => $e->getMessage()
