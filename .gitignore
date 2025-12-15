@@ -1,4 +1,5 @@
 .env
 dist/
 vendor/
+uploads/
 test.php
