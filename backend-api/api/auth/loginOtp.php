@@ -4,10 +4,10 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET");
 header("Access-Control-Allow-Headers: Content-Type");
 
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/../service/MailService.php';
-require_once __DIR__ . '/../service/Jwt.php';  
-require_once __DIR__ . '/../service/Otp.php'; 
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../service/MailService.php';
+require_once __DIR__ . '/../../service/Jwt.php';  
+require_once __DIR__ . '/../../service/Otp.php'; 
 
 
 try {
@@ -27,7 +27,7 @@ try {
 
   // get user 
   $stmtUser = $pdo->prepare(
-    "SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name
+    "SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name, status
     FROM user_tb u
     JOIN roles_tb r ON u.role_id = r.role_id
     WHERE u.user_id = :user_id"
@@ -44,7 +44,8 @@ try {
     "role" => $user['role_name'],
     "email" => $user['email'],
     "fname" => $user['first_name'],
-    "lname" => $user['last_name']
+    "lname" => $user['last_name'],
+    "status" => $user['last_name']
   ];
 
   $accessToken = createJWT($payload, 3600);
