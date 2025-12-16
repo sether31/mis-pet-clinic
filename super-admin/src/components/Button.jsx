@@ -9,7 +9,7 @@ export default function Button({
   const baseClasses = "px-4 py-2 rounded-md font-medium duration-300 ease-in-out";
 
   const variants = {
-    primary: "bg-[var(--clr-dark-green)] text-[var(--clr-primary)] hover:opacity-98 hover:scale-95 ease-in-out duration-500",
+    primary: "bg-[var(--clr-primary)] text-[var(--clr-text-secondary)] hover:opacity-98 hover:scale-95 ease-in-out duration-500",
     disable: "bg-gray-500"
   };
 

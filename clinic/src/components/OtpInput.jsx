@@ -40,9 +40,9 @@ export default function OTPInput({ length = 6, onComplete, setShowOTP, error }) 
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center w-screen h-screen">
       <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
-      <div className="relative bg-[var(--clr-primary)] rounded-xl px-10 pb-10 pt-15 z-10 shadow-sm">
+      <div className="relative bg-[var(--clr-bg-card)] rounded-xl px-10 pb-10 pt-15 z-10 shadow-sm">
         {/* close */}
-        <div className='absolute top-4 right-4 cursor-pointer text-[var(--clr-secondary)] hover:text-[var(--clr-dark-green)]' onClick={closeOTP}>
+        <div className='absolute top-4 right-4 cursor-pointer text-[var(--clr-text-primary)] hover:text-[var(--clr-text-header)]' onClick={closeOTP}>
           <IoIosCloseCircleOutline size={30} />
         </div>
         <p className="mb-2 text-sm text-center text-gray-700">
@@ -59,7 +59,7 @@ export default function OTPInput({ length = 6, onComplete, setShowOTP, error }) 
               onChange={(e) => handleChange(e, index)}
               onKeyDown={(e) => handleBackspace(e, index)}
               ref={(el) => (inputsRef.current[index] = el)}
-              className="w-12 h-12 text-center text-xl border rounded focus:outline-none focus:ring-2 focus:ring-[var(--clr-dark-green)]"
+              className="w-12 h-12 text-center text-xl border rounded focus:outline-none focus:ring-2 focus:ring-[var(--clr-primary)]"
             />
           ))}
         </div>
