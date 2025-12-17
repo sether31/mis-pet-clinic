@@ -9,7 +9,6 @@ require_once __DIR__ . '/../../service/MailService.php';
 require_once __DIR__ . '/../../service/Jwt.php';  
 require_once __DIR__ . '/../../service/Otp.php'; 
 
-
 try {
   $pdo = (new Database())->pdo;
 
@@ -48,14 +47,12 @@ try {
     "status" => $user['last_name']
   ];
 
-  $accessToken = createJWT($payload, 3600);
-  $refreshToken = createJWT($payload, 60 * 60 * 24 * 30);
+  $accessToken = createJWT($payload, 120);
 
   echo json_encode([
     "success" => true,
     "message" => "Login successful",
-    "access_token" => $accessToken,
-    "refresh_token" => $refreshToken
+    "access_token" => $accessToken
   ]);
 
 } catch(Throwable $e) {
