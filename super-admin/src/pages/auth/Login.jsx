@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
 import { delay, motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
@@ -9,11 +9,14 @@ import { SlLock } from 'react-icons/sl';
 // image
 import loginPic from '../../assets/images/login-pic.png';
 // components
+import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
 import FullScreenLoader from '../../components/FullLoader';
 import wait from '../../utils/wait'
+import { validRoleToken } from '../../utils/validRoleToken';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -30,12 +33,26 @@ export default function Login() {
   const [showOTP, setShowOTP] = useState(false); 
   const [userId, setUserId] = useState(null); 
   const [loading, setLoading] = useState(false);
-
+  const [loadingMessage, setLoadingMessage] = useState('Loading...');
   const navigate = useNavigate();
 
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const role = validRoleToken(['super_admin']);
+      console.log(role)
+      if(role) {
+        setLoading(true);
+        setLoadingMessage('Logging in...');
+        await wait(1500);
+        navigate('/dashboard', { replace: true });
+      }
+    }
+    checkToken();
+  }, []);
+
+  
+  
 
   // handle input
   const handleChange = (e) => {
@@ -45,7 +62,7 @@ export default function Login() {
     if(name === "email") {
       if(!value.trim()) {
         setErrors(prev => ({ ...prev, email: null })); 
-      } else if(!validateEmail(value)) {
+      } else if(!ValidateEmail(value)) {
         setErrors(prev => ({ ...prev, email: "Invalid email" }));
       } else {
         setErrors(prev => ({ ...prev, email: "valid" })); 
@@ -64,6 +81,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingMessage('Loading...');
     
     let newErrors = {};
     if(!form.email.trim()){
@@ -90,7 +108,6 @@ export default function Login() {
       });
 
       const data = await res.json();
-      console.log(data);
       if(data.success) {
         setUserId(data.user_id);
         setShowOTP(true);
@@ -115,6 +132,8 @@ export default function Login() {
 
   const handleOTPComplete = async (otp) => {
     setLoading(true);
+    setLoadingMessage('Verifying OTP...');
+
     try {
       const res = await fetch(`${API_URL}/api/auth/loginOtp.php`, {
         method: "POST",
@@ -129,13 +148,11 @@ export default function Login() {
 
         // save token
         localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
 
         setErrors({ email: "", password: "", otp: "" });
         setForm({ email: "", password: "" });
-        setShowOTP(false);
-
         navigate("/dashboard");
+        setShowOTP(false);
       } else {
         setErrors(prev => ({ ...prev, otp: data.message }));
         toast.error(data.message)
@@ -263,7 +280,7 @@ export default function Login() {
       <ToastContainer position="top-right" autoClose={3000} />
 
       {loading && (
-        <FullScreenLoader />
+        <FullScreenLoader message={loadingMessage} />
       )}
     </>
   )
