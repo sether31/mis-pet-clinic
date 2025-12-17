@@ -346,17 +346,15 @@ export default function Register() {
   return (
     <>
       <div className='mb-20 container-xl'>
-        <ToastContainer position="top-right" autoClose={3000} />
-
         <div className='flex flex-col items-center justify-between gap-4 my-5 md:flex-row'>
           <h1 className='text-2xl font-medium'>LOGO</h1>
           <h1 className='flex items-center gap-1 text-base'>
             Already have an account? 
-            <Link to="/login" className='underline text-[var(--clr-dark-green)] hover:opacity-75'>Sign in</Link>
+            <Link to="/login" className='underline text-[var(--clr-text-header)] hover:opacity-75'>Sign in</Link>
           </h1>
         </div>
         
-        <h1 className='mb-4 text-4xl font-bold text-[var(--clr-dark-green)]'>Register Your Clinic</h1>
+        <h1 className='mb-4 text-4xl font-bold text-[var(--clr-text-header)]'>Register Your Clinic</h1>
         <p className='mb-12 text-base'> 
           Create your clinic account to get started with the Pet Clinic Platform. <br />
           Please provide accurate information so we can verify your clinic and set up your account.
@@ -676,7 +674,7 @@ export default function Register() {
                           value={service}
                           checked={form.services.includes(service)}
                           onChange={handleChange}
-                          className='accent-[var(--clr-dark-green)]'
+                          className='accent-[var(--clr-primary)]'
                         />
                         {' '} {serviceLabels[service]}
                       </label>
@@ -684,26 +682,26 @@ export default function Register() {
                   </div>
                   {/* errors */}
                   {errors.services && (
-                    <p className="text-red-500 text-sm mt-1">{errors.services}</p>
+                    <p className="mt-1 text-sm text-red-500">{errors.services}</p>
                   )}
                 </div>
               </div>
             </div>
 
             <div className='p-4 bg-gray-200 rounded-md'>
-              <h1 className='text-md font-medium mb-1'>TERMS & CONDITION</h1>
+              <h1 className='mb-1 font-medium text-md'>TERMS & CONDITION</h1>
               <div className='flex items-center gap-1'>
                 <input
                   type="checkbox"
                   name="agreeTerms"
                   checked={form.agreeTerms}
                   onChange={handleChange}
-                  className='accent-[var(--clr-dark-green)]'
+                  className='accent-[var(--clr-primary)]'
                 />
                 <label htmlFor="emergency-service">I agree to terms and conditions</label>
               </div>
               {errors.agreeTerms && (
-                <p className="flex items-center text-sm text-red-500 mt-1">{errors.agreeTerms}</p>
+                <p className="flex items-center mt-1 text-sm text-red-500">{errors.agreeTerms}</p>
               )}
               <p>By registering, you confirm that all information provided is accurate and that you agree to the platform’s rules, verification process, privacy policy, and acceptable use guidelines.</p>
             </div>
@@ -730,8 +728,11 @@ export default function Register() {
 
         {loading && <FullScreenLoader />}
       </div>   
+
+      <ToastContainer position="top-right" autoClose={3000} />
+      
       <motion.div
-        className="h-screen w-screen bg-[var(--clr-dark-green)] fixed top-0 z-100 hidden lg:block overflow-hidden"
+        className="h-screen w-screen bg-[var(--clr-primary)] fixed top-0 z-100 hidden lg:block overflow-hidden"
         initial={{ y: 0 }}
         animate={{ y: '-100%' }}
         transition={{ duration: 1.5, ease: "easeInOut" }}

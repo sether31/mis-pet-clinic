@@ -133,7 +133,7 @@ export default function Login() {
         setShowOTP(false);
       } else {
         setErrors(prev => ({ ...prev, otp: data.message }));
-        toast.error(data.message)
+        toast.error("Something went wrong");
       }
     } catch(error) {
       console.log("OTP verify error:", error);
@@ -160,12 +160,12 @@ export default function Login() {
 
   return (
     <>
-      <div className="flex items-center min-h-screen px-0 bg-[var(--clr-primary)] container-2xl relative text-[var(--clr-secondary)]">
+      <div className="relative flex items-center min-h-screen px-0 container-2xl">
         {/* login */}
         <div className="grid grid-cols-1 lg:grid-cols-[.85fr_1fr] min-h-[695px] flex-1 px-4 lg:px-0">
           {/* image section */}
           <motion.section 
-            className="h-full bg-[var(--clr-dark-green)] relative hidden lg:block overflow-hidden"
+            className="h-full bg-[var(--clr-primary)] relative hidden lg:block overflow-hidden"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
@@ -188,7 +188,7 @@ export default function Login() {
               animate="visible"
             >
               <motion.h1 variants={formItemVariants} className='mb-4 text-xl font-medium'>LOGO</motion.h1>
-              <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-[var(--clr-dark-green)]'>Login in to your Account</motion.h1>
+              <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-[var(--clr-text-header)]'>Login in to your Account</motion.h1>
 
               <motion.p variants={formItemVariants} className="mb-6 text-gray-600">
                 Welcome back! Please enter your credentials to continue.
@@ -249,7 +249,7 @@ export default function Login() {
 
               <motion.p variants={formItemVariants} className='flex justify-center gap-1 text-base'>
                 Dont have an account? 
-                <Link to="/register" className='underline text-[var(--clr-dark-green)] hover:opacity-75'>Sign up</Link>
+                <Link to="/register" className='underline text-[var(--clr-text-header)] hover:opacity-75'>Sign up</Link>
               </motion.p>
             </motion.div>
           </section>

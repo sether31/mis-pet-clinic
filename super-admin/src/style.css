@@ -1,12 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --clr-primary: #fcfaf8;
-  --clr-secondary: #1f1f1f;
-  --clr-dark-green: #42756C;
-  --clr-med-green: #457B70;
-  --clr-soft-green: #76BAAB;
-  --clr-orange: #F39164;
+  --clr-bg-page: #fcfaf8;
+  --clr-bg-card: #fcfaf8;
+
+  --clr-text-header: var(--clr-primary);
+  --clr-text-primary: #1f1f1f;
+  --clr-text-secondary: #fcfaf8;
+
+  --clr-primary: #42756C;
+  --clr-secondary: #457B70;
+  --clr-soft: #76BAAB;
+  --clr-accent: #F39164;
 }
 
 @layer components {
