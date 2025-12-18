@@ -1,20 +1,34 @@
 import { createBrowserRouter } from "react-router-dom";
+// pages
 import Login from "../pages/auth/Login";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
+// protected route component
 import ProtectedRoute from "../components/ProtectedRoute";
+// context
+import UserProvider from "../contexts/UserProvider";
+import NotFound from "../pages/NotFound";
+
 
 export const routes = createBrowserRouter([
-  { path: "login", element: <Login /> },
+  { path: "/login", element: <Login /> },
   { 
-    path: "dashboard", 
+    path: "/super-admin", 
     element: (
       <ProtectedRoute allowedRoles={['super_admin']} >
-        <DashboardLayout />
+        <UserProvider>
+          <DashboardLayout />
+        </UserProvider>
       </ProtectedRoute>
     ),
     children: [
-      { path: "", element: <Dashboard /> },
+      { index: true, element: <Dashboard /> },
+      { path: "dashboard", element: <Dashboard /> },
+      
     ]
+  },
+  {
+    path: '*',
+    element: <NotFound />
   }
 ]);
