@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom'
 import { delay, motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,11 +9,15 @@ import { SlLock } from 'react-icons/sl';
 // image
 import loginPic from '../../assets/images/login-pic.png';
 // components
+import { validRoleToken } from '../../utils/validRoleToken';
+import getDashboardByRole from '../../utils/getDashboardByRole';
+import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
 import FullScreenLoader from '../../components/FullLoader';
 import wait from '../../utils/wait';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -31,10 +35,31 @@ export default function Login() {
   const [showOTP, setShowOTP] = useState(false); 
   const [userId, setUserId] = useState(null); 
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Loading...');
+  const navigate = useNavigate();
 
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  useEffect(() => {
+    const checkToken = async () => {
+      const user = validRoleToken();
+      if (!user) return;
+
+      setLoading(true);
+      setLoadingMessage('Logging in...');
+      await wait(1000);
+
+      const { role, status } = user;
+
+      // check if pending clinic admin
+      if(role === 'clinic_admin' && status === 'pending') {
+        navigate('/pendingUser', { replace: true });
+        return;
+      }
+
+      navigate(getDashboardByRole(role), { replace: true });
+    };
+
+    checkToken();
+  }, []);
 
   // handle input
   const handleChange = (e) => {
@@ -44,7 +69,7 @@ export default function Login() {
     if(name === "email") {
       if(!value.trim()) {
         setErrors(prev => ({ ...prev, email: null })); 
-      } else if(!validateEmail(value)) {
+      } else if(!ValidateEmail(value)) {
         setErrors(prev => ({ ...prev, email: "Invalid email" }));
       } else {
         setErrors(prev => ({ ...prev, email: "valid" })); 
@@ -63,6 +88,9 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingMessage('Loading...');
+
+    setErrors({ email: "", password: ""});
     
     let newErrors = {};
     if(!form.email.trim()){
@@ -89,30 +117,31 @@ export default function Login() {
       });
 
       const data = await res.json();
-      console.log(data);
-      if(data.success) {
-        setUserId(data.user_id);
-        setShowOTP(true);
-        toast.success(data.message);
-      } else {
+      if(!data.success) {
         if(data.message === "Invalid user") {
-          setErrors(prev => ({ ...prev, email: data.message }));
+          setErrors({ email: data.message });
         } else if(data.message === "Invalid password") {
-          setErrors(prev => ({ ...prev, password: data.message }));
-        } else {
-          setErrors(prev => ({ ...prev, password: data.message }));
+          setErrors({ password: data.message });
         }
         toast.error(data.message);
+        return;
       }
+
+      setUserId(data.user_id);
+      setShowOTP(true);
+      toast.success(data.message);
     } catch(error) {
       console.log("Fetch error:", error);
       toast.error("Something went wrong");
+    } finally{
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const handleOTPComplete = async (otp) => {
     setLoading(true);
+    setLoadingMessage('Verifying OTP...');
+
     try {
       const res = await fetch(`${API_URL}/api/auth/loginOtp.php`, {
         method: "POST",
@@ -121,25 +150,31 @@ export default function Login() {
       });
       const data = await res.json();
 
-      if(data.success) {
-        toast.success(data.message)
-        setErrors({});
-        setForm({
-          email: "",
-          password: "",
-          platform: "web"
-        });
-        setLoading(false);
-        setShowOTP(false);
-      } else {
+      if(!data.success) {
         setErrors(prev => ({ ...prev, otp: data.message }));
-        toast.error("Something went wrong");
+        setLoading(false);
+        toast.error(data.message);
+        return;
+      }
+
+      localStorage.setItem("access_token", data.access_token);
+      toast.success(data.message);
+      await wait(2000);
+      setShowOTP(false);
+
+      const { role, status } = validRoleToken();
+
+      if(role === "clinic_admin" && status === "pending") {
+        navigate("/pendingUser", { replace: true });
+      } else {
+        navigate(getDashboardByRole(role), { replace: true });
       }
     } catch(error) {
       console.log("OTP verify error:", error);
-      toast.error(error);
+      toast.error('Something went wrong');
+    } finally{
+      setLoading(false);
     }
-    setLoading(false);
   };
 
 
@@ -269,7 +304,7 @@ export default function Login() {
       <ToastContainer position="top-right" autoClose={3000} />
 
       {loading && (
-        <FullScreenLoader />
+        <FullScreenLoader message={loadingMessage} />
       )}
     </>
   )
