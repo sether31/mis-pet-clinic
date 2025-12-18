@@ -108,20 +108,19 @@ export default function Login() {
       });
 
       const data = await res.json();
-      if(data.success) {
-        setUserId(data.user_id);
-        setShowOTP(true);
-        toast.success(data.message);
-      } else {
+      if(!data.success) {
         if(data.message === "Invalid user") {
-          setErrors(prev => ({ ...prev, email: data.message }));
+          setErrors({ email: data.message });
         } else if(data.message === "Invalid password") {
-          setErrors(prev => ({ ...prev, password: data.message }));
-        } else {
-          setErrors(prev => ({ ...prev, password: data.message }));
+          setErrors({ password: data.message });
         }
         toast.error(data.message);
+        return;
       }
+
+      setUserId(data.user_id);
+      setShowOTP(true);
+      toast.success(data.message);
     } catch(error) {
       console.log("Fetch error:", error);
       toast.error("Something went wrong");
@@ -142,21 +141,19 @@ export default function Login() {
       });
       const data = await res.json();
 
-      if(data.success) {
-        toast.success(data.message);
-        await wait(2000);
-
-        // save token
-        localStorage.setItem("access_token", data.access_token);
-
-        setErrors({ email: "", password: "", otp: "" });
-        setForm({ email: "", password: "" });
-        navigate("/dashboard");
-        setShowOTP(false);
-      } else {
+      if(!data.success) {
         setErrors(prev => ({ ...prev, otp: data.message }));
-        toast.error(data.message)
+        toast.error(data.message);
+        return;
       }
+
+      toast.success(data.message);
+      await wait(2000);
+      // save token
+      localStorage.setItem("access_token", data.access_token);
+      setErrors({ email: "", password: ""});
+      setForm({ email: "", password: "" });
+      navigate("/dashboard");
     } catch(error) {
       console.log("OTP verify error:", error);
       toast.error("Something went wrong");
