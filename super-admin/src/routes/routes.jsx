@@ -17,14 +17,18 @@ export const routes = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={['super_admin']} >
         <UserProvider>
-          <DashboardLayout />
+          <UIProvider>
+            <DashboardLayout />
+          </UIProvider>
         </UserProvider>
       </ProtectedRoute>
     ),
     children: [
       { index: true, element: <Dashboard /> },
       { path: "dashboard", element: <Dashboard /> },
-      
+      { path: "clinic-applications", element: '' },
+      { path: "registered-clinics", element: '' },
+      { path: "platform-analytics", element: '' },
     ]
   },
   {

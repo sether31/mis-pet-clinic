@@ -7,7 +7,7 @@ import { MdOutlineClose } from "react-icons/md";
 import { RiDashboardLine } from "react-icons/ri";
 import { CgFileDocument } from "react-icons/cg";
 import { LuBuilding2 } from "react-icons/lu";
-import { TbGraph } from "react-icons/tb";
+import { TbGraph, TbLogout } from "react-icons/tb";
 
 const sidebarItems = [
   { label: 'Dashboard', path: '/super-admin/dashboard', icon: RiDashboardLine },
@@ -16,7 +16,7 @@ const sidebarItems = [
   { label: 'Platform Analytics', path: '/super-admin/platform-analytics', icon: TbGraph }
 ];
 
-export default function Sidebar({open, setOpen}) {
+export default function Sidebar({className, open, setOpen}) {
   const location = useLocation();
 
   const toggleMenu = () => {
@@ -24,13 +24,13 @@ export default function Sidebar({open, setOpen}) {
   }
   return (
     <aside 
-      className={`transition-all duration-500 ease-in-out fixed top-0 left-0 z-100 border-r border-r-gray-700 h-max md:h-screen 
-    ${open ? 'w-64 h-screen' : 'w-18'} bg-[var(--clr-bg-page)]`}
+      className={`fixed top-0 left-0 z-100 border-r h-screen bg-[var(--clr-primary)] transition-all duration-500 ease-in-out
+      ${open ? 'w-64' : 'w-18'} ${className}}`}
     >
       {/* header */}
-      <div className={`p-4 flex items-center justify-between ${open ? '' : 'border-b'}`}>
+      <div className={`p-4 flex items-center justify-between bg-[var(--clr-primary)] ${open ? '' : 'border-b border-b-black'}`}>
         <motion.div
-          className="overflow-hidden whitespace-nowrap"
+          className="overflow-hidden whitespace-nowrap text-[var(--clr-text-secondary)]"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20 }}
           transition={{ duration: 0.3 }}
@@ -41,14 +41,15 @@ export default function Sidebar({open, setOpen}) {
         
         {/* hamburger */}
         <div onClick={toggleMenu} className='cursor-pointer'>
-          <RxHamburgerMenu className={open ? 'hidden' : 'block'} size={32} />
-          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out ${open ? 'block' : 'hidden'}`} size={32} />
+          <RxHamburgerMenu className={`hover:text-[var(--clr-text-secondary)] duration-300 ease-in-out ${open ? 'hidden' : 'block'}`} size={32} />
+          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out hover:text-[var(--clr-text-secondary)] ${open ? 'block' : 'hidden'}`} size={32} />
         </div>
       </div>
 
       {/* nav links */}
-      <nav className="grid gap-2 px-4 mt-6">
-        {sidebarItems.map((item) => {
+      <nav className='flex flex-col justify-between h-full px-4 mt-6'>
+        <div className='grid gap-2'>
+          {sidebarItems.map((item) => {
           let isActive = false;
 
           if(item.path === '/super-admin/dashboard') {
@@ -68,6 +69,25 @@ export default function Sidebar({open, setOpen}) {
             />
           )
         })}
+        </div>
+
+        <div className='mt-auto mb-30'>
+          <button className={`flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-[var(--clr-black)] text-gray-300 overflow-hidden cursor-pointer`}>
+            <div className="flex-shrink-0">
+              <TbLogout size={22} />
+            </div>
+            {open && (
+              <motion.span
+                initial={{ opacity: 0, x: -20, width: 0 }} 
+                animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20, width: open ? 'auto' : 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden whitespace-nowrap"
+              >
+                Logout
+              </motion.span>
+            )}
+          </button>
+        </div>
       </nav>
     </aside>
   )
@@ -81,8 +101,8 @@ function SidebarItem({ item, open, active }) {
     <Link
       to={item.path}
       className={`
-        flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-[var(--clr-primary)] hover:text-[var(--clr-text-secondary)] overflow-hidden
-        ${active ? 'bg-[var(--clr-primary)] text-[var(--clr-text-secondary)]' : ''}
+        flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-[var(--clr-black)] text-gray-300 overflow-hidden
+        ${active ? 'bg-[var(--clr-black)]' : ''}
       `}
     >
       <div className="flex-shrink-0">
