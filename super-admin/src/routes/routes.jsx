@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 // pages
+import NotFound from "../pages/NotFound";
 import Login from "../pages/auth/Login";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -7,7 +8,7 @@ import Dashboard from "../pages/dashboard/Dashboard";
 import ProtectedRoute from "../components/ProtectedRoute";
 // context
 import UserProvider from "../contexts/UserProvider";
-import NotFound from "../pages/NotFound";
+import UIProvider from "../contexts/UiProvider";
 
 
 export const routes = createBrowserRouter([

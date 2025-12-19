@@ -1,6 +1,7 @@
 import React from 'react'
 // hooks
 import { useUser } from '../../hooks/useUser'
+// components
 import Header from '../../components/Header';
 
 export default function Dashboard() {

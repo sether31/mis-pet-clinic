@@ -13,7 +13,7 @@ import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
-import FullScreenLoader from '../../components/FullLoader';
+import FullScreenLoader from '../../components/FullScreenLoader';
 import wait from '../../utils/wait'
 import { validRoleToken } from '../../utils/validRoleToken';
 
