@@ -6,10 +6,10 @@ export default function Dashboard() {
   const { user } = useUser();
 
   return (
-    <div>
-      <h1>Dashboard HOME</h1>
+    <div className='bg-[var(--clr-bg-page)] container-xl min-h-screen'>
+      <h1>Dashboard</h1>
       <h1 className="text-2xl font-bold">Welcome, {user?.fname} {user?.lname}</h1>
-      <p>Your role: {user?.role}</p>
+      <p>Role: {user?.role}</p>
     </div>
   )
 }
