@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 // icons
-import { RxHamburgerMenu } from "react-icons/rx";
-import { MdOutlineClose } from "react-icons/md";
-import { RiDashboardLine } from "react-icons/ri";
-import { CgFileDocument } from "react-icons/cg";
-import { LuBuilding2 } from "react-icons/lu";
-import { TbGraph, TbLogout } from "react-icons/tb";
+import { RxHamburgerMenu } from "react-icons/rx"
+import { MdOutlineClose } from "react-icons/md"
+import { RiDashboardLine } from "react-icons/ri"
+import { CgFileDocument } from "react-icons/cg"
+import { LuBuilding2 } from "react-icons/lu"
+import { TbGraph, TbLogout } from "react-icons/tb"
+// hooks
+import { useUI } from '../hooks/useUI'
+// utils
+import wait from '../utils/wait'
 
 const sidebarItems = [
   { label: 'Dashboard', path: '/super-admin/dashboard', icon: RiDashboardLine },
@@ -17,10 +21,20 @@ const sidebarItems = [
 ];
 
 export default function Sidebar({className, open, setOpen}) {
+  const { showLoader, hideLoader } = useUI();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setOpen(!open);
+  }
+
+  const logout = async () => {
+    showLoader('Logging out...');
+    await wait(1000);
+    localStorage.clear();
+    navigate('/login', { replace: true });
+    hideLoader();
   }
   return (
     <aside 
@@ -72,7 +86,10 @@ export default function Sidebar({className, open, setOpen}) {
         </div>
 
         <div className='mt-auto mb-30'>
-          <button className={`flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-[var(--clr-black)] text-gray-300 overflow-hidden cursor-pointer`}>
+          <button 
+            onClick={logout}
+            className={`flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-[var(--clr-black)] text-gray-300 overflow-hidden cursor-pointer`}
+          >
             <div className="flex-shrink-0">
               <TbLogout size={22} />
             </div>
