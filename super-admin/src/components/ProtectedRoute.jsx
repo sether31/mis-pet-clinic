@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 
 // components
-import FullScreenLoader from "./FullLoader";
+import FullScreenLoader from "./FullScreenLoader";
 import wait from "../utils/wait";
 import { validRoleToken } from "../utils/validRoleToken";
 

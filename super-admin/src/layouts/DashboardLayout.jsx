@@ -8,7 +8,6 @@ import SideBar from '../components/Sidebar';
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { showLoader, hideLoader } = useUI();
 
   return (
     <div>
@@ -19,7 +18,7 @@ export default function DashboardLayout() {
         animate={{ marginLeft: sidebarOpen ? 256 : 64 }} 
         transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
       >
-        <div className='fixed top-0 left-0 w-full border-b h-[81px]'></div>
+        <div className='fixed top-0 left-0 w-full border-b h-[81px] bg-[var(--clr-primary)]'></div>
         <Outlet />
       </motion.main>
     </div>
