@@ -40,22 +40,29 @@ export default function Login() {
 
   useEffect(() => {
     const checkToken = async () => {
-      const user = validRoleToken();
-      if (!user) return;
+      try {
+        const user = validRoleToken();
+        if(!user) return;
 
-      setLoading(true);
-      setLoadingMessage('Logging in...');
-      await wait(1000);
+        const { role, status } = user;
 
-      const { role, status } = user;
+        if(!getDashboardByRole(role)) {
+          localStorage.clear();
+          return;
+        }
 
-      // check if pending clinic admin
-      if(role === 'clinic_admin' && status === 'pending') {
-        navigate('/pendingUser', { replace: true });
-        return;
+        setLoading(true);
+        setLoadingMessage('Redirecting...')
+        await wait(2000);
+
+        if(role === 'clinic_admin' && status === 'pending') {
+          navigate('/pendingUser', { replace: true });
+        } else {
+          navigate(getDashboardByRole(role), { replace: true });
+        }
+      } finally {
+        setLoading(false); 
       }
-
-      navigate(getDashboardByRole(role), { replace: true });
     };
 
     checkToken();
@@ -124,6 +131,7 @@ export default function Login() {
           setErrors({ password: data.message });
         }
         toast.error(data.message);
+        setLoading(false);
         return;
       }
 

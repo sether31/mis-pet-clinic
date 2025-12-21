@@ -3,5 +3,5 @@ export default function getDashboardByRole(role) {
     'clinic_admin': '/clinic/admin/dashboard',
   };
 
-  return routes[role] || '/login';
+  return routes[role] || null;
 };

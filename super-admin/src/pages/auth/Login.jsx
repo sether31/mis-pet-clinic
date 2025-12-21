@@ -13,7 +13,7 @@ import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
-import FullScreenLoader from '../../components/FullLoader';
+import FullScreenLoader from '../../components/FullScreenLoader';
 import wait from '../../utils/wait'
 import { validRoleToken } from '../../utils/validRoleToken';
 
@@ -45,7 +45,7 @@ export default function Login() {
         setLoading(true);
         setLoadingMessage('Logging in...');
         await wait(1500);
-        navigate('/dashboard', { replace: true });
+        navigate('/super-admin/dashboard', { replace: true });
       }
     }
     checkToken();
@@ -153,7 +153,7 @@ export default function Login() {
       localStorage.setItem("access_token", data.access_token);
       setErrors({ email: "", password: ""});
       setForm({ email: "", password: "" });
-      navigate("/dashboard");
+      navigate("/super-admin/dashboard");
     } catch(error) {
       console.log("OTP verify error:", error);
       toast.error("Something went wrong");
