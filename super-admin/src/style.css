@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --clr-bg-page: #fcfaf8;
+  --clr-bg-page: #f7f5f2;
   --clr-bg-card: #fcfaf8;
   --clr-black: #1f1f1f;
 
@@ -36,3 +36,4 @@
     @apply mx-auto px-4 max-w-[500px];
   }
 }
+
