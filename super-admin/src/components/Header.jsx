@@ -3,9 +3,6 @@ import { motion } from 'framer-motion';
 // icons
 import { MdOutlineNotifications } from "react-icons/md";
 import { LuSettings } from "react-icons/lu";
-import { TbLogout } from "react-icons/tb";
-import Button from './Button';
-
 
 
 const links = [
@@ -14,7 +11,6 @@ const links = [
   { label: 'Registered Clinics', path: '/super-admin/registered-clinics' },
   { label: 'Platform Analytics', path: '/super-admin/platform-analytics' }
 ];
-
 
 export default function Header() {
   const location = useLocation();
@@ -26,16 +22,20 @@ export default function Header() {
   const pageTitle = currentRoute ? currentRoute.label : '';
   
   return (
-    <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center">
-      <div className="flex items-center justify-between flex-1 px-0 container-xl">
+    <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center text-[var(--clr-text-secondary)]">
+      <div className="flex items-center justify-between flex-1 px-0 pl-4 container-xl">
         <div>
           <h1 className="text-xl font-semibold">{pageTitle}</h1>
-          <h1 className="text-xl font-semibold">{pageTitle}</h1>
+          <h1 className="font-semibold">{pageTitle}</h1>
         </div>
 
         <div className='flex items-center gap-4'>
-          <MdOutlineNotifications size={27} />
-          <LuSettings size={27} />
+          <div className='p-2 rounded bg-[var(--clr-black)] cursor-pointer hover:scale-90 ease-in-out duration-300'>
+            <MdOutlineNotifications size={22} />
+          </div>
+          <div className='p-2 rounded bg-[var(--clr-black)] cursor-pointer hover:scale-90 ease-in-out duration-300'>
+            <LuSettings size={22} />
+          </div>
         </div>
       </div>
     </header>
