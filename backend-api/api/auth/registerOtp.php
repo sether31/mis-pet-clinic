@@ -112,13 +112,44 @@ try {
   $branchId = $pdo->lastInsertId();
 
 
+  // services
+  $services = $_POST['services'] ?? '[]';
+  $servicesArray = json_decode($services, true);
+
+  if(!empty($servicesArray)) {
+    $serviceMap = [
+      'general_checkup'   => 1,
+      'vaccination'      => 2,
+      'surgery'          => 3,
+      'grooming'         => 4,
+      'emergency_service' => 5
+    ];
+
+    $stmtService = $pdo->prepare(
+      "INSERT INTO branch_service_tb (branch_id, service_id, price, duration) 
+      VALUES (:branch_id, :service_id, :price, :duration)"
+    );
+
+    foreach($servicesArray as $serviceLabel) {
+      if(isset($serviceMap[$serviceLabel])) {
+        $stmtService->execute([
+          'branch_id' => $branchId, 
+          'service_id' => $serviceMap[$serviceLabel], 
+          'price' => 0.00,    
+          'duration' => null  
+        ]);
+      }
+    }
+  }
+
+
   // file upload
   function uploadPermit($file, $branchId, $type) {
     if(!isset($file) || $file['error'] !== 0) {
       return null;
     }
 
-    $baseDir = __DIR__ . "/../uploads/clinic/$branchId/$type/";
+    $baseDir = dirname(__DIR__, 2) . "/uploads/clinic/$branchId/$type/";
     if(!is_dir($baseDir)) {
       mkdir($baseDir, 0777, true);
     }
@@ -153,6 +184,8 @@ try {
     $vetLicensePath,
     $branchId
   ]);
+
+  $pdo->commit();
 
   // delete temp id in otp
   cleanupOtp($tempUserId, 'register');
