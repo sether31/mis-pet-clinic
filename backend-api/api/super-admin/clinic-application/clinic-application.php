@@ -1,0 +1,40 @@
+<?php
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *"); 
+header("Access-Control-Allow-Methods: GET");
+header("Access-Control-Allow-Headers: Content-Type");
+
+require_once __DIR__ . '/../../../config/Database.php';
+
+try {
+  $pdo = (new Database())->pdo;
+
+  $sql = "SELECT cb.*, 
+    c.name as clinic_group_name,
+    u.first_name, 
+    u.last_name, 
+    u.email as owner_email,
+    (SELECT GROUP_CONCAT(s.name SEPARATOR ', ') 
+      FROM branch_service_tb bs 
+      JOIN service_tb s ON bs.service_id = s.service_id 
+      WHERE bs.branch_id = cb.branch_id) as services_list
+    FROM clinic_branches_tb cb
+    JOIN clinics_tb c ON cb.clinic_id = c.clinic_id
+    JOIN user_tb u ON c.created_by = u.user_id
+    ORDER BY cb.created_at DESC";
+
+  $stmt = $pdo->prepare($sql);
+  $stmt->execute();
+  $data = $stmt->fetchAll();
+
+  echo json_encode([
+    "success" => true,
+    "data" => $data
+  ]);
+
+} catch (Exception $e) {
+  echo json_encode([
+    "success" => false,
+    "message" => $e->getMessage()
+  ]);
+}
