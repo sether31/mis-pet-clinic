@@ -44,10 +44,10 @@ try {
     "email" => $user['email'],
     "fname" => $user['first_name'],
     "lname" => $user['last_name'],
-    "status" => $user['last_name']
+    "status" => $user['status']
   ];
 
-  $accessToken = createJWT($payload, 120);
+  $accessToken = createJWT($payload, 1000000000);
 
   echo json_encode([
     "success" => true,
