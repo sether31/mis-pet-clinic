@@ -1,14 +1,18 @@
 import { createBrowserRouter } from "react-router-dom";
-// pages
-import NotFound from "../pages/NotFound";
-import Login from "../pages/auth/Login";
-import DashboardLayout from "../layouts/DashboardLayout";
-import Dashboard from "../pages/dashboard/Dashboard";
 // protected route component
 import ProtectedRoute from "../components/ProtectedRoute";
 // context
 import UserProvider from "../contexts/UserProvider";
 import UIProvider from "../contexts/UiProvider";
+// pages
+import NotFound from "../pages/NotFound";
+import Login from "../pages/auth/Login";
+import DashboardLayout from "../layouts/DashboardLayout";
+import Dashboard from "../pages/dashboard/Dashboard";
+import ClinicApplications from "../pages/dashboard/ClinicApplications";
+import RegisteredClinics from "../pages/dashboard/RegisteredClinics";
+import PlatformAnalytics from "../pages/dashboard/PlatformAnalytics";
+
 
 
 export const routes = createBrowserRouter([
@@ -27,9 +31,9 @@ export const routes = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: "dashboard", element: <Dashboard /> },
-      { path: "clinic-applications", element: '' },
-      { path: "registered-clinics", element: '' },
-      { path: "platform-analytics", element: '' },
+      { path: "clinic-applications", element: <ClinicApplications /> },
+      { path: "registered-clinics", element: <RegisteredClinics /> },
+      { path: "platform-analytics", element: <PlatformAnalytics /> },
     ]
   },
   {
