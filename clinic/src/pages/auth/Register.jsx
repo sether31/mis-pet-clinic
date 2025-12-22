@@ -82,11 +82,11 @@ export default function Register() {
   };
 
   const serviceLabels = {
-    generalCheckup: "General Checkup",
+    general_checkup: "General Checkup",
     vaccination: "Vaccination",
     surgery: "Surgery",
     grooming: "Grooming",
-    emergencyService: "Emergency Service"
+    emergency_service: "Emergency Service"
   };
 
   const handleChange = (e) => {
@@ -289,8 +289,9 @@ export default function Register() {
       toast.success("OTP was sent to your email");
       setTempUserId(data.temp_user_id);
       setShowOTP(true);
-    } catch (error) {
-      toast.success(`OTP verify error: ${error}`);
+    } catch(error) {
+      console.log("OTP verify error:", error);
+      toast.error("Something went wrong");
     }
     setLoading(false);
   };
@@ -666,7 +667,7 @@ export default function Register() {
                   </h1>
                   
                   <div className='grid grid-cols-1 gap-2 lg:grid-cols-2'>
-                    {['generalCheckup','vaccination','surgery','grooming','emergencyService'].map(service => (
+                    {['general_checkup','vaccination','surgery','grooming','emergency_service'].map(service => (
                       <label key={service}>
                         <input
                           type="checkbox"
