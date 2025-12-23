@@ -8,6 +8,7 @@ import { RiDashboardLine } from "react-icons/ri"
 import { CgFileDocument } from "react-icons/cg"
 import { LuBuilding2 } from "react-icons/lu"
 import { TbGraph, TbLogout } from "react-icons/tb"
+import { MdOutlineSubscriptions } from "react-icons/md";
 // hooks
 import { useUI } from '../hooks/useUI'
 // utils
@@ -17,6 +18,7 @@ const sidebarItems = [
   { label: 'Dashboard', path: '/super-admin/dashboard', icon: RiDashboardLine },
   { label: 'Clinic Applications', path: '/super-admin/clinic-applications', icon: CgFileDocument },
   { label: 'Registered Clinics', path: '/super-admin/registered-clinics', icon: LuBuilding2 },
+  { label: 'Subscription Plans', path: '/super-admin/subscription-plans', icon: MdOutlineSubscriptions},
   { label: 'Platform Analytics', path: '/super-admin/platform-analytics', icon: TbGraph }
 ];
 
