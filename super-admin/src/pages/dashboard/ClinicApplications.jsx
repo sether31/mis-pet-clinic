@@ -22,7 +22,6 @@ export default function ClinicApplications() {
   const fetchClinics = async () => {
     try {
       setLoading(true);
-      await wait(200);
       const response = await fetch(`${API_URL}/api/super-admin/clinic-application/clinic-application.php`);
       const result = await response.json();
       

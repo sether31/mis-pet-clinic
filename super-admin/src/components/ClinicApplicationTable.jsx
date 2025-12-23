@@ -2,10 +2,10 @@ import{ useState, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
 // icons
 import { 
-  HiSearch, HiChevronLeft, HiChevronRight, HiCheckCircle, 
-  HiXCircle, HiClock, HiOutlineDocumentText, HiOutlineUser,
-  HiOutlineLocationMarker, HiOutlineChatAlt, HiEye, HiSave, 
-  HiLockClosed, HiChevronUp, HiChevronDown
+  HiSearch, HiChevronLeft, HiChevronRight,  
+  HiXCircle, HiOutlineDocumentText, HiOutlineUser,
+  HiOutlineLocationMarker, HiOutlineChatAlt, HiEye, 
+  HiSave, HiLockClosed, HiChevronUp, HiChevronDown
 } from 'react-icons/hi';
 import { LuBriefcaseBusiness } from 'react-icons/lu';
 import { RiInformation2Line } from "react-icons/ri";
@@ -14,7 +14,7 @@ import { LuClock } from "react-icons/lu";
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ClinicApplicationTable({ data = [], onAccept, onReject }) {
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState('asc');
 
@@ -58,23 +58,23 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
   const handleAction = async (id, newStatus, feedback) => {
     setIsSubmitting(true);
     try {
-      if (newStatus === 'approved') {
+      if(newStatus === 'approved') {
         await onAccept(id, feedback);
         toast.success(`${selectedBranch.name} is now Approved`);
       } 
-      else if (newStatus === 'rejected') {
+      else if(newStatus === 'rejected') {
         await onReject(id, feedback);
 
         if(selectedBranch.status === 'rejected') {
-          toast.info("Feedback was successfully updated");
+          toast.success("Feedback was successfully updated");
         } else {
-          toast.error(`${selectedBranch.name} has been Rejected`);
+          toast.success(`${selectedBranch.name} has been Rejected`);
         }
       }
       
       setSelectedBranch(null); 
-    } catch (error) {
-      toast.error("Process failed. Please check your connection.");
+    } catch(error) {
+      toast.error("Something went wrong");
     } finally {
       setIsSubmitting(false);
     }
@@ -100,21 +100,19 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
         {/* tab */}
         <div className="flex w-full p-1 bg-gray-100 rounded-lg lg:w-fit">
           {[
-            {id:"all", label:"All", icon:<HiSearch className="rotate-90"/>},
-            {id:"pending", label:"Pending", icon:<HiClock/>}, 
-            {id:"approved", label:"Approved", icon:<HiCheckCircle/>}, 
-            {id:"rejected", label:"Rejected", icon:<HiXCircle/>}
+            {id:"all", label:"All" },
+            {id:"pending", label:"Pending" }, 
+            {id:"approved", label:"Approved" }, 
+            {id:"rejected", label:"Rejected" }
           ].map(tab => (
             <button 
               key={tab.id} 
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold rounded-md transition-all w-full sm:w-32 cursor-pointer ${
-                activeTab === tab.id 
-                ? "bg-white text-[var(--clr-primary)] border border-gray-200" 
-                : "text-gray-500 hover:text-[var(--clr-text-primary)]"
+              onClick={() => setActiveTab(tab.id)} 
+              className={`px-6 py-2 text-xs font-bold rounded-md transition-all uppercase cursor-pointer ${
+                activeTab === tab.id ? "bg-[var(--clr-primary)] text-[var(--clr-text-secondary)]" : "text-gray-500 hover:text-[var(--clr-text-primary)]"
               }`}
             >
-              {tab.icon} {tab.label}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -122,7 +120,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
         {/* search */}
         <div className="flex items-center gap-3">
           <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(Number(e.target.value))} className="border rounded-lg px-2 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer">
-            {[5, 10, 20].map(v => <option key={v} value={v}>Show {v}</option>)}
+            {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
           </select>
 
           <div className="relative">
@@ -206,7 +204,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                 </tr>
               )) : (
                 // without data
-                <tr><td colSpan="5" className="py-20 text-xs font-bold tracking-widest text-center text-gray-400 uppercase">No Applications Found</td></tr>
+                <tr><td colSpan="6" className="py-20 text-xs font-bold tracking-widest text-center text-gray-400 uppercase">No Applications Found</td></tr>
               )
             }
           </tbody>
