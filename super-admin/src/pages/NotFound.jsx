@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 
 export default function NotFound() {
   return (
-    <div className='flex flex-col items-center justify-center h-screen gap-4 container-xl'>
-      <img src={notFoundPic} alt="corgi with box on his head" className='w-' />
+    <div className='flex flex-col items-center justify-center h-screen gap-4 container-xl bg-[var(--clr-bg-page)]'>
+      <img src={notFoundPic} alt="corgi with box on his head" className='w-auto' />
       <h1 className='text-3xl font-bold lg:text-4xl'>404 - Page Not Found</h1>
       <p>The page you’re looking for doesn’t exist or may have been moved.</p>
       <Link 
