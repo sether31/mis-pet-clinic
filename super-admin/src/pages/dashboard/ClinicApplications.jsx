@@ -7,7 +7,7 @@ import DashboardCard from '../../components/DashboardCard'
 import ClinicApplicationTable from '../../components/ClinicApplicationTable'
 import FullScreenLoader from '../../components/FullScreenLoader'
 // utils
-import wait from '../../utils/wait'
+import { authFetch } from '../../utils/authFetch';
 // icons
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2'
 import { IoDocumentTextOutline } from 'react-icons/io5'
@@ -22,17 +22,15 @@ export default function ClinicApplications() {
   const fetchClinics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/super-admin/clinic-application/clinic-application.php`);
-      const result = await response.json();
+      const response = await authFetch(`${API_URL}/api/super-admin/clinic-application/clinic-application.php`);
       
-      if (result.success && Array.isArray(result.data)) {
-        const formattedData = result.data.map(item => ({
+      if(response.success && Array.isArray(response.data)) {
+        const formattedData = response.data.map(item => ({
           ...item,
           feedback: item.feedback || "",
           status: item.status || "pending"
         }));
         setClinics(formattedData);
-        console.log(formattedData)
       } else {
         setClinics([]); 
       }
@@ -49,11 +47,10 @@ export default function ClinicApplications() {
     fetchClinics();
   }, []);
 
-  // Removed alerts here because the Table Component handles the notifications
+  
   const handleUpdateStatus = async (id, status, feedback) => {
-    const response = await fetch(`${API_URL}/api/super-admin/clinic-application/update-clinic-application-status.php`, {
+    const response = await authFetch(`${API_URL}/api/super-admin/clinic-application/update-clinic-application-status.php`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         branch_id: id, 
         status: status, 
@@ -61,17 +58,15 @@ export default function ClinicApplications() {
       })
     });
     
-    const res = await response.json();
     
-    if (res.success) {
-      // Update local state so the UI reflects the change immediately
+    if(response.success) {
+      // update local change for dynamic ui
       setClinics(prev => prev.map(item => 
         item.branch_id === id ? { ...item, status, feedback: feedback } : item
       ));
-      return res; // Return success to the Table component
+      return response; 
     } else {
-      // If the API fails, we throw an error so the Table's catch block triggers the error toast
-      throw new Error(res.message || "Failed to update status");
+      throw new Error(response.message || "Failed to update status");
     }
   };
 
@@ -83,7 +78,7 @@ export default function ClinicApplications() {
     <div className='bg-[var(--clr-bg-page)] min-h-screen container-xl'>
       <Header />
       <section className='my-6 container-xl'>
-        <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8'>
+        <div className='grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4'>
           <DashboardCard title='Total Applications' data={clinics.length} icon={HiOutlineBuildingOffice2} />
           <DashboardCard title='Pending Review' data={clinics.filter(c => c.status === 'pending').length} icon={IoDocumentTextOutline} iconColor='text-amber-500' />
           <DashboardCard title='Approved' data={clinics.filter(c => c.status === 'approved').length} icon={IoDocumentTextOutline} iconColor='text-green-700' />

@@ -1,16 +1,14 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
-header("Content-Type: application/json");
-
 require_once __DIR__ . '/../../../config/Database.php';
+require_once __DIR__ . '/../../../middleware/auth_middleware.php';
+
+$admin = validate_auth(['super_admin']);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-if (empty($data['subscription_id'])) {
-    echo json_encode(["success" => false, "message" => "Subscription ID is required for updates"]);
-    exit;
+if(empty($data['subscription_id'])) {
+  echo json_encode(["success" => false, "message" => "Subscription ID is required for updates"]);
+  exit;
 }
 
 try {

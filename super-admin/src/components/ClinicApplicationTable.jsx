@@ -66,7 +66,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
         await onReject(id, feedback);
 
         if(selectedBranch.status === 'rejected') {
-          toast.success("Feedback was successfully updated");
+          toast.success("Feedback updated successfully");
         } else {
           toast.success(`${selectedBranch.name} has been Rejected`);
         }
