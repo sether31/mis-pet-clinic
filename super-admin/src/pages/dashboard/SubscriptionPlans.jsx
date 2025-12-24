@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+// utils
+import { authFetch } from '../../utils/authFetch';
 // component
 import Header from '../../components/Header'
 import DashboardCard from '../../components/DashboardCard'
@@ -10,6 +12,7 @@ import FullScreenLoader from '../../components/FullScreenLoader'
 // icons
 import { HiOutlineBadgeCheck } from 'react-icons/hi';
 import { HiOutlineArchiveBoxXMark, HiOutlineSquare3Stack3D } from 'react-icons/hi2';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -24,11 +27,10 @@ export default function SubscriptionPage() {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/super-admin/subscription/getSubscriptions.php`);
-      const result = await response.json();
+      const response = await authFetch(`${API_URL}/api/super-admin/subscription/getSubscriptions.php`);
       
-      if(result.success && Array.isArray(result.data)) {
-        setSubscriptions(result.data);
+      if(response.success && Array.isArray(response.data)) {
+        setSubscriptions(response.data);
       } else {
         setSubscriptions([]); 
       }
@@ -50,18 +52,15 @@ export default function SubscriptionPage() {
     const newStatus = Number(sub.is_active) === 1 ? 0 : 1;
     
     try {
-      const response = await fetch(`${API_URL}/api/super-admin/subscription/UpdateSubscription.php`, {
+      const response = await authFetch(`${API_URL}/api/super-admin/subscription/UpdateSubscription.php`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           ...sub,
           is_active: newStatus 
         })
       });
       
-      const data = await response.json();
-      
-      if(data.success) {
+      if(response.success) {
         toast.success(newStatus === 1 ? "Subscription Restored!" : "Subscription has been Archived!");
         // refresh the data to show the updated
         fetchSubscriptions(); 

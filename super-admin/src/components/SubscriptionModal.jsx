@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
+// utils
+import { authFetch } from '../utils/authFetch';
+// icons
 import { HiXCircle, HiSave } from 'react-icons/hi';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -8,13 +11,14 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // initialize data
   const [form, setForm] = useState({
-    subscription_id: initialData?.subscription_id || '',
+    subscription_id: initialData?.subscription_id,
     name: initialData?.name || '',
     price: initialData?.price || '',
     duration_months: initialData?.duration_months || 1,
     appointment_limit: initialData?.appointment_limit || 100,
     has_marketplace: initialData ? Boolean(Number(initialData.has_marketplace)) : false,
-    has_unlimited_email: initialData ? Boolean(Number(initialData.has_unlimited_email)) : false
+    has_unlimited_email: initialData ? Boolean(Number(initialData.has_unlimited_email)) : false,
+    is_active: initialData ? Number(initialData.is_active) : 1
   });
 
   const handleSubmit = async (e) => {
@@ -22,27 +26,35 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
     setIsSubmitting(true);
     
     // check what endpoint if have id
-    const endpoint = form.subscription_id ? 'UpdateSubscription.php' : 'CreateSubscription.php';
+    const isUpdating = Boolean(form.subscription_id);
+    const endpoint = isUpdating ? 'UpdateSubscription.php' : 'CreateSubscription.php';
+
+    const payload = {
+      name: form.name,
+      price: parseFloat(form.price), 
+      duration_months: parseInt(form.duration_months), 
+      appointment_limit: parseInt(form.appointment_limit), 
+      has_marketplace: form.has_marketplace ? 1 : 0,
+      has_unlimited_email: form.has_unlimited_email ? 1 : 0,
+      is_active: form.is_active
+    };
+
+    if(isUpdating) {
+      payload.subscription_id = form.subscription_id;
+    }
 
     try {
-      const response = await fetch(`${API_URL}/api/super-admin/subscription/${endpoint}`, {
+      const response = await authFetch(`${API_URL}/api/super-admin/subscription/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          // convert bool
-          has_marketplace: form.has_marketplace ? 1 : 0,
-          has_unlimited_email: form.has_unlimited_email ? 1 : 0
-        })
+        body: JSON.stringify(payload)
       });
       
-      const data = await response.json();
-      if(data.success) {
-        toast.success(data.message || "Saved successfully");
+      if(response.success) {
+        toast.success(response.message || "Saved successfully");
         onRefresh();
         onClose();
       } else {
-        toast.error(data.message || "Failed to save");
+        toast.error("Something went wrong");
       }
     } catch(error) {
       toast.error("Something went wrong");
@@ -129,21 +141,21 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
           <div className="pt-4 space-y-3">
             <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest block mb-2">Additional Features</label>
             
-            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-white">
+            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-[var(--clr-bg-page)]">
               <span className="text-xs font-bold text-gray-700 uppercase">Include Marketplace Access</span>
               <input 
                 type="checkbox" 
-                className="w-5 h-5 accent-blue-600"
+                className="w-5 h-5 accent-[var(--clr-primary)]"
                 checked={form.has_marketplace}
                 onChange={(e) => setForm({...form, has_marketplace: e.target.checked})}
               />
             </label>
 
-            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-white">
+            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-[var(--clr-bg-page)]">
               <span className="text-xs font-bold text-gray-700 uppercase">Unlimited Email Support</span>
               <input 
                 type="checkbox" 
-                className="w-5 h-5 accent-blue-600"
+                className="w-5 h-5 accent-[var(--clr-primary)]"
                 checked={form.has_unlimited_email}
                 onChange={(e) => setForm({...form, has_unlimited_email: e.target.checked})}
               />
@@ -154,7 +166,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-white uppercase transition-all bg-blue-600 shadow-lg rounded-xl hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-[var(--clr-text-secondary)] uppercase transition-all bg-[var(--clr-primary)] shadow-lg rounded-xl hover:bg-[var(--clr-primary)]/95 disabled:opacity-50 cursor-pointer"
           >
             <HiSave size={18}/>
             {isSubmitting ? "Processing..." : "Save Subscription Plan"}

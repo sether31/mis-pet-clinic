@@ -1,21 +1,43 @@
-export async function authFetch(url, options = {}) {
-  const token = localStorage.getItem("access_token");
+import { validRoleToken } from './validRoleToken'
 
+export const authFetch = async (url, options = {}, allowedRoles = ['super_admin']) => {
+  const role = validRoleToken(allowedRoles);
+
+  if(!role) {
+    // if role is invalid it will be deleted and redirect back to login
+    window.location.href = '/login?session=expired';
+    return { error: 'Unauthorized', status: 401 };
+  }
+
+  const token = localStorage.getItem("access_token");
   const headers = {
     ...options.headers,
-    Authorization: token ? `Bearer ${token}` : undefined,
+    Authorization: `Bearer ${token}`,
   };
+
+  if(!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   try {
     const response = await fetch(url, { ...options, headers });
 
+    // check if token is invalid or missing
     if(response.status === 401) {
-      return { error: response.status };
+      localStorage.removeItem('access_token');
+      window.location.href = '/login?session=expired';
+      return { error: 401 };
+    }
+
+    // check if token is valid, but the role is wrong
+    if(response.status === 403) {
+      window.location.href = '/login?error=unauthorized'; 
+      return { error: 403 };
     }
 
     return await response.json();
-  } catch(err) {
-    console.error(err);
+  } catch (err) {
+    console.error("Network Error:", err);
     throw err;
   }
 }

@@ -1,9 +1,8 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET");
-header("Content-Type: application/json");
-
 require_once __DIR__ . '/../../../config/Database.php';
+require_once __DIR__ . '/../../../middleware/auth_middleware.php';
+
+$admin = validate_auth(['super_admin']);
 
 try {
   $pdo = (new Database())->pdo;
