@@ -27,7 +27,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
     
     // check what endpoint if have id
     const isUpdating = Boolean(form.subscription_id);
-    const endpoint = isUpdating ? 'UpdateSubscription.php' : 'CreateSubscription.php';
+    const endpoint = isUpdating ? 'update-subscription.php' : 'create-subscription.php';
 
     const payload = {
       name: form.name,

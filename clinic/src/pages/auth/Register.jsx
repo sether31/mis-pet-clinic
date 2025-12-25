@@ -3,19 +3,20 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+// utils
+import wait from '../../utils/wait';
 // components
 import Input from '../../components/Input';
 import InputImage from '../../components/InputImage';
 import Button from '../../components/Button';
 import ValidateEmail from '../../components/ValidateEmail';
+import FullScreenLoader from '../../components/FullLoader';
+import OTPInput from '../../components/OtpInput';
 // icons
 import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { IoPersonOutline } from "react-icons/io5";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
-import FullScreenLoader from '../../components/FullLoader';
-import OTPInput from '../../components/OtpInput';
-import wait from '../../utils/wait';
 import { MdFormatBold } from 'react-icons/md';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -315,7 +316,7 @@ export default function Register() {
     });
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/registerOtp.php`, {
+      const res = await fetch(`${API_URL}/api/auth/register-otp.php`, {
         method: "POST",
         body: fd
       });
@@ -355,7 +356,7 @@ export default function Register() {
           </h1>
         </div>
         
-        <h1 className='mb-4 text-4xl font-bold text-[var(--clr-text-header)]'>Register Your Clinic</h1>
+        <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-[var(--clr-text-header)]'>Register Your Clinic</h1>
         <p className='mb-12 text-base'> 
           Create your clinic account to get started with the Pet Clinic Platform. <br />
           Please provide accurate information so we can verify your clinic and set up your account.

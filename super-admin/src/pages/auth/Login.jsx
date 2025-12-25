@@ -3,19 +3,21 @@ import { Link, useNavigate } from 'react-router-dom'
 import { delay, motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// icons
-import { MdOutlineMail } from 'react-icons/md';
-import { SlLock } from 'react-icons/sl';
-// image
-import loginPic from '../../assets/images/login-pic.png';
+// utils
+import wait from '../../utils/wait'
+import { validRoleToken } from '../../utils/validRoleToken';
 // components
 import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
 import FullScreenLoader from '../../components/FullScreenLoader';
-import wait from '../../utils/wait'
-import { validRoleToken } from '../../utils/validRoleToken';
+// image
+import loginPic from '../../assets/images/login-pic.png';
+// icons
+import { MdOutlineMail } from 'react-icons/md';
+import { SlLock } from 'react-icons/sl';
+
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -99,7 +101,7 @@ export default function Login() {
     } 
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/loginSuperAdmin.php`, {
+      const res = await fetch(`${API_URL}/api/auth/login-super-admin.php`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -134,7 +136,7 @@ export default function Login() {
     setLoadingMessage('Verifying OTP...');
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/loginOtp.php`, {
+      const res = await fetch(`${API_URL}/api/auth/login-otp.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, otp })

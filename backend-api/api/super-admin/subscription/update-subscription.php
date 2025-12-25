@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../config/Database.php';
-require_once __DIR__ . '/../../../middleware/auth_middleware.php';
+require_once __DIR__ . '/../../../middleware/auth-middleware.php';
 
 $admin = validate_auth(['super_admin']);
 
@@ -18,21 +18,21 @@ try {
     name = :name, 
     price = :price, 
     duration_months = :duration, 
-    appointment_limit = :appt, 
+    appointment_limit = :appointment, 
     has_marketplace = :market, 
     has_unlimited_email = :email,
     is_active = :is_active
   WHERE subscription_id = :id");
   
   $success = $stmt->execute([
-    ':name'      => $data['name'],
-    ':price'     => $data['price'],
-    ':duration'  => $data['duration_months'],
-    ':appt'      => $data['appointment_limit'],
-    ':market'    => $data['has_marketplace'] ? 1 : 0,
-    ':email'     => $data['has_unlimited_email'] ? 1 : 0,
+    ':name' => $data['name'],
+    ':price' => $data['price'],
+    ':duration' => $data['duration_months'],
+    ':appointment' => $data['appointment_limit'],
+    ':market' => $data['has_marketplace'] ? 1 : 0,
+    ':email' => $data['has_unlimited_email'] ? 1 : 0,
     ':is_active' => isset($data['is_active']) ? (int)$data['is_active'] : 1,
-    ':id'        => $data['subscription_id']
+    ':id' => $data['subscription_id']
   ]);
 
   if($success) {
