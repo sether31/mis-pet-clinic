@@ -3,20 +3,23 @@ import { Link, useNavigate } from 'react-router-dom'
 import { delay, motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// icons
-import { MdOutlineMail } from 'react-icons/md';
-import { SlLock } from 'react-icons/sl';
-// image
-import loginPic from '../../assets/images/login-pic.png';
-// components
+// utils
 import { validRoleToken } from '../../utils/validRoleToken';
 import getDashboardByRole from '../../utils/getDashboardByRole';
+import wait from '../../utils/wait';
+// components
 import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
 import FullScreenLoader from '../../components/FullLoader';
-import wait from '../../utils/wait';
+// image
+import loginPic from '../../assets/images/login-pic.png';
+// icons
+import { MdOutlineMail } from 'react-icons/md';
+import { SlLock } from 'react-icons/sl';
+
+
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -151,7 +154,7 @@ export default function Login() {
     setLoadingMessage('Verifying OTP...');
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/loginOtp.php`, {
+      const res = await fetch(`${API_URL}/api/auth/login-otp.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, otp })

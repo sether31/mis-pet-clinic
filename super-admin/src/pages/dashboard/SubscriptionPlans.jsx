@@ -27,7 +27,7 @@ export default function SubscriptionPage() {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const response = await authFetch(`${API_URL}/api/super-admin/subscription/getSubscriptions.php`);
+      const response = await authFetch(`${API_URL}/api/super-admin/subscription/get-subscription.php`);
       
       if(response.success && Array.isArray(response.data)) {
         setSubscriptions(response.data);
@@ -52,7 +52,7 @@ export default function SubscriptionPage() {
     const newStatus = Number(sub.is_active) === 1 ? 0 : 1;
     
     try {
-      const response = await authFetch(`${API_URL}/api/super-admin/subscription/UpdateSubscription.php`, {
+      const response = await authFetch(`${API_URL}/api/super-admin/subscription/update-subscription.php`, {
         method: 'POST',
         body: JSON.stringify({ 
           ...sub,

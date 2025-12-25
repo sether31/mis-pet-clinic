@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../config/Database.php';
-require_once __DIR__ . '/../../../middleware/auth_middleware.php';
+require_once __DIR__ . '/../../../middleware/auth-middleware.php';
 
 $admin = validate_auth(['super_admin']);
 

@@ -107,7 +107,7 @@ try {
     ':vetLicenseNumber' => $_POST['vetLicenseNumber'],
     ':clinicStartTime' => $_POST['clinicStartTime'] ?: null,
     ':clinicEndTime' => $_POST['clinicEndTime'] ?: null
-]);
+  ]);
 
   $branchId = $pdo->lastInsertId();
 
@@ -118,10 +118,10 @@ try {
 
   if(!empty($servicesArray)) {
     $serviceMap = [
-      'general_checkup'   => 1,
-      'vaccination'      => 2,
-      'surgery'          => 3,
-      'grooming'         => 4,
+      'general_checkup' => 1,
+      'vaccination' => 2,
+      'surgery' => 3,
+      'grooming' => 4,
       'emergency_service' => 5
     ];
 
@@ -163,10 +163,13 @@ try {
     return "uploads/clinic/$branchId/$type/$filename";
   }
 
-  $tinPicPath = uploadPermit($_FILES['tinNumberPic'], $branchId, 'tin_id');
-  $businessPermitPath = uploadPermit($_FILES['businessPermitPic'], $branchId, 'business_permit');
-  $vetLicensePath = uploadPermit($_FILES['vetLicensePic'], $branchId, 'vet_license');
+  $tinPicPath = uploadPermit($_FILES['tinNumberPic'] ?? null, $branchId, 'tin_id');
+  $businessPermitPath = uploadPermit($_FILES['businessPermitPic'] ?? null, $branchId, 'business_permit');
+  $vetLicensePath = uploadPermit($_FILES['vetLicensePic'] ?? null, $branchId, 'vet_license');
 
+  if(!$tinPicPath || !$businessPermitPath || !$vetLicensePath) {
+    throw new Exception("Failed to upload required documents. Please check file sizes and formats.");
+  }
 
   // update clinic branch permit picture
   $stmtUpdate = $pdo->prepare(

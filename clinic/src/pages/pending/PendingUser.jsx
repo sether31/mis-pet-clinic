@@ -13,7 +13,7 @@ import InputImage from '../../components/InputImage';
 import Button from '../../components/Button';
 import FullScreenLoader from '../../components/FullLoader';
 // icons
-import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
+import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
 import { IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
@@ -117,9 +117,8 @@ export default function PendingUser() {
           return;
         }
 
-        // Only update form fields if it's the initial load or they aren't typing
-        // If it's a manual refresh, we only update status and feedback
-        if (!isManualRefresh) {
+        // only update if initial load because only the status adn feedback should be refresh
+        if(!isManualRefresh) {
           setForm({
             clinicName: data.clinic.branch_name || '',
             completeAddress: data.clinic.location.address || '',
@@ -147,16 +146,24 @@ export default function PendingUser() {
         setStatus(data.clinic.status || '');
         setFeedback(data.clinic.feedback || '');
         
-        if(isManualRefresh) toast.info("Status updated.");
+        const newStatus = data.clinic.status;
+        if(isManualRefresh) {
+          if(newStatus === status) {
+            // check if the status is still the same
+            toast.info("No changes to your status yet.");
+          } else {
+            // status change
+            toast.success(`Status updated to ${newStatus}!`);
+          }
+        }
       }
-    } catch (err) {
+    } catch(err) {
       if(isManualRefresh) toast.error("Failed to refresh status.");
     } finally {
       if (isManualRefresh) setLoading(false);
     }
   };
 
-  // 2. USEEFFECT CALLS THE EXTRACTED FUNCTION
   useEffect(() => {
     checkAccess(false);
   }, []);
@@ -313,6 +320,7 @@ export default function PendingUser() {
   return (
     <>
       <div className='mb-20 container-xl'>
+        {/* header */}
         <div className='flex items-center justify-between gap-4 my-5'>
           <h1 className='text-2xl font-medium'>LOGO</h1>
           {/* status */}
@@ -371,287 +379,291 @@ export default function PendingUser() {
             </p>
           </div>
         )}
-</div>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          <section className='grid gap-4'>
-            {/* Clinic Information */}
-            <div className='pb-8 mb-5 border-gray-300 border-b-1'>
-              <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <HiOutlineBuildingOffice2 className='text-[var(--clr-text-header)]' />
-                <span>Clinic Information</span>
-              </h1>
+      <form onSubmit={handleSubmit}>
+        <section className='grid gap-4'>
+          {/* Clinic Information */}
+          <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+            <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
+              <HiOutlineBuildingOffice2 className='text-[var(--clr-text-header)]' />
+              <span>Clinic Information</span>
+            </h1>
+            
+            <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+              <Input
+                value={form.clinicName}
+                label="Clinic Name"
+                labelStyle="mb-1 ml-1"
+                id="clinicName"
+                name="clinicName"
+                isImportant={true}
+                placeholder="Enter your clinic name"
+                onChange={handleChange}
+                error={errors.clinicName}
+              />
+
+              <Input
+                value={form.completeAddress}
+                label="Complete Address"
+                labelStyle="mb-1 ml-1"
+                id="completeAddress"
+                name="completeAddress"
+                isImportant={true}
+                placeholder="Street, Barangay, Building No., etc."
+                onChange={handleChange}
+                error={errors.completeAddress}
+              />
+
+              <Input
+                value={form.municipality}
+                label="City/Municipality"
+                labelStyle="mb-1 ml-1"
+                id="municipality"
+                name="municipality"
+                isImportant={true}
+                placeholder="Binangonan"
+                onChange={handleChange}
+                error={errors.municipality}
+              />
+
+              <Input
+                value={form.province}
+                label="Province"
+                labelStyle="mb-1 ml-1"
+                id="province"
+                name="province"
+                isImportant={true}
+                placeholder="Rizal"
+                onChange={handleChange}
+                error={errors.province}
+              />
+
               
-              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-                <Input
-                  value={form.clinicName}
-                  label="Clinic Name"
-                  labelStyle="mb-1 ml-1"
-                  id="clinicName"
-                  name="clinicName"
-                  isImportant={true}
-                  placeholder="Enter your clinic name"
-                  onChange={handleChange}
-                  error={errors.clinicName}
-                />
+              <Input
+                value={form.zipCode}
+                label="Zip Code"
+                labelStyle="mb-1 ml-1"
+                id="zipCode"
+                name="zipCode"
+                isImportant={true}
+                placeholder="Rizal"
+                onChange={handleChange}
+                error={errors.zipCode}
+              />
 
-                <Input
-                  value={form.completeAddress}
-                  label="Complete Address"
-                  labelStyle="mb-1 ml-1"
-                  id="completeAddress"
-                  name="completeAddress"
-                  isImportant={true}
-                  placeholder="Street, Barangay, Building No., etc."
-                  onChange={handleChange}
-                  error={errors.completeAddress}
-                />
+              <Input
+                value={form.est}
+                label="Year Establish"
+                labelStyle="mb-1 ml-1"
+                id="est"
+                name="est"
+                isImportant={true}
+                placeholder="2025"
+                onChange={handleChange}
+                error={errors.est}
+              />
 
-                <Input
-                  value={form.municipality}
-                  label="City/Municipality"
-                  labelStyle="mb-1 ml-1"
-                  id="municipality"
-                  name="municipality"
-                  isImportant={true}
-                  placeholder="Binangonan"
-                  onChange={handleChange}
-                  error={errors.municipality}
-                />
-
-                <Input
-                  value={form.province}
-                  label="Province"
-                  labelStyle="mb-1 ml-1"
-                  id="province"
-                  name="province"
-                  isImportant={true}
-                  placeholder="Rizal"
-                  onChange={handleChange}
-                  error={errors.province}
-                />
-
-                
-                <Input
-                  value={form.zipCode}
-                  label="Zip Code"
-                  labelStyle="mb-1 ml-1"
-                  id="zipCode"
-                  name="zipCode"
-                  isImportant={true}
-                  placeholder="Rizal"
-                  onChange={handleChange}
-                  error={errors.zipCode}
-                />
-
-                <Input
-                  value={form.est}
-                  label="Year Establish"
-                  labelStyle="mb-1 ml-1"
-                  id="est"
-                  name="est"
-                  isImportant={true}
-                  placeholder="2025"
-                  onChange={handleChange}
-                  error={errors.est}
-                />
-
-                <div className='mb-4'>
-                  <label htmlFor='clinicDescription' className='ml-1 text-base font-medium text-gray-700'>
-                    Clinic Description {' '}
-                    <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={form.clinicDescription} 
-                    id="clinicDescription"
-                    name="clinicDescription"
-                    className={`border border-gray-300 rounded-lg p-2 w-full min-h-[115px] mt-2`}
-                    placeholder="Brief description of your clinic, specialization, and what makes you unique..."
-                    onChange={handleChange} 
-                  ></textarea>
-                </div>
-
-                <div>
-                  <Input
-                    value={form.website}
-                    label="Website"
-                    labelStyle="mb-1 ml-1"
-                    id="website"
-                    name="website"
-                    isOptional={true}
-                    placeholder="https://www.clinic.com"
-                    onChange={handleChange}
-                    error={errors.website}
-                  />
-
-                  <Input
-                    value={form.facebook}
-                    label="Facebook"
-                    labelStyle="mb-1 ml-1"
-                    id="facebook"
-                    name="facebook"
-                    isOptional={true}
-                    placeholder="https://facebook.com/"
-                    onChange={handleChange}
-                    error={errors.facebook}
-                  />
-                </div>
-              </div>
-            </div>
-
-
-            {/* Business & licensing Information */}
-            <div className='pb-8 mb-5 border-gray-300 border-b-1'>
-              <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <CiCreditCard1 className='text-[var(--clr-text-header)]' />
-                <span>Business & licensing Information</span>
-              </h1>
-              <div className='flex items-center gap-2 p-3 mb-6 text-sm font-medium text-blue-800 border border-blue-100 rounded-lg bg-blue-50'>
-                <FaCircleInfo />
-                <p>
-                  Security Requirement: Please re-upload your document images for every update to ensure data integrity.
+              <div className='mb-4'>
+                <label htmlFor='clinicDescription' className='ml-1 text-base font-medium text-gray-700'>
+                  Clinic Description {' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={form.clinicDescription} 
+                  id="clinicDescription"
+                  name="clinicDescription"
+                  className={`border border-gray-300 rounded-lg p-2 w-full min-h-[115px] mt-2`}
+                  placeholder="Brief description of your clinic, specialization, and what makes you unique..."
+                  onChange={handleChange} 
+                ></textarea>
+                <p className="flex items-center text-sm text-red-500">
+                  <HiMiniExclamationCircle size={16} />
+                  {errors.clinicDescription}
                 </p>
               </div>
-              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-                <InputImage
-                  label="Tin Number Picture"
-                  name="tinNumberPic"
-                  required={true}
+
+              <div>
+                <Input
+                  value={form.website}
+                  label="Website"
+                  labelStyle="mb-1 ml-1"
+                  id="website"
+                  name="website"
+                  isOptional={true}
+                  placeholder="https://www.clinic.com"
                   onChange={handleChange}
-                  error={errors.tinNumberPic}
+                  error={errors.website}
                 />
 
                 <Input
-                  value={form.tinNumber}
-                  label="Tin Number"
+                  value={form.facebook}
+                  label="Facebook"
                   labelStyle="mb-1 ml-1"
-                  id="tinNumber"
-                  isImportant={true}
-                  name="tinNumber"
-                  placeholder="123-456-789-000"
+                  id="facebook"
+                  name="facebook"
+                  isOptional={true}
+                  placeholder="https://facebook.com/"
                   onChange={handleChange}
-                  error={errors.tinNumber}
-                />
-
-                <InputImage
-                  label="Business Permit Picture"
-                  name="businessPermitPic"
-                  required={true}
-                  onChange={handleChange}
-                  error={errors.businessPermitPic}
-                />
-
-                <Input
-                  value={form.businessPermitNumber}
-                  label="Business Permit Number"
-                  labelStyle="mb-1 ml-1"
-                  id="businessPermitNumber"
-                  isImportant={true}
-                  name="businessPermitNumber"
-                  placeholder="BP-2025-12345"
-                  onChange={handleChange}
-                  error={errors.businessPermitNumber}
-                />
-
-                <InputImage
-                  label="Veterinarian License Picture"
-                  name="vetLicensePic"
-                  required={true}
-                  onChange={handleChange}
-                  error={errors.vetLicensePic}
-                />
-
-                <Input
-                  value={form.vetLicenseNumber}
-                  label="Veterinarian License Number"
-                  labelStyle="mb-1 ml-1"
-                  id="vetLicenseNumber"
-                  isImportant={true}
-                  name="vetLicenseNumber"
-                  placeholder="12345"
-                  onChange={handleChange}
-                  error={errors.vetLicenseNumber}
+                  error={errors.facebook}
                 />
               </div>
             </div>
-              
-            {/* Operations */}
-            <div className='pb-8 mb-5 border-gray-300 border-b-1'>
-              <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <LiaBusinessTimeSolid className='text-[var(--clr-text-header)]' />
-                <span>Operating Hours</span>
-              </h1>
-              <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
-                <div className='flex flex-col gap-4 sm:flex-row'>
-                  <Input
-                    value={form.clinicStartTime} 
-                    type='time'
-                    label="Operating hours start time"
-                    labelStyle="mb-1 ml-1"
-                    id="clinicStartTime"
-                    isOptional={true}
-                    name="clinicStartTime"
-                    placeholder="6:00 AM"
-                    onChange={handleChange}
-                    error={errors.clinicStartTime}
-                  />
-                  <Input
-                    value={form.clinicEndTime} 
-                    type='time'
-                    label="Operating hours end time"
-                    labelStyle="mb-1 ml-1"
-                    id="clinicEndTime"
-                    isOptional={true}
-                    name="clinicEndTime"
-                    placeholder="10:00 PM"
-                    onChange={handleChange}
-                    error={errors.clinicEndTime}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className='p-4 bg-gray-200 rounded-md'>
-              <h1 className='mb-1 font-medium text-md'>TERMS & CONDITION</h1>
-              <div className='flex items-center gap-1'>
-                <input
-                  type="checkbox"
-                  name="agreeTerms"
-                  checked={form.agreeTerms}
-                  onChange={handleChange}
-                  className='accent-[var(--clr-primary)]'
-                />
-                <label htmlFor="emergency-service">I agree to terms and conditions</label>
-              </div>
-              {errors.agreeTerms && (
-                <p className="flex items-center mt-1 text-sm text-red-500">{errors.agreeTerms}</p>
-              )}
-              <p>By registering, you confirm that all information provided is accurate and that you agree to the platform’s rules, verification process, privacy policy, and acceptable use guidelines.</p>
-            </div>
-          </section>
-
-          <div className="flex flex-col items-center gap-3 mt-8 md:flex-row">
-            <Button 
-              type="submit" 
-              variant="primary" 
-              className="w-full lg:w-[200px] cursor-pointer"
-              load={loading}
-            >
-              Update your clinic
-            </Button>
-
-            <Button 
-              type="button" 
-              variant="secondary" 
-              className="w-full lg:w-[200px] cursor-pointer flex gap-1 items-center justify-center"
-              onClick={() => checkAccess(true)}
-              load={loading}
-            >
-              <IoRefreshOutline size={18} className={loading ? "animate-spin" : ""} />
-              Refresh status
-            </Button>
           </div>
-        </form>
+
+
+          {/* Business & licensing Information */}
+          <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+            <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
+              <CiCreditCard1 className='text-[var(--clr-text-header)]' />
+              <span>Business & licensing Information</span>
+            </h1>
+            <div className='flex items-center gap-2 p-3 mb-6 text-sm font-medium text-blue-800 border border-blue-100 rounded-lg bg-blue-50'>
+              <FaCircleInfo />
+              <p>
+                Security Requirement: Please re-upload your document images for every update to ensure data integrity.
+              </p>
+            </div>
+            <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+              <InputImage
+                label="Tin Number Picture"
+                name="tinNumberPic"
+                required={true}
+                onChange={handleChange}
+                error={errors.tinNumberPic}
+              />
+
+              <Input
+                value={form.tinNumber}
+                label="Tin Number"
+                labelStyle="mb-1 ml-1"
+                id="tinNumber"
+                isImportant={true}
+                name="tinNumber"
+                placeholder="123-456-789-000"
+                onChange={handleChange}
+                error={errors.tinNumber}
+              />
+
+              <InputImage
+                label="Business Permit Picture"
+                name="businessPermitPic"
+                required={true}
+                onChange={handleChange}
+                error={errors.businessPermitPic}
+              />
+
+              <Input
+                value={form.businessPermitNumber}
+                label="Business Permit Number"
+                labelStyle="mb-1 ml-1"
+                id="businessPermitNumber"
+                isImportant={true}
+                name="businessPermitNumber"
+                placeholder="BP-2025-12345"
+                onChange={handleChange}
+                error={errors.businessPermitNumber}
+              />
+
+              <InputImage
+                label="Veterinarian License Picture"
+                name="vetLicensePic"
+                required={true}
+                onChange={handleChange}
+                error={errors.vetLicensePic}
+              />
+
+              <Input
+                value={form.vetLicenseNumber}
+                label="Veterinarian License Number"
+                labelStyle="mb-1 ml-1"
+                id="vetLicenseNumber"
+                isImportant={true}
+                name="vetLicenseNumber"
+                placeholder="12345"
+                onChange={handleChange}
+                error={errors.vetLicenseNumber}
+              />
+            </div>
+          </div>
+            
+          {/* Operations */}
+          <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+            <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
+              <LiaBusinessTimeSolid className='text-[var(--clr-text-header)]' />
+              <span>Operating Hours</span>
+            </h1>
+            <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
+              <div className='flex flex-col gap-4 sm:flex-row'>
+                <Input
+                  value={form.clinicStartTime} 
+                  type='time'
+                  label="Operating hours start time"
+                  labelStyle="mb-1 ml-1"
+                  id="clinicStartTime"
+                  isOptional={true}
+                  name="clinicStartTime"
+                  placeholder="6:00 AM"
+                  onChange={handleChange}
+                  error={errors.clinicStartTime}
+                />
+                <Input
+                  value={form.clinicEndTime} 
+                  type='time'
+                  label="Operating hours end time"
+                  labelStyle="mb-1 ml-1"
+                  id="clinicEndTime"
+                  isOptional={true}
+                  name="clinicEndTime"
+                  placeholder="10:00 PM"
+                  onChange={handleChange}
+                  error={errors.clinicEndTime}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className='p-4 bg-gray-200 rounded-md'>
+            <h1 className='mb-1 font-medium text-md'>TERMS & CONDITION</h1>
+            <div className='flex items-center gap-1'>
+              <input
+                type="checkbox"
+                name="agreeTerms"
+                checked={form.agreeTerms}
+                onChange={handleChange}
+                className='accent-[var(--clr-primary)]'
+              />
+              <label htmlFor="emergency-service">I agree to terms and conditions</label>
+            </div>
+            {errors.agreeTerms && (
+              <p className="flex items-center mt-1 text-sm text-red-500">{errors.agreeTerms}</p>
+            )}
+            <p>By registering, you confirm that all information provided is accurate and that you agree to the platform’s rules, verification process, privacy policy, and acceptable use guidelines.</p>
+          </div>
+        </section>
+
+        <div className="flex flex-col items-center gap-3 mt-8 md:flex-row">
+          <Button 
+            type="submit" 
+            variant="primary" 
+            className="w-full lg:w-[200px] cursor-pointer"
+            load={loading}
+          >
+            Update your clinic
+          </Button>
+
+          <Button 
+            type="button" 
+            variant="secondary" 
+            className="w-full lg:w-[200px] cursor-pointer flex gap-1 items-center justify-center"
+            onClick={() => checkAccess(true)}
+            load={loading}
+          >
+            <IoRefreshOutline size={18} className={loading ? "animate-spin" : ""} />
+            Refresh status
+          </Button>
+        </div>
+      </form>
 
 
         {loading && <FullScreenLoader />}
