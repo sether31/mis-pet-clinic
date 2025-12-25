@@ -52,10 +52,10 @@ export default function Login() {
         }
 
         setLoading(true);
-        setLoadingMessage('Redirecting...')
+        setLoadingMessage('Logging in...')
         await wait(2000);
 
-        if(role === 'clinic_admin' && status === 'pending') {
+        if(role === 'clinic_admin' && (status === 'pending' || status === 'rejected')) {
           navigate('/pendingUser', { replace: true });
         } else {
           navigate(getDashboardByRole(role), { replace: true });
@@ -66,7 +66,7 @@ export default function Login() {
     };
 
     checkToken();
-  }, []);
+  }, [navigate]);
 
   // handle input
   const handleChange = (e) => {

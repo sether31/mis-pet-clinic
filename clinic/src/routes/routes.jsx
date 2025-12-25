@@ -5,7 +5,7 @@ import PendingUser from "../pages/pending/PendingUser";
 import ClinicLayout from "../layouts/ClinicLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
-import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";;
+import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";
 
 export const routes = createBrowserRouter([
   { path: "/login", element: <Login /> },

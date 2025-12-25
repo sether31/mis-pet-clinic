@@ -355,7 +355,7 @@ export default function Register() {
           </h1>
         </div>
         
-        <h1 className='mb-4 text-4xl font-bold text-[var(--clr-text-header)]'>Register Your Clinic</h1>
+        <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-[var(--clr-text-header)]'>Register Your Clinic</h1>
         <p className='mb-12 text-base'> 
           Create your clinic account to get started with the Pet Clinic Platform. <br />
           Please provide accurate information so we can verify your clinic and set up your account.
