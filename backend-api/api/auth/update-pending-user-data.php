@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/Database.php';
-require_once __DIR__ . '/../../middleware/auth_middleware.php';
+require_once __DIR__ . '/../../middleware/auth-middleware.php';
 
 $decodedToken = validate_auth(['clinic_admin']);
 $adminUserId = $decodedToken->user_id;
@@ -32,8 +32,10 @@ $branchId = $branch['branch_id'];
 try {
   $pdo->beginTransaction();
 
-  // remove image clean smth
-  $baseDir = "../uploads/clinic/" . $branchId . "/";
+  // full Path for to find the folder phy location
+  $physicalBaseDir = dirname(__DIR__, 2) . "/uploads/clinic/" . $branchId . "/";  
+  // what will send to db
+  $dbBaseDir = "uploads/clinic/" . $branchId . "/";
   $fileMapping = [
     'tinNumberPic' => ['col' => 'tin_id_picture', 'folder' => 'tin_id'],
     'businessPermitPic' => ['col' => 'business_permit_picture', 'folder' => 'business_permit'],
@@ -45,21 +47,31 @@ try {
 
   foreach($fileMapping as $formKey => $info) {
     if(isset($_FILES[$formKey]) && $_FILES[$formKey]['error'] === UPLOAD_ERR_OK) {
-      // delete old image
-      $oldPath = $branch[$info['col']];
-      if($oldPath && file_exists($oldPath)) {
-        unlink($oldPath);
+      
+      // --- 3. FIX DELETION ---
+      $oldDbPath = $branch[$info['col']];
+      // Use the physical root to find the file on the hard drive
+      $oldPhysicalPath = dirname(__DIR__, 2) . "/" . $oldDbPath;
+      if($oldDbPath && file_exists($oldPhysicalPath)) {
+        unlink($oldPhysicalPath);
       }
 
-      $targetDir = $baseDir . $info['folder'] . "/";
+      // --- 4. PREPARE DIRECTORY ---
+      $targetDir = $physicalBaseDir . $info['folder'] . "/";
       if(!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
+      // --- 5. GENERATE FILENAME ---
       $ext = pathinfo($_FILES[$formKey]['name'], PATHINFO_EXTENSION);
-      $targetPath = $targetDir . "img_" . uniqid() . "." . $ext;
+      $fileName = "img_" . uniqid() . "." . $ext;
 
-      if(move_uploaded_file($_FILES[$formKey]['tmp_name'], $targetPath)) {
+      // --- 6. DEFINE BOTH PATHS ---
+      $targetPhysicalPath = $targetDir . $fileName; // Where PHP saves it
+      $targetDbPath = $dbBaseDir . $info['folder'] . "/" . $fileName; // What React sees
+
+      // --- 7. SAVE & RECORD ---
+      if(move_uploaded_file($_FILES[$formKey]['tmp_name'], $targetPhysicalPath)) {
         $imageUpdates[] = "{$info['col']} = ?";
-        $imageParams[] = $targetPath;
+        $imageParams[] = $targetDbPath; // Store the CLEAN path in DB
       }
     }
   }
