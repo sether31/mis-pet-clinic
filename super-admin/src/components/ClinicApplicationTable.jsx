@@ -247,7 +247,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
             {/* document data */}
             <div className="p-8 space-y-12 overflow-y-auto">
               <section>
-                <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest mb-6 flex items-center gap-2"><HiOutlineDocumentText size={18}/> Verification Documents</h3>
+                <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest mb-6 flex items-center gap-2"><HiOutlineDocumentText className="text-[var(--clr-text-header)]" size={18}/> Verification Documents</h3>
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <DocCard label="Vet License" img={`${API_URL}/${selectedBranch.vet_license_picture}`} id={selectedBranch.vet_license_number} />
                   <DocCard label="Business Permit" img={`${API_URL}/${selectedBranch.business_permit_picture}`} id={selectedBranch.business_permit_number} />
@@ -258,7 +258,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
               {/* contact info */}
               <section className="pt-10 space-y-8 border-t border-gray-100">
                 <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest flex items-center gap-2">
-                  <RiInformation2Line size={18} /> 
+                  <RiInformation2Line className="text-[var(--clr-text-header)]" size={18} /> 
                   Contact Information
                 </h3>
 
@@ -274,7 +274,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
               {/* services */}
               <section className="pt-10 space-y-4 border-t border-gray-100">
                 <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest flex items-center gap-2">
-                  <LuBriefcaseBusiness size={18} /> 
+                  <LuBriefcaseBusiness className="text-[var(--clr-text-header)]" size={18} /> 
                   Services Offered
                 </h3>
                               
@@ -285,7 +285,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                         key={index}
                         className="px-4 py-2 bg-[var(--clr-primary)]/10 border border-[var(--clr-primary)]/20 text-[var(--clr-primary)] text-[10px] font-black rounded-lg uppercase"
                       >
-                        {/* This removes the _ and makes it look like 'GENERAL CHECKUP' */}
+                        {/* remove the _ and makes it look like to show like general checkout without _ */}
                         {service.replace(/_/g, ' ')}
                       </div>
                     ))
@@ -300,7 +300,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
               <section className="pt-10 pb-6 space-y-6 border-t border-gray-100">
                 <div className="flex items-center justify-between">
                    <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest flex items-center gap-2">
-                     <HiOutlineChatAlt size={18}/> Evaluation Feedback
+                     <HiOutlineChatAlt className="text-[var(--clr-text-header)]" size={18}/> Evaluation Feedback
                    </h3>
                    {/* lock icon */}
                    {selectedBranch.status === 'approved' && (
@@ -330,20 +330,21 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
               </section>
             </div>
 
-            {/* ACTION FOOTER */}
-            <div className="flex justify-end gap-4 p-6 border-t bg-gray-50">
-              {selectedBranch.status === 'rejected' && (
-                <button 
-                  disabled={isSubmitting}
-                  onClick={() => handleAction(selectedBranch.branch_id, 'rejected', adminFeedback)} 
-                  className="flex items-center gap-2 px-6 py-3 bg-[var(--clr-text-primary)] text-[var(--clr-text-secondary)] text-[11px] font-black rounded-xl uppercase tracking-widest hover:opacity-90 cursor-pointer transition-all disabled:opacity-50"
-                >
-                  <HiSave size={16}/> {isSubmitting ? "Updating..." : "Update Feedback"}
-                </button>
-              )}
+            {/* footer actions */}
+            {selectedBranch.status !== 'approved' && (
+              <div className="flex justify-end gap-4 p-6 border-t bg-gray-50">
+                {/* feedback btn */}
+                {selectedBranch.status === 'rejected' && (
+                  <button 
+                    disabled={isSubmitting}
+                    onClick={() => handleAction(selectedBranch.branch_id, 'rejected', adminFeedback)} 
+                    className="flex items-center gap-2 px-6 py-3 bg-[var(--clr-text-primary)] text-[var(--clr-text-secondary)] text-[11px] font-black rounded-xl uppercase tracking-widest hover:opacity-90 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    <HiSave size={16}/> {isSubmitting ? "Updating..." : "Update Feedback"}
+                  </button>
+                )}
 
-              {/* reject action btn */}
-              {selectedBranch.status !== 'approved' && (
+                {/* approve btn */}
                 <button 
                   disabled={isSubmitting}
                   onClick={() => handleAction(selectedBranch.branch_id, 'approved', adminFeedback)} 
@@ -351,19 +352,20 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                 >
                   {isSubmitting ? "Processing..." : "Approve Branch"}
                 </button>
-              )}
+    
 
-              {/* approve action btn */}
-              {selectedBranch.status !== 'rejected' && (
-                <button 
-                  disabled={isSubmitting}
-                  onClick={() => handleAction(selectedBranch.branch_id, 'rejected', adminFeedback)} 
-                  className="px-10 py-3 border-2 border-red-500 text-red-600 text-[11px] font-black rounded-xl uppercase tracking-widest hover:bg-red-50 transition-all  cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmitting ? "Wait..." : "Reject Application"}
-                </button>
-              )}
-            </div>
+                {/* reject btn */}
+                {selectedBranch.status === 'pending' && (
+                  <button 
+                    disabled={isSubmitting}
+                    onClick={() => handleAction(selectedBranch.branch_id, 'rejected', adminFeedback)} 
+                    className="px-10 py-3 border-2 border-red-500 text-red-600 text-[11px] font-black rounded-xl uppercase tracking-widest hover:bg-red-50 transition-all  cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Wait..." : "Reject Application"}
+                  </button>
+                )}
+              </div> 
+            )}
           </div>
         </div>
       )}
