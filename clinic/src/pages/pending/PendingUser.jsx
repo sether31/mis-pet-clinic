@@ -16,7 +16,7 @@ import FullScreenLoader from '../../components/FullLoader';
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
-import { IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
+import { IoLogOut, IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
 import { FaCircleInfo, FaCircleCheck } from "react-icons/fa6";
 
 
@@ -105,11 +105,11 @@ export default function PendingUser() {
       // fetch data
       const response = await authFetch(`${API_URL}/api/auth/get-pending-user-data.php`, {}, ['clinic_admin']);
 
-      if (response.success && response.data) {
+      if(response.success && response.data) {
         const data = response.data;
 
         // check if user status updated on server side
-        if (data.user.status === 'approved' && data.clinic.status === 'approved') {
+        if(data.user.status === 'approved' && data.clinic.status === 'approved') {
           toast.success("Your account has been approved!");
           await wait(2000);
           localStorage.clear();
@@ -310,10 +310,20 @@ export default function PendingUser() {
         return;
       }
       toast.success("Clinic details successfully updated!");
+
+      await checkAccess(true);
     } catch(error) {
       toast.error("Something went wrong");
     }
     setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    setLoading(true);
+    toast.info("Logging out...");
+    localStorage.clear(); 
+    await wait(1200);
+    navigate('/login', { replace: true });
   };
 
 
@@ -323,8 +333,24 @@ export default function PendingUser() {
         {/* header */}
         <div className='flex items-center justify-between gap-4 my-5'>
           <h1 className='text-2xl font-medium'>LOGO</h1>
+          {/* logout */}
+          <Button 
+            type="button" 
+            variant="secondary" 
+            className="flex items-center justify-center gap-1 cursor-pointer w-max"
+            onClick={handleLogout}
+            load={loading}
+          >
+            <IoLogOut />
+            Logout
+          </Button>
+        </div>
+        
+        <div className="flex flex-col gap-2 mb-4 md:items-center md:flex-row">
+          <h1 className='text-3xl sm:text-4xl font-bold text-[var(--clr-text-header)]'>Review Your Clinic</h1>
+
           {/* status */}
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+          <div className={`flex w-max items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
             status === "approved" ? 'bg-green-50 border-green-200' : 
             status === "rejected" ? 'bg-red-50 border-red-200' : 
             'bg-amber-50 border-amber-200'
@@ -343,8 +369,6 @@ export default function PendingUser() {
             </span>
           </div>
         </div>
-        
-        <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-[var(--clr-text-header)]'>Review Your Clinic</h1>
         
         {/* check feedback */}
         <div className="mb-8">
@@ -473,14 +497,19 @@ export default function PendingUser() {
                   value={form.clinicDescription} 
                   id="clinicDescription"
                   name="clinicDescription"
-                  className={`border border-gray-300 rounded-lg p-2 w-full min-h-[115px] mt-2`}
+                  className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
+                    ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
+                    ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
+                  `}
                   placeholder="Brief description of your clinic, specialization, and what makes you unique..."
                   onChange={handleChange} 
                 ></textarea>
-                <p className="flex items-center text-sm text-red-500">
-                  <HiMiniExclamationCircle size={16} />
-                  {errors.clinicDescription}
-                </p>
+                {(errors.clinicDescription && errors.clinicDescription !== "valid") && (
+                  <p className="flex items-center text-sm text-red-500">
+                    <HiMiniExclamationCircle size={16} />
+                    {errors.clinicDescription}
+                  </p>
+                )}
               </div>
 
               <div>

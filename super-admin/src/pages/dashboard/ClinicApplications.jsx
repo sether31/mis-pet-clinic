@@ -75,7 +75,7 @@ export default function ClinicApplications() {
   const handleReject = (id, feedback) => handleUpdateStatus(id, 'rejected', feedback);
 
   return (
-    <div className='bg-[var(--clr-bg-page)] min-h-screen container-xl'>
+    <div className='bg-(--clr-bg-page) min-h-screen container-xl'>
       <Header />
       <section className='my-6 container-xl'>
         <div className='grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4'>

@@ -4,10 +4,10 @@ import { delay, motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // utils
+import { validateEmail } from '../../utils/validateEmail'
 import wait from '../../utils/wait'
 import { validRoleToken } from '../../utils/validRoleToken';
 // components
-import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
@@ -42,7 +42,6 @@ export default function Login() {
   useEffect(() => {
     const checkToken = async () => {
       const role = validRoleToken(['super_admin']);
-      console.log(role)
       if(role) {
         setLoading(true);
         setLoadingMessage('Logging in...');
@@ -64,7 +63,7 @@ export default function Login() {
     if(name === "email") {
       if(!value.trim()) {
         setErrors(prev => ({ ...prev, email: null })); 
-      } else if(!ValidateEmail(value)) {
+      } else if(!validateEmail(value)) {
         setErrors(prev => ({ ...prev, email: "Invalid email" }));
       } else {
         setErrors(prev => ({ ...prev, email: "valid" })); 
@@ -187,7 +186,7 @@ export default function Login() {
         <div className="grid grid-cols-1 place-content-center lg:place-content-stretch lg:grid-cols-[.85fr_1fr] min-h-[695px] flex-1 px-4 lg:px-0">
           {/* image section */}
           <motion.section 
-            className="h-full bg-[var(--clr-primary)] relative hidden lg:block overflow-hidden"
+            className="h-full bg-(--clr-primary) relative hidden lg:block overflow-hidden"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
@@ -210,7 +209,7 @@ export default function Login() {
               animate="visible"
             >
               <motion.h1 variants={formItemVariants} className='mb-4 text-xl font-medium'>LOGO</motion.h1>
-              <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-[var(--clr-primary)]'>Login in to your Account</motion.h1>
+              <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-(--clr-primary)'>Login in to your Account</motion.h1>
 
               <motion.p variants={formItemVariants} className="mb-6 text-gray-600">
                 Welcome back! Please enter your credentials to continue.
@@ -257,7 +256,7 @@ export default function Login() {
               </form>
 
               <motion.p variants={formItemVariants}>
-                <Link to="/forgotPassword" className="text-base font-[500] text-gray-700 hover:text-gray-600 mt-2 text-right block">
+                <Link to="/forgotPassword" className="block mt-2 text-base font-medium text-right text-gray-700 hover:text-gray-600">
                   Forgot Password?
                 </Link>
               </motion.p>

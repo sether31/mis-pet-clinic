@@ -48,35 +48,36 @@ try {
   foreach($fileMapping as $formKey => $info) {
     if(isset($_FILES[$formKey]) && $_FILES[$formKey]['error'] === UPLOAD_ERR_OK) {
       
-      // --- 3. FIX DELETION ---
+      // fix deletion 
       $oldDbPath = $branch[$info['col']];
-      // Use the physical root to find the file on the hard drive
+      // use the physical root to find the file on the hard drive
       $oldPhysicalPath = dirname(__DIR__, 2) . "/" . $oldDbPath;
       if($oldDbPath && file_exists($oldPhysicalPath)) {
         unlink($oldPhysicalPath);
       }
 
-      // --- 4. PREPARE DIRECTORY ---
+      // prepare dir
       $targetDir = $physicalBaseDir . $info['folder'] . "/";
       if(!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
-      // --- 5. GENERATE FILENAME ---
+      // generate filename 
       $ext = pathinfo($_FILES[$formKey]['name'], PATHINFO_EXTENSION);
       $fileName = "img_" . uniqid() . "." . $ext;
 
-      // --- 6. DEFINE BOTH PATHS ---
-      $targetPhysicalPath = $targetDir . $fileName; // Where PHP saves it
-      $targetDbPath = $dbBaseDir . $info['folder'] . "/" . $fileName; // What React sees
+      // php
+      $targetPhysicalPath = $targetDir . $fileName; 
+      // react
+      $targetDbPath = $dbBaseDir . $info['folder'] . "/" . $fileName; 
 
-      // --- 7. SAVE & RECORD ---
+      // save
       if(move_uploaded_file($_FILES[$formKey]['tmp_name'], $targetPhysicalPath)) {
         $imageUpdates[] = "{$info['col']} = ?";
-        $imageParams[] = $targetDbPath; // Store the CLEAN path in DB
+        $imageParams[] = $targetDbPath; 
       }
     }
   }
 
-  // 5. Update the Branch Table
+  // update branch table
   $sql = "UPDATE clinic_branches_tb SET 
     name = ?, description = ?, address = ?, municipality = ?, 
     province = ?, zip_code = ?, est = ?, website = ?, facebook = ?, 

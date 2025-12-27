@@ -84,7 +84,7 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className='bg-[var(--clr-bg-page)] min-h-screen container-xl'>
+    <div className='bg-(--clr-bg-page) min-h-screen container-xl'>
       <Header />
       <section className='my-6 container-xl'>
         {/* dashboard card */}
