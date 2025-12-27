@@ -64,7 +64,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-left">
+    <div className="fixed inset-0 flex items-center justify-center p-4 text-left z-100 bg-black/60 backdrop-blur-sm">
       <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white shadow-2xl rounded-2xl">
         {/* modal header */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50">
@@ -85,7 +85,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
             <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Subscription Name</label>
             <input 
               type="text" 
-              className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none bg-gray-50 rounded-xl focus:border-[var(--clr-primary)]"
+              className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none bg-gray-50 rounded-xl focus:border-(--clr-primary)"
               placeholder="e.g., Premium Tier"
               value={form.name}
               onChange={(e) => setForm({...form, name: e.target.value})}
@@ -93,13 +93,13 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-[var(--clr-text-primary]">
+          <div className="grid grid-cols-2 gap-4 text-(--clr-text-primary)">
             {/* price */}
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Price (PHP)</label>
               <input 
                 type="number" 
-                className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none bg-gray-50 rounded-xl focus:border-[var(--clr-primary)]"
+                className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none bg-gray-50 rounded-xl focus:border-(--clr-primary)"
                 placeholder="0.00"
                 value={form.price}
                 onChange={(e) => setForm({...form, price: e.target.value})}
@@ -111,7 +111,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Duration</label>
               <select 
-                className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none cursor-pointer bg-gray-50 rounded-xl focus:border-[var(--clr-primary)]"
+                className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none cursor-pointer bg-gray-50 rounded-xl focus:border-(--clr-primary)"
                 value={form.duration_months}
                 onChange={(e) => setForm({...form, duration_months: e.target.value})}
               >
@@ -126,7 +126,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
           <div className="space-y-1">
             <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Appointment Limit</label>
             <select 
-              className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none cursor-pointer bg-gray-50 rounded-xl focus:border-[var(--clr-primary)]"
+              className="w-full p-3 text-sm font-bold transition-all border border-gray-300 outline-none cursor-pointer bg-gray-50 rounded-xl focus:border-(--clr-primary)"
               value={form.appointment_limit}
               onChange={(e) => setForm({...form, appointment_limit: e.target.value})}
             >
@@ -141,21 +141,21 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
           <div className="pt-4 space-y-3">
             <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest block mb-2">Additional Features</label>
             
-            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-[var(--clr-bg-page)]">
+            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-(--clr-bg-page)">
               <span className="text-xs font-bold text-gray-700 uppercase">Include Marketplace Access</span>
               <input 
                 type="checkbox" 
-                className="w-5 h-5 accent-[var(--clr-primary)]"
+                className="w-5 h-5 accent-(--clr-primary)"
                 checked={form.has_marketplace}
                 onChange={(e) => setForm({...form, has_marketplace: e.target.checked})}
               />
             </label>
 
-            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-[var(--clr-bg-page)]">
+            <label className="flex items-center justify-between p-4 transition-all border border-gray-200 cursor-pointer bg-gray-50 rounded-xl hover:bg-(--clr-bg-page)">
               <span className="text-xs font-bold text-gray-700 uppercase">Unlimited Email Support</span>
               <input 
                 type="checkbox" 
-                className="w-5 h-5 accent-[var(--clr-primary)]"
+                className="w-5 h-5 accent-(--clr-primary)"
                 checked={form.has_unlimited_email}
                 onChange={(e) => setForm({...form, has_unlimited_email: e.target.checked})}
               />
@@ -166,7 +166,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-[var(--clr-text-secondary)] uppercase transition-all bg-[var(--clr-primary)] shadow-lg rounded-xl hover:bg-[var(--clr-primary)]/95 disabled:opacity-50 cursor-pointer"
+            className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-(--clr-text-secondary) uppercase transition-all bg-(--clr-primary) shadow-lg rounded-xl hover:bg-(--clr-primary)/95 disabled:opacity-50 cursor-pointer"
           >
             <HiSave size={18}/>
             {isSubmitting ? "Processing..." : "Save Subscription Plan"}

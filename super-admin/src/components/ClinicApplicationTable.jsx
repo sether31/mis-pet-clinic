@@ -94,7 +94,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
   };
 
   return (
-    <div className="w-full bg-[var(--clr-bg-card)] rounded-xl border border-gray-300 shadow-sm overflow-hidden flex flex-col">
+    <div className="w-full bg-(--clr-bg-card) rounded-xl border border-gray-300 shadow-sm overflow-hidden flex flex-col">
       {/* tabs and filter */}
       <div className="flex flex-col justify-between gap-4 p-4 border-b border-gray-300 lg:flex-row">
         {/* tab */}
@@ -109,7 +109,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
               key={tab.id} 
               onClick={() => setActiveTab(tab.id)} 
               className={`px-6 py-2 text-xs font-bold rounded-md transition-all uppercase cursor-pointer ${
-                activeTab === tab.id ? "bg-[var(--clr-primary)] text-[var(--clr-text-secondary)]" : "text-gray-500 hover:text-[var(--clr-text-primary)]"
+                activeTab === tab.id ? "bg-(--clr-primary) text-(--clr-text-secondary)" : "text-gray-500 hover:text-(--clr-text-primary)"
               }`}
             >
               {tab.label}
@@ -125,7 +125,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
 
           <div className="relative">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-            <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm w-64 outline-none focus:bg-white focus:border-[var(--clr-primary)] transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm w-64 outline-none focus:bg-white focus:border-(--clr-primary) transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </div>
       </div>
@@ -135,7 +135,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
         <table className="w-full text-left table-fixed">
           {/* table head */}
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold text-[var(--clr-text-primary)] uppercase tracking-widest">
+            <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold text-(--clr-text-primary) uppercase tracking-widest">
               <th className="w-[35%] px-6 py-4 border-r border-gray-300">Branch Name</th>
               <th className="w-[25%] px-6 py-4 border-r border-gray-300">Owner</th>
               <th className="w-[10%] px-6 py-4 border-r border-gray-300">Municipality</th>
@@ -145,7 +145,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
               >
                 <div className="flex items-center justify-between">
                   <span>Date</span>
-                  <span className="text-gray-400 group-hover:text-[var(--clr-primary)]">
+                  <span className="text-gray-400 group-hover:text-(--clr-primary)">
                     {sortOrder === 'asc' ? <HiChevronUp size={16}/> : <HiChevronDown size={16}/>}
                   </span>
                 </div>
@@ -164,19 +164,19 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                 <tr key={branch.branch_id} className="hover:bg-gray-200/50 even:bg-gray-200/50">
                   {/* Changed border color to gray-300 and text to your variable */}
                   <td className="px-6 py-4 border-r border-gray-300">
-                    <div className="text-sm font-bold text-[var(--clr-text-primary)]">{branch.name}</div>
+                    <div className="text-sm font-bold text-(--clr-text-primary)">{branch.name}</div>
                     <div className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">ID: {branch.branch_id}</div>
                   </td>
                   {/* branch name */}
-                  <td className="px-6 py-4 border-r border-gray-300 text-sm font-medium text-[var(--clr-text-primary)]">
+                  <td className="px-6 py-4 border-r border-gray-300 text-sm font-medium text-(--clr-text-primary)">
                     {branch.first_name} {branch.last_name}
                   </td>
                   {/* municipality */}
-                  <td className="px-6 py-4 border-r border-gray-300 text-sm text-center font-medium text-[var(--clr-text-primary)]">
+                  <td className="px-6 py-4 border-r border-gray-300 text-sm text-center font-medium text-(--clr-text-primary)">
                     {branch.municipality}
                   </td>
                   {/* branch date */}
-                  <td className="px-6 py-4 border-r border-gray-300 text-sm font-medium text-[var(--clr-text-primary)]">
+                  <td className="px-6 py-4 border-r border-gray-300 text-sm font-medium text-(--clr-text-primary)">
                     {new Date(branch.created_at).toLocaleDateString('en-Us', {
                       month: 'short',
                       day: '2-digit',
@@ -230,12 +230,12 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
 
       {/* view details modal */}
       {selectedBranch && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-var[(--clr-text-primary)]/80 backdrop-blur-sm p-4 text-left">
-          <div className="bg-[var(--clr-bg-page)] w-full max-w-5xl max-h-[95vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-6 border-b flex justify-between items-center bg-[var(--clr-bg-page)]">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-(--clr-text-primary)/80 backdrop-blur-sm p-4 text-left">
+          <div className="bg-(--clr-bg-page) w-full max-w-5xl max-h-[95vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-6 border-b flex justify-between items-center bg-(--clr-bg-page)">
               <div className="flex items-center gap-4">
                 {/* modal header */}
-                <h2 className="text-xl font-black text-var[(--clr-text-primary)] uppercase tracking-tight">{selectedBranch.name}</h2>
+                <h2 className="text-xl font-black text-(--clr-text-primary) uppercase tracking-tight">{selectedBranch.name}</h2>
                 <span className={`px-3 py-1 text-[10px] font-black rounded-full uppercase border ${selectedBranch.status === 'approved' ? 'border-green-200 text-green-600 bg-green-50' : selectedBranch.status === 'pending' ? 'border-amber-200 text-amber-600 bg-amber-50' : 'border-red-200 text-red-600 bg-red-50'}`}>
                     {selectedBranch.status}
                 </span>
@@ -247,7 +247,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
             {/* document data */}
             <div className="p-8 space-y-12 overflow-y-auto">
               <section>
-                <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest mb-6 flex items-center gap-2"><HiOutlineDocumentText className="text-[var(--clr-text-header)]" size={18}/> Verification Documents</h3>
+                <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest mb-6 flex items-center gap-2"><HiOutlineDocumentText className="text-(--clr-text-header)" size={18}/> Verification Documents</h3>
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                   <DocCard label="Vet License" img={`${API_URL}/${selectedBranch.vet_license_picture}`} id={selectedBranch.vet_license_number} />
                   <DocCard label="Business Permit" img={`${API_URL}/${selectedBranch.business_permit_picture}`} id={selectedBranch.business_permit_number} />
@@ -257,8 +257,8 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
 
               {/* contact info */}
               <section className="pt-10 space-y-8 border-t border-gray-100">
-                <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest flex items-center gap-2">
-                  <RiInformation2Line className="text-[var(--clr-text-header)]" size={18} /> 
+                <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-2">
+                  <RiInformation2Line className="text-(--clr-text-header)" size={18} /> 
                   Contact Information
                 </h3>
 
@@ -273,8 +273,8 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
 
               {/* services */}
               <section className="pt-10 space-y-4 border-t border-gray-100">
-                <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest flex items-center gap-2">
-                  <LuBriefcaseBusiness className="text-[var(--clr-text-header)]" size={18} /> 
+                <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-2">
+                  <LuBriefcaseBusiness className="text-(--clr-text-header)" size={18} /> 
                   Services Offered
                 </h3>
                               
@@ -283,7 +283,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                     selectedBranch.services_list.split(', ').map((service, index) => (
                       <div 
                         key={index}
-                        className="px-4 py-2 bg-[var(--clr-primary)]/10 border border-[var(--clr-primary)]/20 text-[var(--clr-primary)] text-[10px] font-black rounded-lg uppercase"
+                        className="px-4 py-2 bg-(--clr-primary)/10 border border-(--clr-primary)/20 text-(--clr-primary) text-[10px] font-black rounded-lg uppercase"
                       >
                         {/* remove the _ and makes it look like to show like general checkout without _ */}
                         {service.replace(/_/g, ' ')}
@@ -299,8 +299,8 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
               {/* evaluation */}
               <section className="pt-10 pb-6 space-y-6 border-t border-gray-100">
                 <div className="flex items-center justify-between">
-                   <h3 className="text-[11px] font-black text-[var(--clr-text-primary)] uppercase tracking-widest flex items-center gap-2">
-                     <HiOutlineChatAlt className="text-[var(--clr-text-header)]" size={18}/> Evaluation Feedback
+                   <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-2">
+                     <HiOutlineChatAlt className="text-(--clr-text-header)" size={18}/> Evaluation Feedback
                    </h3>
                    {/* lock icon */}
                    {selectedBranch.status === 'approved' && (
@@ -312,7 +312,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                 
                 {/* eval textarea */}
                 <div className={`rounded-2xl p-6 border ${
-                  selectedBranch.status === 'pending' ? "bg-[var(--clr-bg-page)] border-gray-300" : "bg-gray-50 border-gray-200"
+                  selectedBranch.status === 'pending' ? "bg-(--clr-bg-page) border-gray-300" : "bg-gray-50 border-gray-200"
                 }`}>
                   <textarea 
                     className={`w-full p-4 rounded-xl text-sm h-32 outline-none transition-all border 
@@ -338,7 +338,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                   <button 
                     disabled={isSubmitting}
                     onClick={() => handleAction(selectedBranch.branch_id, 'rejected', adminFeedback)} 
-                    className="flex items-center gap-2 px-6 py-3 bg-[var(--clr-text-primary)] text-[var(--clr-text-secondary)] text-[11px] font-black rounded-xl uppercase tracking-widest hover:opacity-90 cursor-pointer transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 px-6 py-3 bg-(--clr-text-primary) text-(--clr-text-secondary) text-[11px] font-black rounded-xl uppercase tracking-widest hover:opacity-90 cursor-pointer transition-all disabled:opacity-50"
                   >
                     <HiSave size={16}/> {isSubmitting ? "Updating..." : "Update Feedback"}
                   </button>
@@ -348,7 +348,7 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                 <button 
                   disabled={isSubmitting}
                   onClick={() => handleAction(selectedBranch.branch_id, 'approved', adminFeedback)} 
-                  className="px-10 py-3 bg-[var(--clr-primary)] text-[var(--clr-text-secondary)] text-[11px] font-black rounded-xl uppercase tracking-widest hover:opacity-90 cursor-pointer transition-all disabled:opacity-50"
+                  className="px-10 py-3 bg-(--clr-primary) text-(--clr-text-secondary) text-[11px] font-black rounded-xl uppercase tracking-widest hover:opacity-90 cursor-pointer transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? "Processing..." : "Approve Branch"}
                 </button>
@@ -378,11 +378,10 @@ function DocCard({ label, img, id }) {
   const fullImgUrl = img.replace(/([^:])\/\//g, '$1/');
 
   return (
-    <div className="bg-[var(--clr-text-secondary)] border rounded-2xl overflow-hidden group flex flex-col">
-      <div className="px-4 py-2 bg-gray-50 border-b text-[9px] font-black text-[var(--clr-text-header)] uppercase tracking-widest flex justify-between items-center">
+    <div className="bg-(--clr-text-secondary) border rounded-2xl overflow-hidden group flex flex-col">
+      <div className="px-4 py-2 bg-gray-50 border-b text-[9px] font-black text-(--clr-text-header) uppercase tracking-widest flex justify-between items-center">
         {label}
-        {/* Adds a little indicator that it's clickable */}
-        <span className="text-[8px] text-[var(--clr-text-header)]">Click to expand</span>
+        <span className="text-[8px] text-(--clr-text-header)">Click to expand</span>
       </div>
       
       <a 
@@ -408,8 +407,8 @@ function DocCard({ label, img, id }) {
 function Detail({ label, value, icon }) {
   return (
     <div className="space-y-1">
-      <span className="text-[10px] font-black uppercase text-[var(--clr-text-primary)] block tracking-widest">{label}</span>
-      <span className="text-sm font-bold text-[var(--clr-text-primary)] flex items-center gap-2">{icon}{value || "---"}</span>
+      <span className="text-[10px] font-black uppercase text-(--clr-text-primary) block tracking-widest">{label}</span>
+      <span className="text-sm font-bold text-(--clr-text-primary) flex items-center gap-2">{icon}{value || "---"}</span>
     </div>
   );
 }

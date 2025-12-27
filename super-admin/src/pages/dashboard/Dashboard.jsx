@@ -14,7 +14,7 @@ export default function Dashboard() {
   const { user } = useUser();
 
   return (
-    <div className='bg-[var(--clr-bg-page)] min-h-screen'>
+    <div className='bg-(--clr-bg-page) min-h-screen'>
       <Header />
       
       <section className='my-6 container-xl'>
@@ -41,7 +41,7 @@ export default function Dashboard() {
             title='Pending Applications'
             data='21'
             icon={IoDocumentTextOutline}
-            iconColor='text-[var(--clr-accent)]'
+            iconColor='text-(--clr-accent)'
           />
       
           <DashboardCard
@@ -61,7 +61,7 @@ export default function Dashboard() {
 
         {/* recent activity */}
         <div className='grid grid-cols-1 gap-6 mt-6 lg:grid-cols-2'>
-          <div className='border-2 border-gray-300 rounded-xl bg-[var(--clr-bg-card)] p-4'>
+          <div className='border-2 border-gray-300 rounded-xl bg-(--clr-bg-card) p-4'>
             <h1 className='mb-6 text-lg font-medium'>Recent Activity</h1>
 
             <div>
@@ -83,7 +83,7 @@ export default function Dashboard() {
           </div>
 
           {/* top performing clinics */}
-          <div className='border-2 border-gray-300 rounded-xl bg-[var(--clr-bg-card)] p-4'>
+          <div className='border-2 border-gray-300 rounded-xl bg-(--clr-bg-card) p-4'>
             <h1 className='mb-6 text-lg font-medium'>Top Performing Clinics</h1>
 
             <div>
