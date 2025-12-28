@@ -9,7 +9,7 @@ import { IoDocumentTextOutline } from 'react-icons/io5'
 
 export default function RegisteredClinics() {
   return (
-    <div className='bg-[var(--clr-bg-page)] min-h-screen'>
+    <div className='bg-(--clr-bg-page) min-h-screen'>
       <Header />
       
       <section className='my-6 container-xl'>

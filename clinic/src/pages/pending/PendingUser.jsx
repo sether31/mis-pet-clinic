@@ -16,7 +16,7 @@ import FullScreenLoader from '../../components/FullLoader';
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
-import { IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
+import { IoLogOut, IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
 import { FaCircleInfo, FaCircleCheck } from "react-icons/fa6";
 
 
@@ -89,7 +89,7 @@ export default function PendingUser() {
 
       // check if user is approve
       if (user.status === 'approved') {
-        navigate('/clinic/admin/dashboard', { replace: true });
+        navigate('/clinic/select-branch', { replace: true });
         return;
       }
 
@@ -104,49 +104,24 @@ export default function PendingUser() {
 
       // fetch data
       const response = await authFetch(`${API_URL}/api/auth/get-pending-user-data.php`, {}, ['clinic_admin']);
-
-      if (response.success && response.data) {
-        const data = response.data;
+      if(response.success && response.data) {
+        const { user, clinic, new_token } = response.data;
+        const newStatus = clinic.status;
 
         // check if user status updated on server side
-        if (data.user.status === 'approved' && data.clinic.status === 'approved') {
+        if(user.status === 'approved' && clinic.status === 'approved') {
+          setStatus("approved");
           toast.success("Your account has been approved!");
+
+          if(new_token) {
+            localStorage.setItem('access_token', new_token);
+          }
           await wait(2000);
-          localStorage.clear();
-          navigate('/login', { replace: true });
+          navigate('/clinic/select-branch', { replace: true });
           return;
         }
 
-        // only update if initial load because only the status adn feedback should be refresh
-        if(!isManualRefresh) {
-          setForm({
-            clinicName: data.clinic.branch_name || '',
-            completeAddress: data.clinic.location.address || '',
-            municipality: data.clinic.location.municipality || '',
-            province: data.clinic.location.province || '',
-            zipCode: data.clinic.location.zip_code || '',
-            est: data.clinic.established || '',
-            clinicDescription: data.clinic.description || '',
-            website: data.clinic.contact_info.website || '',
-            facebook: data.clinic.contact_info.facebook || '',
-            firstName: data.user.first_name || '',
-            lastName: data.user.last_name || '',
-            tinNumber: data.clinic.license.tin_id_number || '',
-            businessPermitNumber: data.clinic.license.business_permit_number || '',
-            vetLicenseNumber: data.clinic.license.vet_license_number || '',
-            clinicStartTime: data.clinic.hours.start || '',
-            clinicEndTime: data.clinic.hours.end || '',
-            agreeTerms: true,
-            tinNumberPic: null,
-            businessPermitPic: null,
-            vetLicensePic: null
-          });
-        }
-        
-        setStatus(data.clinic.status || '');
-        setFeedback(data.clinic.feedback || '');
-        
-        const newStatus = data.clinic.status;
+        // check if user refresh
         if(isManualRefresh) {
           if(newStatus === status) {
             // check if the status is still the same
@@ -155,6 +130,36 @@ export default function PendingUser() {
             // status change
             toast.success(`Status updated to ${newStatus}!`);
           }
+        }
+     
+        setStatus(newStatus || '');
+        setFeedback(clinic.feedback || '');    
+
+
+        // only update if initial load because only the status adn feedback should be refresh
+        if(!isManualRefresh) {
+          setForm({
+            clinicName: clinic.branch_name || '',
+            completeAddress: clinic.location.address || '',
+            municipality: clinic.location.municipality || '',
+            province: clinic.location.province || '',
+            zipCode: clinic.location.zip_code || '',
+            est: clinic.established || '',
+            clinicDescription: clinic.description || '',
+            website: clinic.contact_info.website || '',
+            facebook: clinic.contact_info.facebook || '',
+            firstName: user.first_name || '',
+            lastName: user.last_name || '',
+            tinNumber: clinic.license.tin_id_number || '',
+            businessPermitNumber: clinic.license.business_permit_number || '',
+            vetLicenseNumber: clinic.license.vet_license_number || '',
+            clinicStartTime: clinic.hours.start || '',
+            clinicEndTime: clinic.hours.end || '',
+            agreeTerms: true,
+            tinNumberPic: null,
+            businessPermitPic: null,
+            vetLicensePic: null
+          });
         }
       }
     } catch(err) {
@@ -310,10 +315,20 @@ export default function PendingUser() {
         return;
       }
       toast.success("Clinic details successfully updated!");
+
+      await checkAccess(true);
     } catch(error) {
       toast.error("Something went wrong");
     }
     setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    setLoading(true);
+    toast.info("Logging out...");
+    localStorage.clear(); 
+    await wait(1200);
+    navigate('/login', { replace: true });
   };
 
 
@@ -323,8 +338,24 @@ export default function PendingUser() {
         {/* header */}
         <div className='flex items-center justify-between gap-4 my-5'>
           <h1 className='text-2xl font-medium'>LOGO</h1>
+          {/* logout */}
+          <Button 
+            type="button" 
+            variant="secondary" 
+            className="flex items-center justify-center gap-1 cursor-pointer w-max"
+            onClick={handleLogout}
+            load={loading}
+          >
+            <IoLogOut />
+            Logout
+          </Button>
+        </div>
+        
+        <div className="flex flex-col gap-2 mb-4 md:items-center md:flex-row">
+          <h1 className='text-3xl sm:text-4xl font-bold text-(--clr-text-header)'>Review Your Clinic</h1>
+
           {/* status */}
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+          <div className={`flex w-max items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
             status === "approved" ? 'bg-green-50 border-green-200' : 
             status === "rejected" ? 'bg-red-50 border-red-200' : 
             'bg-amber-50 border-amber-200'
@@ -335,7 +366,7 @@ export default function PendingUser() {
               'bg-amber-500 animate-pulse'
             }`}></div>
             <span className={`text-sm font-medium capitalize ${
-              status === "approved" ? 'text-[var(--clr-text-header)]' : 
+              status === "approved" ? 'text-(--clr-text-header)' : 
               status === "rejected" ? 'text-red-700' : 
               'text-amber-700'
             }`}>
@@ -343,8 +374,6 @@ export default function PendingUser() {
             </span>
           </div>
         </div>
-        
-        <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-[var(--clr-text-header)]'>Review Your Clinic</h1>
         
         {/* check feedback */}
         <div className="mb-8">
@@ -354,8 +383,8 @@ export default function PendingUser() {
               <FaCircleCheck size={20} />
               <h3 className="text-lg font-bold">Verification Successful</h3>
             </div>
-            <p className="text-sm font-medium text-[var(--clr-text-header)]">
-              Your clinic has been approved! Redirecting you to login...
+            <p className="text-sm font-medium text-(--clr-text-header)">
+              Your clinic has been approved! Redirecting you to select branch...
             </p>
           </div>
         ) : status === "rejected" ? (
@@ -384,9 +413,9 @@ export default function PendingUser() {
       <form onSubmit={handleSubmit}>
         <section className='grid gap-4'>
           {/* Clinic Information */}
-          <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+          <div className='pb-8 mb-5 border-gray-300 border-b'>
             <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-              <HiOutlineBuildingOffice2 className='text-[var(--clr-text-header)]' />
+              <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
               <span>Clinic Information</span>
             </h1>
             
@@ -473,14 +502,19 @@ export default function PendingUser() {
                   value={form.clinicDescription} 
                   id="clinicDescription"
                   name="clinicDescription"
-                  className={`border border-gray-300 rounded-lg p-2 w-full min-h-[115px] mt-2`}
+                  className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
+                    ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
+                    ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
+                  `}
                   placeholder="Brief description of your clinic, specialization, and what makes you unique..."
                   onChange={handleChange} 
                 ></textarea>
-                <p className="flex items-center text-sm text-red-500">
-                  <HiMiniExclamationCircle size={16} />
-                  {errors.clinicDescription}
-                </p>
+                {(errors.clinicDescription && errors.clinicDescription !== "valid") && (
+                  <p className="flex items-center text-sm text-red-500">
+                    <HiMiniExclamationCircle size={16} />
+                    {errors.clinicDescription}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -515,7 +549,7 @@ export default function PendingUser() {
           {/* Business & licensing Information */}
           <div className='pb-8 mb-5 border-gray-300 border-b-1'>
             <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-              <CiCreditCard1 className='text-[var(--clr-text-header)]' />
+              <CiCreditCard1 className='text-(--clr-text-header)' />
               <span>Business & licensing Information</span>
             </h1>
             <div className='flex items-center gap-2 p-3 mb-6 text-sm font-medium text-blue-800 border border-blue-100 rounded-lg bg-blue-50'>
@@ -590,7 +624,7 @@ export default function PendingUser() {
           {/* Operations */}
           <div className='pb-8 mb-5 border-gray-300 border-b-1'>
             <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-              <LiaBusinessTimeSolid className='text-[var(--clr-text-header)]' />
+              <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
               <span>Operating Hours</span>
             </h1>
             <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
@@ -631,7 +665,7 @@ export default function PendingUser() {
                 name="agreeTerms"
                 checked={form.agreeTerms}
                 onChange={handleChange}
-                className='accent-[var(--clr-primary)]'
+                className='accent-(--clr-primary)'
               />
               <label htmlFor="emergency-service">I agree to terms and conditions</label>
             </div>
@@ -671,7 +705,7 @@ export default function PendingUser() {
 
       <ToastContainer position="top-right" autoClose={3000} />    
       <motion.div
-        className="h-screen w-screen bg-[var(--clr-primary)] fixed top-0 z-100 hidden lg:block overflow-hidden"
+        className="h-screen w-screen bg-(--clr-primary) fixed top-0 z-100 hidden lg:block overflow-hidden"
         initial={{ y: 0 }}
         animate={{ y: '-100%' }}
         transition={{ duration: 1.5, ease: "easeInOut" }}

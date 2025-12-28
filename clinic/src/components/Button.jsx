@@ -9,8 +9,8 @@ export default function Button({
   const baseClasses = "px-4 py-2 rounded-md font-medium duration-300 ease-in-out";
 
   const variants = {
-    primary: "bg-[var(--clr-primary)] border border-[var(--clr-primary)] text-[var(--clr-text-secondary)] hover:opacity-98 hover:scale-95 ease-in-out duration-500",
-    secondary: "bg-[var(--clr-bg-page)] border border-[var(--clr-primary)] text-[var(--clr-text-header)] hover:bg-[var(--clr-primary)] hover:text-[var(--clr-text-secondary)] hover:scale-95 ease-in-out duration-500",
+    primary: "bg-(--clr-primary) border border-(--clr-primary) text-(--clr-text-secondary) hover:opacity-98 hover:scale-95 ease-in-out duration-500",
+    secondary: "bg-(--clr-bg-page) border border-(--clr-primary) text-(--clr-text-header) hover:bg-(--clr-primary) hover:text-[var(--clr-text-secondary)] hover:scale-95 ease-in-out duration-500",
     disable: "bg-gray-500"
   };
 

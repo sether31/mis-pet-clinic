@@ -40,13 +40,13 @@ export default function Sidebar({className, open, setOpen}) {
   }
   return (
     <aside 
-      className={`fixed top-0 left-0 z-100 border-r h-screen bg-[var(--clr-primary)] transition-all duration-500 ease-in-out
+      className={`fixed top-0 left-0 z-100 border-r h-screen bg-(--clr-primary) transition-all duration-500 ease-in-out
       ${open ? 'w-64' : 'w-18'} ${className}}`}
     >
       {/* header */}
-      <div className={`p-4 flex items-center justify-between bg-[var(--clr-primary)] ${open ? '' : 'border-b border-b-black'}`}>
+      <div className={`p-4 flex items-center justify-between bg-(--clr-primary) ${open ? '' : 'border-b border-b-black'}`}>
         <motion.div
-          className="overflow-hidden whitespace-nowrap text-[var(--clr-text-secondary)]"
+          className="overflow-hidden whitespace-nowrap text-(--clr-text-secondary)"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20 }}
           transition={{ duration: 0.3 }}
@@ -57,8 +57,8 @@ export default function Sidebar({className, open, setOpen}) {
         
         {/* hamburger */}
         <div onClick={toggleMenu} className='cursor-pointer'>
-          <RxHamburgerMenu className={`hover:text-[var(--clr-text-secondary)] duration-300 ease-in-out ${open ? 'hidden' : 'block'}`} size={32} />
-          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out hover:text-[var(--clr-text-secondary)] ${open ? 'block' : 'hidden'}`} size={32} />
+          <RxHamburgerMenu className={`hover:text-(--clr-text-secondary) duration-300 ease-in-out ${open ? 'hidden' : 'block'}`} size={32} />
+          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out hover:text-(--clr-text-secondary) ${open ? 'block' : 'hidden'}`} size={32} />
         </div>
       </div>
 
@@ -90,9 +90,9 @@ export default function Sidebar({className, open, setOpen}) {
         <div className='mt-auto mb-30'>
           <button 
             onClick={logout}
-            className={`flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-[var(--clr-black)] text-gray-300 overflow-hidden cursor-pointer`}
+            className={`flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) text-gray-300 overflow-hidden cursor-pointer`}
           >
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <TbLogout size={22} />
             </div>
             {open && (
@@ -120,11 +120,11 @@ function SidebarItem({ item, open, active }) {
     <Link
       to={item.path}
       className={`
-        flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-[var(--clr-black)] text-gray-300 overflow-hidden
-        ${active ? 'bg-[var(--clr-black)]' : ''}
+        flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) text-gray-300 overflow-hidden
+        ${active ? 'bg-(--clr-black)' : ''}
       `}
     >
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <Icon size={22} />
       </div>
 

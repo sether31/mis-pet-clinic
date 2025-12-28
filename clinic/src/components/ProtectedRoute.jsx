@@ -28,7 +28,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
 
       // if clinic admin pending
       if(role === "clinic_admin" && status === "pending") {
-        setRedirect("/pendingUser");
+        setRedirect("/pending-user");
         setChecking(false);
         return;
       }

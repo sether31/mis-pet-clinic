@@ -57,7 +57,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
               key={tab.id} 
               onClick={() => setActiveTab(tab.id)} 
               className={`px-6 py-2 text-xs font-bold rounded-md transition-all uppercase cursor-pointer ${
-                activeTab === tab.id ? "bg-[var(--clr-primary)] text-[var(--clr-text-secondary)]" : "text-gray-500 hover:text-[var(--clr-text-primary)]"
+                activeTab === tab.id ? "bg-(--clr-primary) text-(--clr-text-secondary)" : "text-gray-500 hover:text-(--clr-text-primary)"
               }`}
             >
               {tab.label}
@@ -75,12 +75,12 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
 
           <div className="relative">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-            <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm w-64 outline-none focus:bg-white focus:border-[var(--clr-primary)] transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm w-64 outline-none focus:bg-white focus:border-(--clr-primary) transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
 
           <button 
             onClick={onCreate} 
-            className="px-6 py-2 bg-[var(--clr-primary)] text-[var(--clr-text-secondary)] text-[11px] font-black rounded-lg uppercase tracking-widest flex items-center gap-2 hover:bg-[var(--clr-primary)]/95 transition-all cursor-pointer"
+            className="px-6 py-2 bg-(--clr-primary) text-(--clr-text-secondary) text-[11px] font-black rounded-lg uppercase tracking-widest flex items-center gap-2 hover:bg-(--clr-primary)/95 transition-all cursor-pointer"
           >
             <HiPlus/> New Plan
           </button>
@@ -101,7 +101,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
               >
                 <div className="flex items-center justify-between">
                   <span>Date</span>
-                  <span className="text-gray-400 group-hover:text-[var(--clr-primary)]">
+                  <span className="text-gray-400 group-hover:text-(--clr-primary)">
                     {sortPrice === 'asc' ? <HiChevronUp size={16} /> : <HiChevronDown size={16} />}
                   </span>
                 </div>
@@ -137,7 +137,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
                       </span>
                     )}
                     {Number(plan.has_unlimited_email) === 1 && (
-                      <span className="px-2 py-1 bg-green-50 text-[var(--clr-text-header)] border-green-100 text-[9px] font-black rounded uppercase">
+                      <span className="px-2 py-1 bg-green-50 text-(--clr-text-header) border-green-100 text-[9px] font-black rounded uppercase">
                         Email
                       </span>
                     )}
@@ -164,12 +164,12 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
                 <td className="px-6 py-4 text-center">
                   <div className="flex justify-center gap-2">
                     {/* edit */}
-                    <button onClick={() => onEdit(plan)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:text-[var(--clr-text-header)] hover:border-[var(--clr-primary)]">
+                    <button onClick={() => onEdit(plan)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:text-(--clr-text-header) hover:border-(--clr-primary)">
                       <HiPencilAlt size={16}/>
                     </button>
 
                     <button onClick={() => onToggleStatus(plan)} className={`p-2 border border-gray-300 rounded-lg cursor-pointer bg-white ${
-                        Number(plan.is_active) === 1 ? 'hover:text-red-600 hover:border-red-600' : 'hover:text-[var(--clr-text-header)] hover:border-[var(--clr-primary)]'
+                        Number(plan.is_active) === 1 ? 'hover:text-red-600 hover:border-red-600' : 'hover:text-(--clr-text-header) hover:border-(--clr-primary)'
                       }`}>
                       {Number(plan.is_active) === 1 ? <HiArchive size={16}/> : <HiRefresh size={16}/>}
                     </button>

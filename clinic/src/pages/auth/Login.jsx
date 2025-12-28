@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
-import { delay, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // utils
+import { validateEmail } from '../../utils/validateEmail'
 import { validRoleToken } from '../../utils/validRoleToken';
 import getDashboardByRole from '../../utils/getDashboardByRole';
 import wait from '../../utils/wait';
 // components
-import ValidateEmail from '../../components/ValidateEmail'
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
@@ -59,7 +59,7 @@ export default function Login() {
         await wait(2000);
 
         if(role === 'clinic_admin' && (status === 'pending' || status === 'rejected')) {
-          navigate('/pendingUser', { replace: true });
+          navigate('/pending-user', { replace: true });
         } else {
           navigate(getDashboardByRole(role), { replace: true });
         }
@@ -79,7 +79,7 @@ export default function Login() {
     if(name === "email") {
       if(!value.trim()) {
         setErrors(prev => ({ ...prev, email: null })); 
-      } else if(!ValidateEmail(value)) {
+      } else if(!validateEmail(value)) {
         setErrors(prev => ({ ...prev, email: "Invalid email" }));
       } else {
         setErrors(prev => ({ ...prev, email: "valid" })); 
@@ -176,7 +176,7 @@ export default function Login() {
       const { role, status } = validRoleToken();
 
       if(role === "clinic_admin" && status === "pending") {
-        navigate("/pendingUser", { replace: true });
+        navigate("/pending-user", { replace: true });
       } else {
         navigate(getDashboardByRole(role), { replace: true });
       }
@@ -211,7 +211,7 @@ export default function Login() {
         <div className="grid grid-cols-1 lg:grid-cols-[.85fr_1fr] min-h-[695px] flex-1 px-4 lg:px-0">
           {/* image section */}
           <motion.section 
-            className="h-full bg-[var(--clr-primary)] relative hidden lg:block overflow-hidden"
+            className="h-full bg-(--clr-primary) relative hidden lg:block overflow-hidden"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             transition={{ duration: 1.2, ease: "easeOut" }}
@@ -234,7 +234,7 @@ export default function Login() {
               animate="visible"
             >
               <motion.h1 variants={formItemVariants} className='mb-4 text-xl font-medium'>LOGO</motion.h1>
-              <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-[var(--clr-text-header)]'>Login in to your Account</motion.h1>
+              <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-(--clr-text-header)'>Login in to your Account</motion.h1>
 
               <motion.p variants={formItemVariants} className="mb-6 text-gray-600">
                 Welcome back! Please enter your credentials to continue.
@@ -295,7 +295,7 @@ export default function Login() {
 
               <motion.p variants={formItemVariants} className='flex justify-center gap-1 text-base'>
                 Dont have an account? 
-                <Link to="/register" className='underline text-[var(--clr-text-header)] hover:opacity-75'>Sign up</Link>
+                <Link to="/register" className='underline text-(--clr-text-header) hover:opacity-75'>Sign up</Link>
               </motion.p>
             </motion.div>
           </section>

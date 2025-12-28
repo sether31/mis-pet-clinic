@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../middleware/auth-middleware.php';
 
+require_once __DIR__ . '/../../service/Jwt.php';
+
 $admin = validate_auth(['clinic_admin']);
 
 try {
@@ -33,7 +35,7 @@ try {
   $user = $stmt->fetch();
 
   if($user) {
-    echo json_encode([
+    $responseData = [
       "success" => true,
       "data" => [
         // user data
@@ -79,7 +81,20 @@ try {
           ]
         ]
       ]
-    ]);
+    ];
+
+    // if approved generate new token with updated data
+    if($user['user_status'] === 'approved' && $user['branch_status'] === 'approved') {
+      $new_token = createJWT([
+        "user_id" => $user['user_id'],
+        "role" => $user['role_name'],
+        "status" => 'approved' 
+      ]);
+      $responseData['data']['new_token'] = $new_token;
+    }
+
+    echo json_encode($responseData);
+
 } else {
     http_response_code(404);
     echo json_encode(["success" => false, "message" => "User not found"]);

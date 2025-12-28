@@ -4,16 +4,16 @@ import { motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // utils
+import { validateEmail } from '../../utils/validateEmail'
 import wait from '../../utils/wait';
 // components
 import Input from '../../components/Input';
 import InputImage from '../../components/InputImage';
 import Button from '../../components/Button';
-import ValidateEmail from '../../components/ValidateEmail';
 import FullScreenLoader from '../../components/FullLoader';
 import OTPInput from '../../components/OtpInput';
 // icons
-import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
+import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { IoPersonOutline } from "react-icons/io5";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
@@ -28,6 +28,7 @@ const initialFormState = {
   province: '',
   zipCode: '',
   est: '',
+  clinicDescription: '',
   website: '',
   facebook: '',
   email: '',
@@ -38,7 +39,6 @@ const initialFormState = {
   tinNumber: '',
   businessPermitNumber: '',
   vetLicenseNumber: '',
-  clinicDescription: '',
   clinicStartTime: '',
   clinicEndTime: '',
   services: [],
@@ -62,6 +62,7 @@ export default function Register() {
     province: "Province",
     zipCode: "Zip Code",
     est: "Year Established",
+    clinicDescription: "Clinic Description",
     website: "Website",
     facebook: "Facebook",
     email: "Email",
@@ -78,8 +79,7 @@ export default function Register() {
     agreeTerms: "Terms & Conditions",
     tinNumberPic: "Tin Picture",
     businessPermitPic: "Business Permit Picture",
-    vetLicensePic: "Veterinarian License Picture",
-    clinicDescription: "Clinic Description"
+    vetLicensePic: "Veterinarian License Picture"
   };
 
   const serviceLabels = {
@@ -130,7 +130,7 @@ export default function Register() {
     if(name === "email") {
       if(!value.trim()) {
         setErrors(prev => ({ ...prev, email: `${inputLabels[name]} is required.` }));
-      } else if(!ValidateEmail(value)) {
+      } else if(!validateEmail(value)) {
         setErrors(prev => ({ ...prev, email: "Invalid email." }));
       } else {
         setErrors(prev => ({ ...prev, email: "valid" }));
@@ -205,6 +205,8 @@ export default function Register() {
       "municipality",
       "province",
       "zipCode",
+      "est",
+      "clinicDescription",
       "email",
       "firstName",
       "lastName",
@@ -352,11 +354,11 @@ export default function Register() {
           <h1 className='text-2xl font-medium'>LOGO</h1>
           <h1 className='flex items-center gap-1 text-base'>
             Already have an account? 
-            <Link to="/login" className='underline text-[var(--clr-text-header)] hover:opacity-75'>Sign in</Link>
+            <Link to="/login" className='underline text-(--clr-text-header) hover:opacity-75'>Sign in</Link>
           </h1>
         </div>
         
-        <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-[var(--clr-text-header)]'>Register Your Clinic</h1>
+        <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-(--clr-text-header)'>Register Your Clinic</h1>
         <p className='mb-12 text-base'> 
           Create your clinic account to get started with the Pet Clinic Platform. <br />
           Please provide accurate information so we can verify your clinic and set up your account.
@@ -365,11 +367,12 @@ export default function Register() {
         <form onSubmit={handleSubmit}>
           <section className='grid gap-4'>
             {/* Clinic Information */}
-            <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+            <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <HiOutlineBuildingOffice2 />
+                <HiOutlineBuildingOffice2 className='text-[var(--clr-text-header)]' />
                 <span>Clinic Information</span>
               </h1>
+              
               <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
                 <Input
                   value={form.clinicName}
@@ -438,42 +441,68 @@ export default function Register() {
                   labelStyle="mb-1 ml-1"
                   id="est"
                   name="est"
-                  isOptional={true}
+                  isImportant={true}
                   placeholder="2025"
                   onChange={handleChange}
                   error={errors.est}
                 />
 
-                <Input
-                  value={form.website}
-                  label="Website"
-                  labelStyle="mb-1 ml-1"
-                  id="website"
-                  name="website"
-                  isOptional={true}
-                  placeholder="https://www.clinic.com"
-                  onChange={handleChange}
-                  error={errors.website}
-                />
+                <div className='mb-4'>
+                  <label htmlFor='clinicDescription' className='ml-1 text-base font-medium text-gray-700'>
+                    Clinic Description {' '}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={form.clinicDescription} 
+                    id="clinicDescription"
+                    name="clinicDescription"
+                    className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
+                      ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
+                      ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
+                    `}
+                    placeholder="Brief description of your clinic, specialization, and what makes you unique..."
+                    onChange={handleChange} 
+                  ></textarea>
+                  {(errors.clinicDescription && errors.clinicDescription !== "valid") && (
+                    <p className="flex items-center text-sm text-red-500">
+                      <HiMiniExclamationCircle size={16} />
+                      {errors.clinicDescription}
+                    </p>
+                  )}
+                </div>
 
-                <Input
-                  value={form.facebook}
-                  label="Facebook"
-                  labelStyle="mb-1 ml-1"
-                  id="facebook"
-                  name="facebook"
-                  isOptional={true}
-                  placeholder="https://facebook.com/"
-                  onChange={handleChange}
-                  error={errors.facebook}
-                />
+                <div>
+                  <Input
+                    value={form.website}
+                    label="Website"
+                    labelStyle="mb-1 ml-1"
+                    id="website"
+                    name="website"
+                    isOptional={true}
+                    placeholder="https://www.clinic.com"
+                    onChange={handleChange}
+                    error={errors.website}
+                  />
+
+                  <Input
+                    value={form.facebook}
+                    label="Facebook"
+                    labelStyle="mb-1 ml-1"
+                    id="facebook"
+                    name="facebook"
+                    isOptional={true}
+                    placeholder="https://facebook.com/"
+                    onChange={handleChange}
+                    error={errors.facebook}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Owner Information< */}
-            <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+            <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <IoPersonOutline /> 
+                <IoPersonOutline className='text-(--clr-text-header)' /> 
                 <span>Owner Information</span>
               </h1>
               <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
@@ -541,9 +570,9 @@ export default function Register() {
             </div>
 
             {/* Business & licensing Information */}
-            <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+            <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <CiCreditCard1 />
+                <CiCreditCard1 className='text-(--clr-text-header)' />
                 <span>Business & licensing Information</span>
               </h1>
               <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
@@ -610,56 +639,39 @@ export default function Register() {
             </div>
               
             {/* Services and Operations */}
-            <div className='pb-8 mb-5 border-gray-300 border-b-1'>
+            <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <LiaBusinessTimeSolid />
+                <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
                 <span>Services and Operations</span>
               </h1>
-              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-                <div>
-                  <div className='mb-4'>
-                    <label htmlFor='clinicDescription' className='ml-1 text-base font-medium text-gray-700'>
-                      Clinic Description {' '}
-                      <span className="text-gray-500">(optional)</span>
-                    </label>
-                    <textarea
-                      value={form.clinicDescription} 
-                      id="clinicDescription"
-                      name="clinicDescription"
-                      className={`border border-gray-300 rounded-lg p-2 w-full min-h-15 mt-2`}
-                      placeholder="Brief description of your clinic, specialization, and what makes you unique..."
-                      onChange={handleChange} 
-                    ></textarea>
-                  </div>
-
-                  <div className='flex gap-4'>
-                    <Input
-                      value={form.clinicStartTime} 
-                      type='time'
-                      label="Operating hours start time"
-                      labelStyle="mb-1 ml-1"
-                      id="clinicStartTime"
-                      isOptional={true}
-                      name="clinicStartTime"
-                      placeholder="6:00 AM"
-                      onChange={handleChange}
-                      error={errors.clinicStartTime}
-                    />
-                    <Input
-                      value={form.clinicEndTime} 
-                      type='time'
-                      label="Operating hours end time"
-                      labelStyle="mb-1 ml-1"
-                      id="clinicEndTime"
-                      isOptional={true}
-                      name="clinicEndTime"
-                      placeholder="10:00 PM"
-                      onChange={handleChange}
-                      error={errors.clinicEndTime}
-                    />
-                  </div>
+              <div className='grid grid-cols-1 gap-4'>
+                <div className='flex gap-4'>
+                  <Input
+                    value={form.clinicStartTime} 
+                    type='time'
+                    label="Operating hours start time"
+                    labelStyle="mb-1 ml-1"
+                    id="clinicStartTime"
+                    isOptional={true}
+                    name="clinicStartTime"
+                    placeholder="6:00 AM"
+                    onChange={handleChange}
+                    error={errors.clinicStartTime}
+                  />
+                  <Input
+                    value={form.clinicEndTime} 
+                    type='time'
+                    label="Operating hours end time"
+                    labelStyle="mb-1 ml-1"
+                    id="clinicEndTime"
+                    isOptional={true}
+                    name="clinicEndTime"
+                    placeholder="10:00 PM"
+                    onChange={handleChange}
+                    error={errors.clinicEndTime}
+                  />
                 </div>
-
+    
                 {/* Services Offered */}
                 <div>
                   <h1 className='mb-2 text-base font-medium text-gray-700'>
@@ -698,7 +710,7 @@ export default function Register() {
                   name="agreeTerms"
                   checked={form.agreeTerms}
                   onChange={handleChange}
-                  className='accent-[var(--clr-primary)]'
+                  className='accent-(--clr-primary)'
                 />
                 <label htmlFor="emergency-service">I agree to terms and conditions</label>
               </div>
@@ -734,7 +746,7 @@ export default function Register() {
       <ToastContainer position="top-right" autoClose={3000} />
       
       <motion.div
-        className="h-screen w-screen bg-[var(--clr-primary)] fixed top-0 z-100 hidden lg:block overflow-hidden"
+        className="h-screen w-screen bg-(--clr-primary) fixed top-0 z-100 hidden lg:block overflow-hidden"
         initial={{ y: 0 }}
         animate={{ y: '-100%' }}
         transition={{ duration: 1.5, ease: "easeInOut" }}

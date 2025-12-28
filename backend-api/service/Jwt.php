@@ -8,7 +8,8 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 
-function createJWT($payload, $expiresInSeconds = 3600) {
+function createJWT($payload, $expiresInSeconds = 1296000) {
+  $payload['iat'] = time();
   $payload['exp'] = time() + $expiresInSeconds;
 
   return JWT::encode($payload, $_ENV['JWT_SEC_KEY'], 'HS256');

@@ -31,7 +31,7 @@ export default function Header() {
   const role = `${rawRole} portal`;
 
   return (
-    <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-[var(--clr-primary)] border-b border-white/10">
+    <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-(--clr-primary) border-b border-white/10">
       <div className="flex items-center justify-between flex-1 px-6 container-xl">
         <div className="flex flex-col">
           <motion.h1 
@@ -39,25 +39,27 @@ export default function Header() {
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl font-black uppercase tracking-tight text-[var(--clr-text-primary)]"
+            className="text-xl font-black uppercase tracking-tight text-(--clr-text-primary)"
           >
             {pageTitle}
           </motion.h1>
           
           {/* role */}
-          <h2 className="text-[14px] font-bold text-[var(--clr-text-primary)] capitalize">
+          <h2 className="text-[14px] font-bold text-(--clr-text-primary) capitalize">
             {role}
           </h2>
         </div>
 
         {/* Right Side: Actions */}
         <div className='flex items-center gap-3'>
-          <button className='p-2.5 rounded-xl bg-[var(--clr-black)] text-[var(--clr-text-secondary)] cursor-pointer hover:opacity-85 transition-all duration-300 relative group'>
+          <button className='p-2.5 rounded-xl bg-(--clr-black) text-(--clr-text-secondary) cursor-pointer hover:opacity-85 transition-all duration-300 relative group'>
             <MdOutlineNotifications size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 border-2 border-[var(--clr-black)] rounded-full"></span>
+            <span className="absolute w-2 py-[2px] px-1 text-xs bg-red-500 border-2 border-none rounded-full -top-1 -right-1 w-max h-max">
+              31
+            </span>
           </button>
 
-          <button className='p-2.5 rounded-xl bg-[var(--clr-black)] text-[var(--clr-text-secondary)] cursor-pointer hover:opacity-85 transition-all duration-300'>
+          <button className='p-2.5 rounded-xl bg-(--clr-black) text-(--clr-text-secondary) cursor-pointer hover:opacity-85 transition-all duration-300'>
             <LuSettings size={20} />
           </button>
         </div>
