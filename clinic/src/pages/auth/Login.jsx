@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
-import { delay, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // utils
@@ -59,7 +59,7 @@ export default function Login() {
         await wait(2000);
 
         if(role === 'clinic_admin' && (status === 'pending' || status === 'rejected')) {
-          navigate('/pendingUser', { replace: true });
+          navigate('/pending-user', { replace: true });
         } else {
           navigate(getDashboardByRole(role), { replace: true });
         }
@@ -176,7 +176,7 @@ export default function Login() {
       const { role, status } = validRoleToken();
 
       if(role === "clinic_admin" && status === "pending") {
-        navigate("/pendingUser", { replace: true });
+        navigate("/pending-user", { replace: true });
       } else {
         navigate(getDashboardByRole(role), { replace: true });
       }

@@ -6,21 +6,32 @@ import ClinicLayout from "../layouts/ClinicLayout";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
 import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";
+import SelectBranch from "../pages/clinic-admin/SelectBranch";
 
 export const routes = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/register", element: <Register /> },
   { path: "/forgotPassword", element: '' },
   {
-    path: "/pendingUser",
+    path: "/pending-user",
     element: <PendingUser />
   },
+  // clinic
   {
     path: '/clinic',
     element: <ClinicLayout />,
     children: [
+      {
+        path: 'select-branch',
+        element: (
+          <ProtectedRoute allowedRoles={['clinic_admin']}>
+            <SelectBranch />
+          </ProtectedRoute>
+        )
+      },
+      // users
       { 
-        path: 'admin', 
+        path: ':branchId/admin', 
         element: (
           <ProtectedRoute allowedRoles={['clinic_admin']}>
             <AdminDashboardLayout />,
