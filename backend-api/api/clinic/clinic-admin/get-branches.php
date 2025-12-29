@@ -7,7 +7,7 @@ $admin = validate_auth(['clinic_admin']);
 try {
   $pdo = (new Database())->pdo;
 
-  // get all branches tha twas created by the admin
+  // get all branches that was created by the admin
   $stmt = $pdo->prepare(
     "SELECT b.* FROM clinic_branches_tb b
     INNER JOIN clinics_tb c ON b.clinic_id = c.clinic_id
@@ -17,7 +17,7 @@ try {
 
   $stmt->execute([':user_id' => $admin->user_id]);
   $branches = $stmt->fetchAll();
-
+  
   echo json_encode([
     "success" => true, 
     "data" => $branches
