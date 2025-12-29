@@ -139,6 +139,7 @@ export default function Login() {
       }
 
       setUserId(data.user_id);
+      setLoading(false);
       setShowOTP(true);
       toast.success(data.message);
     } catch(error) {
