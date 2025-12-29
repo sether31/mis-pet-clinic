@@ -88,13 +88,13 @@ export default function PendingUser() {
       }
 
       // check if user is approve
-      if (user.status === 'approved') {
+      if(user.status === 'approved') {
         navigate('/clinic/select-branch', { replace: true });
         return;
       }
 
       // check if user disabled
-      if (user.status === 'disabled') {
+      if(user.status === 'disabled') {
         toast.error("Your account has been disabled. Please contact support.");
         await wait(1000);
         localStorage.clear();
@@ -107,6 +107,12 @@ export default function PendingUser() {
       if(response.success && response.data) {
         const { user, clinic, new_token } = response.data;
         const newStatus = clinic.status;
+
+        // handle unauthorized
+        if(response.status === 403) {
+          navigate('/login', { replace: true });
+          return;
+        }
 
         // check if user status updated on server side
         if(user.status === 'approved' && clinic.status === 'approved') {

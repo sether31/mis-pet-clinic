@@ -3,6 +3,7 @@
 :root {
   --clr-bg-page: #fcfaf8;
   --clr-bg-card: #fcfaf8;
+  --clr-black: #1f1f1f;
 
   --clr-text-header: var(--clr-primary);
   --clr-text-primary: #1f1f1f;
@@ -35,3 +36,4 @@
     @apply mx-auto px-4 max-w-[500px];
   }
 }
+
