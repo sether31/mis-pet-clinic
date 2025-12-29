@@ -23,14 +23,12 @@ export const authFetch = async (url, options = {}, allowedRoles = []) => {
     // check if expired
     if(response.status === 401) {
       localStorage.removeItem('access_token');
-      window.location.href = '/login?session=expired';
-      return { success: false, status: 401 };
+      return { success: false, status: 401, message: "Session Expired" };
     }
 
     // check if unauthorized
     if(response.status === 403) {
-      window.location.href = '/login?error=unauthorized';
-      return { success: false, error: 'Forbidden', status: 403 };
+      return { success: false, status: 403, message: "Access Denied" };
     }
 
     return await response.json();
