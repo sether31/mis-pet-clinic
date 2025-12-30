@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // utils
@@ -13,16 +13,18 @@ import Button from '../../components/Button';
 // icons
 import { HiOutlineBuildingOffice2, HiPlus, HiArrowRight } from "react-icons/hi2";
 import { IoLogOut } from "react-icons/io5";
+import AddBranchModal from '../../components/AddBranchModal';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function SelectBranch() {
+  const navigate = useNavigate();
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('loading');
   const [activeTab, setActiveTab] = useState('approved'); 
-  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const tabs = [
     { id: 'approved', label: 'Active' },
@@ -31,23 +33,32 @@ export default function SelectBranch() {
     { id: 'suspended', label: 'Suspended' },
   ];
 
-  useEffect(() => {
-    const fetchBranches = async () => {
-      setLoading(true);
-      try {
-        const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-branches.php`, {}, ['clinic_admin']);
-        if(response.success) {
-          setBranches(response.data);
-        }
-      } catch (err) {
-        console.error("Error fetching branches:", err);
+  const fetchBranches = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-branches.php`, {}, ['clinic_admin']);
+      if(!response.success) {
         toast.error("Something went wrong");
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
-    fetchBranches();
+      setBranches(response.data);
+    } catch(err) {
+      console.error("Error fetching branches:", err);
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    } 
   }, []);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
+  const handleSuccess = () => {
+    setIsModalOpen(false); 
+    setActiveTab('pending');
+    fetchBranches();
+  };
 
   const filteredBranches = branches.filter(b => (b.status || b.branch_status) === activeTab);
 
@@ -57,6 +68,15 @@ export default function SelectBranch() {
       setLoadingMessage('Redirecting...')
       localStorage.setItem('active_clinic_id', branch.branch_id);
       navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
+    } else if (activeTab === 'pending') {
+      toast.info("This branch is pending");
+      return;
+    } else if (activeTab === 'rejected') {
+      toast.info("This branch is rejected");
+      return;
+    } else {
+      toast.info("This branch is suspended. Please contact support.");
+      return;
     }
   }
 
@@ -75,16 +95,15 @@ export default function SelectBranch() {
         <nav className="fixed top-0 left-0 z-50 w-full bg-(--clr-primary) border-b border-gray-300">
           <div className="flex items-center justify-between px-6 py-4 mx-auto container-xl">
             <span className="text-xl font-bold tracking-tight">LOGO</span>
-            
-            <Button 
+           
+            <button 
               type="button" 
-              variant="secondary" 
-              className="flex items-center justify-center gap-2 cursor-pointer w-max text-(--clr-text-secondary) bg-(--clr-black)"
               onClick={handleLogout}
+              className="px-4 py-2 rounded-md font-medium flex items-center justify-center gap-2 cursor-pointer w-max text-(--clr-text-secondary) bg-(--clr-black) hover:scale-95 ease-in-out duration-500"
             >
               <IoLogOut size={18}/>
               Logout
-            </Button>
+            </button>
           </div>
         </nav>
 
@@ -98,8 +117,8 @@ export default function SelectBranch() {
 
             {/* add branch */}
             <Button 
-              onClick={() => navigate('/clinic/add-branch')}
-              className="flex items-center gap-2 px-6 py-3 transition-transform cursor-pointer h-max active:scale-95"
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-6 py-3 transition-transform cursor-pointer h-max active:scale-95"
             >
               <HiPlus size={20} strokeWidth={2}/>
               Add New Branch
@@ -135,11 +154,7 @@ export default function SelectBranch() {
               <div
                 key={branch.branch_id}
                 onClick={() => handleSelect(branch)}
-                className={`group relative bg-(--clr-bg-card) border border-gray-300 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2
-                ${
-                  activeTab === 'approved' ? 'cursor-pointer hover:border-(--clr-primary)' : 'opacity-80 cursor-not-allowed'
-                }
-                `}
+                className={`group relative bg-(--clr-bg-card) border border-gray-300 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 cursor-pointer hover:border-(--clr-primary)`}
               >
                 <div className="flex flex-col h-full">
                   <div className="flex items-start justify-between mb-6">
@@ -187,6 +202,16 @@ export default function SelectBranch() {
 
       <ToastContainer position="top-right" autoClose={3000} />
       {loading && <FullScreenLoader message={loadingMessage} />}
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <AddBranchModal
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            onSuccess={handleSuccess} 
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
