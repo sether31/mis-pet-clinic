@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // utils
 import wait from '../utils/wait';
-import { authFetch } from '../utils/authFetch';
+import { authFetch } from '../utils/authFetch'
+import { validRoleToken } from '../utils/validRoleToken';
 // components
 import Input from './Input';
 import InputImage from './InputImage';
@@ -14,6 +16,8 @@ import FullScreenLoader from './FullLoader';
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2, HiXCircle } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
+import { IoLogOut, IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
+import { FaCircleInfo, FaCircleCheck } from "react-icons/fa6";
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -28,27 +32,25 @@ const initialFormState = {
   clinicDescription: '',
   website: '',
   facebook: '',
-  email: '',
-  firstName: '',
-  lastName: '',
-  password: '',
-  confirmPassword: '',
   tinNumber: '',
   businessPermitNumber: '',
   vetLicenseNumber: '',
   clinicStartTime: '',
   clinicEndTime: '',
-  services: [],
   agreeTerms: false,
   tinNumberPic: null,
   businessPermitPic: null,
   vetLicensePic: null
 }
 
-export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
+export default function BranchStatusModal({ branch, onClose, onSuccess}) {
+  const navigate = useNavigate();
   const [form, setForm] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState('')
+  const [status, setStatus] = useState();
+
 
   const inputLabels = {
     clinicName: "Clinic Name",
@@ -65,20 +67,89 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     vetLicenseNumber: "Veterinarian License Number",
     clinicStartTime: "Clinic Start Time",
     clinicEndTime: "Clinic End Time",
-    services: "Services",
     agreeTerms: "Terms & Conditions",
     tinNumberPic: "Tin Picture",
     businessPermitPic: "Business Permit Picture",
     vetLicensePic: "Veterinarian License Picture"
   };
 
-  const serviceLabels = {
-    general_checkup: "General Checkup",
-    vaccination: "Vaccination",
-    surgery: "Surgery",
-    grooming: "Grooming",
-    emergency_service: "Emergency Service"
+  const checkAccess = async (isManualRefresh = false) => {
+    if (isManualRefresh) setLoading(true);
+
+    try {
+      // check role
+      const user = validRoleToken(['clinic_admin']);
+      if(!user || user.role !== 'clinic_admin') {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      // fetch data
+      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-branch-data.php`, 
+      {
+        method: 'POST',
+        body: JSON.stringify({ branch_id: branch.branch_id })
+      }, ['clinic_admin']);
+
+      
+      if(response.success && response.data) {
+        const branch = response.data;
+        const newStatus = branch.status;
+
+        if(response.status === 400) {
+          toast.warn(response.message);
+          return;
+        }
+
+        // check if user refresh
+        if(isManualRefresh) {
+          if(newStatus === status) {
+            // check if the status is still the same
+            toast.info("No changes to your status yet.");
+          } else {
+            // status change
+            toast.success(`Status updated to ${newStatus}!`);
+          }
+        }
+     
+        setStatus(newStatus || '');
+        setFeedback(branch.feedback || '');    
+
+
+        // only update if initial load because only the status adn feedback should be refresh
+        if(!isManualRefresh) {
+          setForm({
+            clinicName: branch.name || '',
+            completeAddress: branch.address || '',
+            municipality: branch.municipality || '',
+            province: branch.province || '',
+            zipCode: branch.zip_code || '',
+            est: branch.est || '',
+            clinicDescription: branch.description || '',
+            website: branch.website || '',
+            facebook: branch.facebook || '',
+            tinNumber: branch.tin_id_number || '',
+            businessPermitNumber: branch.business_permit_number || '',
+            vetLicenseNumber: branch.vet_license_number || '',
+            clinicStartTime: branch.operating_hours_start_time || '',
+            clinicEndTime: branch.operating_hours_end_time || '',
+            agreeTerms: true,
+            tinNumberPic: null,
+            businessPermitPic: null,
+            vetLicensePic: null
+          });
+        }
+      }
+    } catch(err) {
+      if(isManualRefresh) toast.error("Failed to refresh status.");
+    } finally {
+      if(isManualRefresh) setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    checkAccess(false);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -93,26 +164,6 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         ...prev,
         [name]: files[0] ? "valid" : `${inputLabels[name]} is required.`
       }));
-      return;
-    }
-
-    // check service
-    if(name === "services") {
-      const selected = [...form.services];
-
-      if(checked) {
-        selected.push(value);
-      } else {
-        selected.splice(selected.indexOf(value), 1);
-      }
-
-      setForm(prev => ({ ...prev, services: selected }));
-
-      setErrors(prev => ({
-        ...prev,
-        services: selected.length === 0 ? "Select at least one service." : ""
-      }));
-
       return;
     }
 
@@ -164,7 +215,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-
+  // validate forms
   const validateForm = () => {
     const newErrors = {};
     const requiredInputFields = [
@@ -186,18 +237,13 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
     });
-  
+
     // check image
     ["tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
       if(!form[field]) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
     });
-
-    // check service
-    if(form.services.length === 0) {
-      newErrors.services = "Select at least one service.";
-    }
 
     // check time
     if(form.clinicStartTime && !form.clinicEndTime) {
@@ -227,18 +273,25 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     await wait(1000);
     // append to form data
     const formData = new FormData();
+
+    console.log("Target Branch ID:", branch?.branch_id);
+
+    if(branch?.branch_id) {
+      formData.append('branch_id', branch.branch_id);
+    } else {
+      toast.error("Branch ID not found");
+      setLoading(false);
+      return;
+    } 
+
     Object.keys(form).forEach(key => {
       if(form[key] !== null) {
-          if(key === 'services') {
-          formData.append(key, JSON.stringify(form[key]));
-        } else {
-          formData.append(key, form[key]);
-        }
+        formData.append(key, form[key]);
       }
     });
 
     try {
-      const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/add-new-branch.php`, {
+      const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/update-new-branch.php`, {
         method: "POST",
         body: formData
       }, ['clinic_admin']);
@@ -248,7 +301,8 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         setLoading(false);
         return;
       }
-      toast.success(res.message || "Registration completed. Please wait for admin approval.");
+      toast.success("Clinic details successfully updated!");
+      await checkAccess(true);
       onSuccess();
     } catch(error) {
       toast.error("Something went wrong");
@@ -264,22 +318,77 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         initial={{ opacity: 0, y: "100%" }} 
         animate={{ opacity: 1, y: 0 }} 
         exit={{ opacity: 0, y: 0 }}
-        className='fixed inset-0 z-100 bg-white overflow-y-scroll'
+        className='fixed inset-0 overflow-y-scroll bg-white z-100'
       >
         {/* nav */}
-        <div className='container-xl flex items-center justify-between gap-4 my-5'>
+        <div className='flex items-center justify-between gap-4 my-5 container-xl'>
           <h1 className='text-2xl font-medium'>LOGO</h1>
           <button onClick={onClose}  className="text-gray-400 cursor-pointer hover:text-red-500">
             <HiXCircle size={32} />
           </button>
         </div>
+        
         {/* main content */}
-        <div className='container-xl pb-10'>   
-          <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-(--clr-text-header)'>Register New Branch</h1>
-          <p className='mb-12 text-base'> 
-            Fill out the details to add a new location to your clinic network.
-          </p>
-          {/* registration */}
+        <div className='pb-10 container-xl'>   
+          <div className="flex flex-col gap-2 mb-4 md:items-center md:flex-row">
+            <h1 className='text-3xl sm:text-4xl font-bold text-(--clr-text-header)'>Review Your Clinic</h1>
+
+            {/* status */}
+            <div className={`flex w-max items-center gap-2 px-4 py-2 rounded-full border transition-colors ${
+              status === "approved" ? 'bg-green-50 border-green-200' : 
+              status === "rejected" ? 'bg-red-50 border-red-200' : 
+              'bg-amber-50 border-amber-200'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                status === "approved" ? 'bg-green-500' : 
+                status === "rejected" ? 'bg-red-500 animate-pulse' : 
+                'bg-amber-500 animate-pulse'
+              }`}></div>
+              <span className={`text-sm font-medium capitalize ${
+                status === "approved" ? 'text-(--clr-text-header)' : 
+                status === "rejected" ? 'text-red-700' : 
+                'text-amber-700'
+              }`}>
+                Status: {status}
+              </span>
+            </div>
+          </div>
+
+          {/* check feedback */}
+          <div className="mb-8">
+            {status === "approved" ? (
+              <div className="p-4 border-l-4 border-green-500 bg-green-50">
+                <div className="flex items-center gap-2 mb-2 text-green-700">
+                  <FaCircleCheck size={20} />
+                  <h3 className="text-lg font-bold">Verification Successful</h3>
+                </div>
+                <p className="text-sm font-medium text-(--clr-text-header)">
+                  Your clinic has been approved! Redirecting you to select branch...
+                </p>
+              </div>
+            ) : status === "rejected" ? (
+              <div className="p-4 border-l-4 border-red-400 bg-red-50">
+                <div className="flex items-center gap-2 mb-2 text-red-700">
+                  <IoWarningOutline size={20} />
+                  <h3 className="text-lg font-bold">Action Required: Verification Issue</h3>
+                </div>
+                <p className="text-sm font-medium text-red-800">
+                  Reason: {feedback || "Please review your documents and resubmit."}
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 border-l-4 bg-amber-50 border-amber-200">
+                <div className="flex items-center gap-2 mb-2 text-amber-700">
+                  <FaCircleInfo size={20} />
+                  <h3 className="text-lg font-bold">Verification In Progress</h3>
+                </div>
+                <p className="text-sm font-medium text-amber-800">
+                  Hello, we are currently verifying your data. You can update your details below if you noticed any mistakes.
+                </p>
+              </div>
+            )}
+          </div>
+
           <form onSubmit={handleSubmit}>
             <section className='grid gap-4'>
               {/* Clinic Information */}
@@ -415,12 +524,19 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                 </div>
               </div>
 
+
               {/* Business & licensing Information */}
-              <div className='pb-8 mb-5 border-b border-gray-300'>
+              <div className='pb-8 mb-5 border-gray-300 border-b'>
                 <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
                   <CiCreditCard1 className='text-(--clr-text-header)' />
                   <span>Business & licensing Information</span>
                 </h1>
+                <div className='flex items-center gap-2 p-3 mb-6 text-sm font-medium text-blue-800 border border-blue-100 rounded-lg bg-blue-50'>
+                  <FaCircleInfo />
+                  <p>
+                    Security Requirement: Please re-upload your document images for every update to ensure data integrity.
+                  </p>
+                </div>
                 <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
                   <InputImage
                     label="Tin Number Picture"
@@ -484,14 +600,14 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                 </div>
               </div>
                 
-              {/* Services and Operations */}
-              <div className='pb-8 mb-5 border-b border-gray-300'>
+              {/* Operations */}
+              <div className='pb-8 mb-5 border-gray-300 border-b'>
                 <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
                   <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
-                  <span>Services and Operations</span>
+                  <span>Operating Hours</span>
                 </h1>
-                <div className='grid grid-cols-1 gap-4'>
-                  <div className='flex gap-4'>
+                <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
+                  <div className='flex flex-col gap-4 sm:flex-row'>
                     <Input
                       value={form.clinicStartTime} 
                       type='time'
@@ -517,34 +633,6 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                       error={errors.clinicEndTime}
                     />
                   </div>
-      
-                  {/* Services Offered */}
-                  <div>
-                    <h1 className='mb-2 text-base font-medium text-gray-700'>
-                      Services Offered {' '}
-                      <span className="text-red-500">*</span>
-                    </h1>
-                    
-                    <div className='grid grid-cols-1 gap-2 lg:grid-cols-2'>
-                      {['general_checkup','vaccination','surgery','grooming','emergency_service'].map(service => (
-                        <label key={service}>
-                          <input
-                            type="checkbox"
-                            name="services"
-                            value={service}
-                            checked={form.services.includes(service)}
-                            onChange={handleChange}
-                            className='accent-[var(--clr-primary)]'
-                          />
-                          {' '} {serviceLabels[service]}
-                        </label>
-                      ))}
-                    </div>
-                    {/* errors */}
-                    {errors.services && (
-                      <p className="mt-1 text-sm text-red-500">{errors.services}</p>
-                    )}
-                  </div>
                 </div>
               </div>
 
@@ -567,19 +655,34 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
               </div>
             </section>
 
-            <Button 
-              type="submit" 
-              variant="primary" 
-              className="w-full lg:w-[200px] mx-auto mt-4 cursor-pointer"
-            >
-              Register
-            </Button>
+            <div className="flex flex-col items-center gap-3 mt-8 md:flex-row">
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full lg:w-[200px] cursor-pointer"
+                load={loading}
+              >
+                Update your clinic
+              </Button>
+
+              <Button 
+                type="button" 
+                variant="secondary" 
+                className="w-full lg:w-[200px] cursor-pointer flex gap-1 items-center justify-center"
+                onClick={() => checkAccess(true)}
+                load={loading}
+              >
+                <IoRefreshOutline size={18} className={loading ? "animate-spin" : ""} />
+                Refresh status
+              </Button>
+            </div>
           </form>
         </div>
-          {loading && <FullScreenLoader />}
+
+        {loading && <FullScreenLoader />}
       </motion.div>   
 
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={3000} />    
     </>
   )
 }
