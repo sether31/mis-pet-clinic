@@ -77,14 +77,40 @@ export default function SelectBranch() {
   const filteredBranches = branches.filter(b => (b.status || b.branch_status) === activeTab);
 
   const handleSelect = async (branch) => {
+    // approve branch
     if(activeTab === 'approved') {
       setLoading(true);
-      setLoadingMessage('Redirecting...')
-      localStorage.setItem('active_clinic_id', branch.branch_id);
-      navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
-    } else if (activeTab === 'suspended') {
+      setLoadingMessage('Checking...')
+
+      try {
+        const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/check-subscription-history.php`, {
+          method: 'POST',
+          body: JSON.stringify({ branch_id: branch.branch_id })
+        }, ['clinic_admin']);
+
+        localStorage.setItem('active_clinic_id', branch.branch_id);
+
+        if(!res.hasSubHistory) {
+          toast.info("Please select a subscription plan to get started.");
+          await wait(1000);
+          navigate(`/clinic/${branch.branch_id}/admin/select-plan`, { replace: true });
+          return;
+        }
+
+        // regardless if expired or rejected go to dashboard
+        setLoadingMessage('Redirecting to dashboard...');
+        navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
+      } catch(error) {
+        toast.error("Failed to verify branch status.");
+        setLoading(false);
+      }
+
+      // suspended
+    } else if(activeTab === 'suspended') {
       toast.info("This branch is suspended. Please contact support.");
       return;
+
+      // pending rejected
     } else {
       setSelectedBranch(branch);
       setIsSelectedBranchModalOpen(true);
