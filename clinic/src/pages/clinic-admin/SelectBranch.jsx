@@ -14,6 +14,7 @@ import Button from '../../components/Button';
 import { HiOutlineBuildingOffice2, HiPlus, HiArrowRight } from "react-icons/hi2";
 import { IoLogOut } from "react-icons/io5";
 import AddBranchModal from '../../components/AddBranchModal';
+import BranchStatusModal from '../../components/BranchStatusModal';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -25,6 +26,8 @@ export default function SelectBranch() {
   const [loadingMessage, setLoadingMessage] = useState('loading');
   const [activeTab, setActiveTab] = useState('approved'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [isSelectedBranchModalOpen, setIsSelectedBranchModalOpen] = useState(false);
 
   const tabs = [
     { id: 'approved', label: 'Active' },
@@ -54,28 +57,63 @@ export default function SelectBranch() {
     fetchBranches();
   }, [fetchBranches]);
 
+  // add branch
   const handleSuccess = () => {
     setIsModalOpen(false); 
     setActiveTab('pending');
     fetchBranches();
   };
+  // update branch
+  const updateBranchSuccess = () => {
+    setIsSelectedBranchModalOpen(false);
+    setSelectedBranch(null);
+    setActiveTab('pending');
+    fetchBranches();
+  };
+
+
+
 
   const filteredBranches = branches.filter(b => (b.status || b.branch_status) === activeTab);
 
   const handleSelect = async (branch) => {
+    // approve branch
     if(activeTab === 'approved') {
       setLoading(true);
-      setLoadingMessage('Redirecting...')
-      localStorage.setItem('active_clinic_id', branch.branch_id);
-      navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
-    } else if (activeTab === 'pending') {
-      toast.info("This branch is pending");
-      return;
-    } else if (activeTab === 'rejected') {
-      toast.info("This branch is rejected");
-      return;
-    } else {
+      setLoadingMessage('Checking...')
+
+      try {
+        const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/check-subscription-history.php`, {
+          method: 'POST',
+          body: JSON.stringify({ branch_id: branch.branch_id })
+        }, ['clinic_admin']);
+
+        localStorage.setItem('active_clinic_id', branch.branch_id);
+
+        if(!res.hasSubHistory) {
+          toast.info("Please select a subscription plan to get started.");
+          await wait(1000);
+          navigate(`/clinic/${branch.branch_id}/admin/select-plan`, { replace: true });
+          return;
+        }
+
+        // regardless if expired or rejected go to dashboard
+        setLoadingMessage('Redirecting to dashboard...');
+        navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
+      } catch(error) {
+        toast.error("Failed to verify branch status.");
+        setLoading(false);
+      }
+
+      // suspended
+    } else if(activeTab === 'suspended') {
       toast.info("This branch is suspended. Please contact support.");
+      return;
+
+      // pending rejected
+    } else {
+      setSelectedBranch(branch);
+      setIsSelectedBranchModalOpen(true);
       return;
     }
   }
@@ -209,6 +247,17 @@ export default function SelectBranch() {
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             onSuccess={handleSuccess} 
+          />
+        )}
+
+        {isSelectedBranchModalOpen && (
+          <BranchStatusModal 
+            branch={selectedBranch} 
+            onClose={() => {
+              setIsSelectedBranchModalOpen(false);
+              setSelectedBranch(null);
+            }}
+            onSuccess={updateBranchSuccess} 
           />
         )}
       </AnimatePresence>

@@ -7,6 +7,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
 import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";
 import SelectBranch from "../pages/clinic-admin/SelectBranch";
+import SelectPlans from "../pages/clinic-admin/SelectPlans";
 
 export const routes = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -38,7 +39,10 @@ export const routes = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [
-          { path: "dashboard", element: <AdminDashboard /> }
+          { path: "select-plan", element: <SelectPlans /> },
+          // main dashboard
+          { index: true, element: <AdminDashboard /> },
+          { path: "dashboard", element: <AdminDashboard /> },
         ]
       }
     ]
