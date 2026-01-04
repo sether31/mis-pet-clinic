@@ -58,7 +58,7 @@ export default function SelectPlans() {
   }, [])
 
   const handleClose = () => {
-    navigate("/select-branch")
+    navigate("/clinic/select-branch")
   }
 
   return (
@@ -97,7 +97,7 @@ export default function SelectPlans() {
                   className="flex flex-col p-8 transition-all bg-white border border-gray-300 shadow-sm rounded-xl hover:border-(--clr-primary) hover:shadow-(--clr-primary) hover:scale-105 ease-in-out duration-300"
                 >
                   <div className="mb-8">
-                    <h2 className="text-xl font-bold">{sub.name}</h2>
+                    <h2 className="text-xl font-bold capitalize">{sub.name}</h2>
                     <div className="flex items-baseline mt-4">
                       <span className="text-4xl font-extrabold">₱{sub.price}</span>
                       <span className="ml-1 text-sm font-medium text-gray-500">/ {sub.duration_months} mo</span>

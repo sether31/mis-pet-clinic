@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
       if(!user) {
         setMessage("Session expired. Redirecting to login...");
         await wait(1500);
-        setRedirect("/login");
+        setRedirect("/clinic/login");
         setChecking(false);
         return;
       }
@@ -28,7 +28,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
 
       // if clinic admin pending
       if(role === "clinic_admin" && status === "pending") {
-        setRedirect("/pending-user");
+        setRedirect("/clinic/pending-user");
         setChecking(false);
         return;
       }

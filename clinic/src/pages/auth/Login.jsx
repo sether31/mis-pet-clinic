@@ -59,7 +59,7 @@ export default function Login() {
         await wait(2000);
 
         if(role === 'clinic_admin' && (status === 'pending' || status === 'rejected')) {
-          navigate('/pending-user', { replace: true });
+          navigate('/clinic/pending-user', { replace: true });
         } else {
           navigate(getDashboardByRole(role), { replace: true });
         }
@@ -177,7 +177,7 @@ export default function Login() {
       const { role, status } = validRoleToken();
 
       if(role === "clinic_admin" && status === "pending") {
-        navigate("/pending-user", { replace: true });
+        navigate("/clinic/pending-user", { replace: true });
       } else {
         navigate(getDashboardByRole(role), { replace: true });
       }
@@ -282,7 +282,7 @@ export default function Login() {
               </form>
 
               <motion.p variants={formItemVariants}>
-                <Link to="/forgotPassword" className="text-base font-[500] text-gray-700 hover:text-gray-600 mt-2 text-right block">
+                <Link to="/forgotPassword" className="text-base font-medium text-gray-700 hover:text-gray-600 mt-2 text-right block">
                   Forgot Password?
                 </Link>
               </motion.p>
@@ -296,7 +296,7 @@ export default function Login() {
 
               <motion.p variants={formItemVariants} className='flex justify-center gap-1 text-base'>
                 Dont have an account? 
-                <Link to="/register" className='underline text-(--clr-text-header) hover:opacity-75'>Sign up</Link>
+                <Link to="/clinic/register" className='underline text-(--clr-text-header) hover:opacity-75'>Sign up</Link>
               </motion.p>
             </motion.div>
           </section>

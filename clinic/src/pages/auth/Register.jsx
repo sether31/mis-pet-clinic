@@ -354,7 +354,7 @@ export default function Register() {
           <h1 className='text-2xl font-medium'>LOGO</h1>
           <h1 className='flex items-center gap-1 text-base'>
             Already have an account? 
-            <Link to="/login" className='underline text-(--clr-text-header) hover:opacity-75'>Sign in</Link>
+            <Link to="/clinic/login" className='underline text-(--clr-text-header) hover:opacity-75'>Sign in</Link>
           </h1>
         </div>
         
@@ -369,7 +369,7 @@ export default function Register() {
             {/* Clinic Information */}
             <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <HiOutlineBuildingOffice2 className='text-[var(--clr-text-header)]' />
+                <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
                 <span>Clinic Information</span>
               </h1>
               

@@ -83,7 +83,7 @@ export default function PendingUser() {
       // check role
       const user = validRoleToken(['clinic_admin']);
       if (!user || user.role !== 'clinic_admin') {
-        navigate('/login', { replace: true });
+        navigate('/clinic/login', { replace: true });
         return;
       }
 
