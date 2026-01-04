@@ -154,7 +154,7 @@ export default function Login() {
       localStorage.setItem("access_token", data.access_token);
       setErrors({ email: "", password: ""});
       setForm({ email: "", password: "" });
-      navigate("/super-admin/dashboard");
+      navigate("/dashboard");
     } catch(error) {
       console.log("OTP verify error:", error);
       toast.error("Something went wrong");
