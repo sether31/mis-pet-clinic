@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 // protected route component
 import ProtectedRoute from "../components/ProtectedRoute";
 // context
@@ -20,7 +20,7 @@ import SubscriptionPlans from "../pages/dashboard/SubscriptionPlans"
 export const routes = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { 
-    path: "/super-admin", 
+    path: "/", 
     element: (
       <ProtectedRoute allowedRoles={['super_admin']} >
         <UserProvider>
@@ -32,7 +32,8 @@ export const routes = createBrowserRouter([
     ),
     children: [
       { path: "*", element: <NotFoundDashboard /> },
-      { index: true, element: <Dashboard /> },
+      { index: true, element: <Navigate to="dashboard" replace /> },
+      // main dashboard
       { path: "dashboard", element: <Dashboard /> },
       { path: "clinic-applications", element: <ClinicApplications /> },
       { path: "registered-clinics", element: <RegisteredClinics /> },
@@ -44,4 +45,6 @@ export const routes = createBrowserRouter([
     path: '*',
     element: <NotFound />
   }
-]);
+], {
+  basename: "/super-admin" 
+});

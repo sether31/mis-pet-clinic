@@ -46,7 +46,7 @@ export default function Login() {
         setLoading(true);
         setLoadingMessage('Logging in...');
         await wait(1500);
-        navigate('/super-admin/dashboard', { replace: true });
+        navigate('/dashboard', { replace: true });
       }
     }
     checkToken();
@@ -154,7 +154,7 @@ export default function Login() {
       localStorage.setItem("access_token", data.access_token);
       setErrors({ email: "", password: ""});
       setForm({ email: "", password: "" });
-      navigate("/super-admin/dashboard");
+      navigate("/dashboard");
     } catch(error) {
       console.log("OTP verify error:", error);
       toast.error("Something went wrong");

@@ -7,11 +7,11 @@ import { MdOutlineNotifications } from "react-icons/md";
 import { LuSettings } from "react-icons/lu";
 
 const links = [
-  { label: 'Dashboard', path: '/super-admin/dashboard' },
-  { label: 'Clinic Applications', path: '/super-admin/clinic-applications' },
-  { label: 'Registered Clinics', path: '/super-admin/registered-clinics' },
-  { label: 'Subscription Plans', path : '/super-admin/subscription-plans' },
-  { label: 'Platform Analytics', path: '/super-admin/platform-analytics' }
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Clinic Applications', path: '/clinic-applications' },
+  { label: 'Registered Clinics', path: '/registered-clinics' },
+  { label: 'Subscription Plans', path : '/subscription-plans' },
+  { label: 'Platform Analytics', path: '/platform-analytics' }
 ];
 
 export default function Header() {
@@ -19,11 +19,13 @@ export default function Header() {
   const { user } = useUser();
 
   const getPageTitle = () => {
-    if(location.pathname === '/super-admin' || location.pathname === '/super-admin/') {
+    const path = location.pathname;
+
+    if(path === '/' || path === '/dashboard' || path === '/dashboard/') {
       return 'Dashboard';
     }
-    const currentRoute = links.find(item => location.pathname.startsWith(item.path));
-    return currentRoute ? currentRoute.label : 'Page Not Found';
+    const match = links.find(item => item.path === path || `${item.path}/` === path);
+    return match ? match.label : 'Page Not Found';
   };
 
   const pageTitle = getPageTitle();

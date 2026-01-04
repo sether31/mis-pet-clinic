@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import PendingUser from "../pages/pending/PendingUser";
@@ -19,9 +19,10 @@ export const routes = createBrowserRouter([
   },
   // clinic
   {
-    path: '/clinic',
+    path: '/',
     element: <ClinicLayout />,
     children: [
+      { index: true, element: <Navigate to="/login" replace /> },
       {
         path: 'select-branch',
         element: (
@@ -47,4 +48,6 @@ export const routes = createBrowserRouter([
       }
     ]
   }
-]);
+], {
+  basename: "/clinic" 
+});
