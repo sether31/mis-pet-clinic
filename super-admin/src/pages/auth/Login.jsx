@@ -46,7 +46,7 @@ export default function Login() {
         setLoading(true);
         setLoadingMessage('Logging in...');
         await wait(1500);
-        navigate('/super-admin/dashboard', { replace: true });
+        navigate('/dashboard', { replace: true });
       }
     }
     checkToken();

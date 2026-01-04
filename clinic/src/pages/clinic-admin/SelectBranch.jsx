@@ -72,8 +72,6 @@ export default function SelectBranch() {
   };
 
 
-
-
   const filteredBranches = branches.filter(b => (b.status || b.branch_status) === activeTab);
 
   const handleSelect = async (branch) => {
@@ -93,13 +91,13 @@ export default function SelectBranch() {
         if(!res.hasSubHistory) {
           toast.info("Please select a subscription plan to get started.");
           await wait(1000);
-          navigate(`/clinic/${branch.branch_id}/admin/select-plan`, { replace: true });
+          navigate(`/${branch.branch_id}/admin/select-plan`, { replace: true });
           return;
         }
 
         // regardless if expired or rejected go to dashboard
         setLoadingMessage('Redirecting to dashboard...');
-        navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
+        navigate(`clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
       } catch(error) {
         toast.error("Failed to verify branch status.");
         setLoading(false);

@@ -9,7 +9,7 @@ export default function NotFound() {
       <p>The page you’re looking for doesn’t exist or may have been moved.</p>
       <Link 
         className='px-6 py-2 font-medium rounded-md bg-(--clr-primary) text-(--clr-text-secondary) hover:opacity-98 hover:scale-95 ease-in-out duration-500' 
-        to="/super-admin/dashboard"
+        to="/dashboard"
       >
         Go Home
       </Link>

@@ -15,11 +15,11 @@ import { useUI } from '../hooks/useUI'
 import wait from '../utils/wait'
 
 const sidebarItems = [
-  { label: 'Dashboard', path: '/super-admin/dashboard', icon: RiDashboardLine },
-  { label: 'Clinic Applications', path: '/super-admin/clinic-applications', icon: CgFileDocument },
-  { label: 'Registered Clinics', path: '/super-admin/registered-clinics', icon: LuBuilding2 },
-  { label: 'Subscription Plans', path: '/super-admin/subscription-plans', icon: MdOutlineSubscriptions},
-  { label: 'Platform Analytics', path: '/super-admin/platform-analytics', icon: TbGraph }
+  { label: 'Dashboard', path: '/dashboard', icon: RiDashboardLine },
+  { label: 'Clinic Applications', path: '/clinic-applications', icon: CgFileDocument },
+  { label: 'Registered Clinics', path: '/registered-clinics', icon: LuBuilding2 },
+  { label: 'Subscription Plans', path: '/subscription-plans', icon: MdOutlineSubscriptions},
+  { label: 'Platform Analytics', path: '/platform-analytics', icon: TbGraph }
 ];
 
 export default function Sidebar({className, open, setOpen}) {
@@ -66,15 +66,7 @@ export default function Sidebar({className, open, setOpen}) {
       <nav className='flex flex-col justify-between h-full px-4 mt-6'>
         <div className='grid gap-2'>
           {sidebarItems.map((item) => {
-          let isActive = false;
-
-          if(item.path === '/super-admin/dashboard') {
-            isActive = location.pathname === '/super-admin/dashboard' 
-              || location.pathname === '/super-admin'
-              || location.pathname === '/super-admin/';
-          } else {
-            isActive = location.pathname === item.path;
-          }
+            const isActive = location.pathname === item.path || location.pathname === `${item.path}/`;
 
           return (
             <SidebarItem
