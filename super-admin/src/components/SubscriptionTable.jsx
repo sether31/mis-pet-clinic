@@ -11,26 +11,38 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(5); 
 
-  // Simple sort state: 'asc' or 'desc'
+  // sort
   const [sortPrice, setSortPrice] = useState('asc');
+  const [sortStatus, setSortStatus] = useState('asc');
 
   // filtering and sorting with memo
   const filtered = useMemo(() => {
-    // filter
     let result = data
       .filter(p => {
-        if (activeTab === "all") return true;
-        return activeTab === "active" ? Number(p.is_active) === 1 : Number(p.is_active) === 0;
+        if(activeTab === "all") return true;
+        const status = Number(p.is_active);
+        return activeTab === "active" ? status === 1 : status === 0;
       })
       .filter(p => !search || p.name?.toLowerCase().includes(search.toLowerCase()));
-
-    // 2. sort by price
+    
+    // sort
     result.sort((a, b) => {
-      return sortPrice === 'asc' ? a.price - b.price : b.price - a.price;
+      // sort by status
+      const statusA = Number(a.is_active);
+      const statusB = Number(b.is_active);
+      
+      if(statusA !== statusB) {
+        return sortStatus === 'asc' ? statusB - statusA : statusA - statusB;
+      }
+
+      // sort by price
+      const priceA = Number(a.price) || 0;
+      const priceB = Number(b.price) || 0;
+      return sortPrice === 'asc' ? priceB - priceA : priceA - priceB;
     });
 
     return result; 
-  }, [data, activeTab, search, sortPrice]); 
+  }, [data, activeTab, search, sortPrice, sortStatus]);
 
   // pagination
   const paginated = filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
@@ -95,18 +107,30 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600">
               <th className="w-[25%] px-6 py-4 border-r border-gray-300">Plan Name</th>
               <th className="w-[40%] px-6 py-4 border-r border-gray-300">Features</th>
+              {/* sort price */}
               <th 
                 className="w-[15%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors group"
                 onClick={() => setSortPrice(sortPrice === 'asc' ? 'desc' : 'asc')}
               >
                 <div className="flex items-center justify-between">
-                  <span>Date</span>
+                  <span>Price</span>
                   <span className="text-gray-400 group-hover:text-(--clr-primary)">
                     {sortPrice === 'asc' ? <HiChevronUp size={16} /> : <HiChevronDown size={16} />}
                   </span>
                 </div>
               </th>
-              <th className="w-[10%] px-6 py-4 border-r border-gray-300 text-center">Status</th>
+              {/* sort status */}
+              <th 
+                className="w-[15%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors group"
+                onClick={() => setSortStatus(sortStatus === 'asc' ? 'desc' : 'asc')}
+              >
+                <div className="flex items-center justify-between">
+                  <span>Status</span>
+                  <span className="text-gray-400 group-hover:text-(--clr-primary)">
+                    {sortStatus === 'asc' ? <HiChevronUp size={16} /> : <HiChevronDown size={16} />}
+                  </span>
+                </div>
+              </th>              
               <th className="w-[10%] px-6 py-4 text-center">Action</th>
             </tr>
           </thead>
