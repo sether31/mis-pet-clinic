@@ -5,6 +5,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import ClinicLayout from "../layouts/ClinicLayout";
 import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
 // pages
+import NotFound from "../pages/NotFound";
   // auth
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
@@ -15,6 +16,7 @@ import SelectBranch from "../pages/clinic-admin/SelectBranch";
 import SelectPlans from "../pages/clinic-admin/SelectPlans";
 
 export const routes = createBrowserRouter([
+  { path: "*", element: <NotFound /> },
   {
     path: "/clinic",
     children: [
