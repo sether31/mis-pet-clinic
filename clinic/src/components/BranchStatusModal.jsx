@@ -274,8 +274,6 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
     // append to form data
     const formData = new FormData();
 
-    console.log("Target Branch ID:", branch?.branch_id);
-
     if(branch?.branch_id) {
       formData.append('branch_id', branch.branch_id);
     } else {

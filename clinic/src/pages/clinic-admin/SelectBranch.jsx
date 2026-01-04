@@ -91,13 +91,13 @@ export default function SelectBranch() {
         if(!res.hasSubHistory) {
           toast.info("Please select a subscription plan to get started.");
           await wait(1000);
-          navigate(`/${branch.branch_id}/admin/select-plan`, { replace: true });
+          navigate(`/clinic/${branch.branch_id}/admin/select-plan`, { replace: true });
           return;
         }
 
         // regardless if expired or rejected go to dashboard
         setLoadingMessage('Redirecting to dashboard...');
-        navigate(`clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
+        navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
       } catch(error) {
         toast.error("Failed to verify branch status.");
         setLoading(false);
@@ -121,7 +121,7 @@ export default function SelectBranch() {
     setLoadingMessage('Logging out...')
     await wait(1500);
     clearSession();
-    navigate('/login', { replace: true });
+    navigate('/clinic/login', { replace: true });
   };
 
   return (
