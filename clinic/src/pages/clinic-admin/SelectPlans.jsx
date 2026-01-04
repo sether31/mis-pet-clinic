@@ -58,7 +58,7 @@ export default function SelectPlans() {
   }, [])
 
   const handleClose = () => {
-    navigate("/clinic/select-branch")
+    navigate("/select-branch")
   }
 
   return (
