@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../hooks/useUI';
 // utils
 import wait from '../utils/wait';
 import { authFetch } from '../utils/authFetch';
@@ -9,7 +10,6 @@ import { authFetch } from '../utils/authFetch';
 import Input from './Input';
 import InputImage from './InputImage';
 import Button from './Button';
-import FullScreenLoader from './FullLoader';
 // icons
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2, HiXCircle } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
@@ -46,9 +46,9 @@ const initialFormState = {
 }
 
 export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
+  const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
 
   const inputLabels = {
     clinicName: "Clinic Name",
@@ -213,14 +213,14 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    showLoader();
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
     if(Object.keys(validationErrors).length > 0) {
       await wait(1000);
       toast.error("Please fill in all required fields correctly.");
-      setLoading(false);
+      hideLoader();
       return;  
     }
 
@@ -245,7 +245,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
 
       if(!res.success) {
         toast.error("Something went wrong")
-        setLoading(false);
+        hideLoader();
         return;
       }
       toast.success(res.message || "Registration completed. Please wait for admin approval.");
@@ -253,7 +253,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     } catch(error) {
       toast.error("Something went wrong");
     }
-    setLoading(false);
+    hideLoader();
   };
 
 
@@ -576,10 +576,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
             </Button>
           </form>
         </div>
-          {loading && <FullScreenLoader />}
       </motion.div>   
-
-      <ToastContainer position="top-right" autoClose={3000} />
     </>
   )
 }

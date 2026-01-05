@@ -1,53 +1,72 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+// components
+import ProtectedRoute from "../components/ProtectedRoute";
+// hooks
+import UIProvider from "../contexts/UiProvider";
+// layout
+import ClinicLayout from "../layouts/ClinicLayout";
+import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
+// pages
+import NotFound from "../pages/NotFound";
+  // auth
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import PendingUser from "../pages/pending/PendingUser";
-import ClinicLayout from "../layouts/ClinicLayout";
-import ProtectedRoute from "../components/ProtectedRoute";
-import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
+  // clinic admin
 import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";
 import SelectBranch from "../pages/clinic-admin/SelectBranch";
 import SelectPlans from "../pages/clinic-admin/SelectPlans";
 
+
 export const routes = createBrowserRouter([
-  { path: "/login", element: <Login /> },
-  { path: "/register", element: <Register /> },
-  { path: "/forgotPassword", element: '' },
+  { path: "*", element: <NotFound /> },
   {
-    path: "/pending-user",
-    element: <PendingUser />
-  },
-  // clinic
-  {
-    path: '/',
-    element: <ClinicLayout />,
+    path: "/clinic",
+    element: (
+      <UIProvider>
+        <Outlet />
+      </UIProvider>
+    ),
     children: [
-      { index: true, element: <Navigate to="/login" replace /> },
+      // auth
+      { path: "login", element: <Login /> },
+      { path: "register", element: <Register /> },
+      { path: "forgotPassword", element: "" },
+      { path: "pending-user", element: <PendingUser />},
+
+      // clinic layout
       {
-        path: 'select-branch',
-        element: (
-          <ProtectedRoute allowedRoles={['clinic_admin']}>
-            <SelectBranch />
-          </ProtectedRoute>
-        )
-      },
-      // users
-      { 
-        path: ':branchId/admin', 
-        element: (
-          <ProtectedRoute allowedRoles={['clinic_admin']}>
-            <AdminDashboardLayout />,
-          </ProtectedRoute>
-        ),
+        path: "",
+        element: <ClinicLayout />,
         children: [
-          { path: "select-plan", element: <SelectPlans /> },
-          // main dashboard
-          { index: true, element: <AdminDashboard /> },
-          { path: "dashboard", element: <AdminDashboard /> },
+          { index: true, element: <Navigate to="/select-branch" replace /> },
+          {
+            path: "select-branch",
+            element: (
+              <ProtectedRoute allowedRoles={['clinic_admin']}>
+                <SelectBranch />
+              </ProtectedRoute>
+            )
+          },
+
+          // users
+          { 
+            path: ":branchId/admin", 
+            element: (
+              <ProtectedRoute allowedRoles={['clinic_admin']}>
+                <AdminDashboardLayout />,
+              </ProtectedRoute>
+            ),
+            children: [
+              { index: true, element: <AdminDashboard /> },
+              { path: "select-plan", element: <SelectPlans /> },
+              // main dashboard
+              { path: "dashboard", element: <AdminDashboard /> },
+            ]
+          }
         ]
       }
     ]
-  }
-], {
-  basename: "/clinic" 
-});
+  },
+]);
+

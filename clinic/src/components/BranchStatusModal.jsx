@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../hooks/useUI';
 // utils
 import wait from '../utils/wait';
 import { authFetch } from '../utils/authFetch'
@@ -11,12 +12,11 @@ import { validRoleToken } from '../utils/validRoleToken';
 import Input from './Input';
 import InputImage from './InputImage';
 import Button from './Button';
-import FullScreenLoader from './FullLoader';
 // icons
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2, HiXCircle } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
-import { IoLogOut, IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
+import { IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
 import { FaCircleInfo, FaCircleCheck } from "react-icons/fa6";
 
 
@@ -45,10 +45,10 @@ const initialFormState = {
 
 export default function BranchStatusModal({ branch, onClose, onSuccess}) {
   const navigate = useNavigate();
+  const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState('')
+  const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState();
 
 
@@ -74,7 +74,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
   };
 
   const checkAccess = async (isManualRefresh = false) => {
-    if (isManualRefresh) setLoading(true);
+    if (isManualRefresh) showLoader();
 
     try {
       // check role
@@ -143,7 +143,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
     } catch(err) {
       if(isManualRefresh) toast.error("Failed to refresh status.");
     } finally {
-      if(isManualRefresh) setLoading(false);
+      if(isManualRefresh) hideLoader();
     }
   };
 
@@ -259,14 +259,14 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    showLoader();
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
     if(Object.keys(validationErrors).length > 0) {
       await wait(1000);
       toast.error("Please fill in all required fields correctly.");
-      setLoading(false);
+      hideLoader();
       return;  
     }
 
@@ -274,13 +274,11 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
     // append to form data
     const formData = new FormData();
 
-    console.log("Target Branch ID:", branch?.branch_id);
-
     if(branch?.branch_id) {
       formData.append('branch_id', branch.branch_id);
     } else {
       toast.error("Branch ID not found");
-      setLoading(false);
+      hideLoader();
       return;
     } 
 
@@ -298,7 +296,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
 
       if(!res.success) {
         toast.error("Something went wrong")
-        setLoading(false);
+        hideLoader();
         return;
       }
       toast.success("Clinic details successfully updated!");
@@ -307,7 +305,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
     } catch(error) {
       toast.error("Something went wrong");
     }
-    setLoading(false);
+    hideLoader();
   };
 
 
@@ -659,9 +657,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
               <Button 
                 type="submit" 
                 variant="primary" 
-                className="w-full lg:w-[200px] cursor-pointer"
-                load={loading}
-              >
+                className="w-full lg:w-[200px] cursor-pointer"              >
                 Update your clinic
               </Button>
 
@@ -670,19 +666,14 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
                 variant="secondary" 
                 className="w-full lg:w-[200px] cursor-pointer flex gap-1 items-center justify-center"
                 onClick={() => checkAccess(true)}
-                load={loading}
               >
-                <IoRefreshOutline size={18} className={loading ? "animate-spin" : ""} />
+                <IoRefreshOutline size={18} />
                 Refresh status
               </Button>
             </div>
           </form>
         </div>
-
-        {loading && <FullScreenLoader />}
-      </motion.div>   
-
-      <ToastContainer position="top-right" autoClose={3000} />    
+      </motion.div>     
     </>
   )
 }

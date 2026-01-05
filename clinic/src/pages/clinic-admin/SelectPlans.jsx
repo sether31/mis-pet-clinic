@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../../hooks/useUI'
 // components
 import { authFetch } from '../../utils/authFetch';
-import FullScreenLoader from '../../components/FullLoader';
 // icons
 import { HiCheck, HiXCircle, HiXMark } from "react-icons/hi2";
 
@@ -30,19 +30,18 @@ const cardVariants = {
 };
 
 export default function SelectPlans() {
+  const { showLoader, hideLoader } = useUI();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('Loading...');
   const [subscriptions, setSubscriptions] = useState([]);
 
   useEffect(() => {
     const fetchSubscription = async () => {
-      setLoading(true);
+      showLoader();
       try {
         const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-active-plans.php`, {}, ['clinic_admin']);
         if(!response.success) {
           toast.error("Something went wrong");
-          setLoading(false);
+          hideLoader();
           return;
         }
         setSubscriptions(response.data);
@@ -50,7 +49,7 @@ export default function SelectPlans() {
         console.error("Error fetching branches:", err);
         toast.error("Something went wrong");
       } finally {
-        setLoading(false);
+        hideLoader();
       }
     }
 
@@ -58,7 +57,7 @@ export default function SelectPlans() {
   }, [])
 
   const handleClose = () => {
-    navigate("/select-branch")
+    navigate("/clinic/select-branch")
   }
 
   return (
@@ -82,7 +81,7 @@ export default function SelectPlans() {
           <p className="mt-1 text-lg text-gray-500">Choose a plan to activate your clinic branch features.</p>
         </div>
 
-        {!loading && subscriptions.length > 0 && (
+        {subscriptions.length > 0 && (
           <motion.div 
             variants={containerVariants}
             initial="hidden"
@@ -97,7 +96,7 @@ export default function SelectPlans() {
                   className="flex flex-col p-8 transition-all bg-white border border-gray-300 shadow-sm rounded-xl hover:border-(--clr-primary) hover:shadow-(--clr-primary) hover:scale-105 ease-in-out duration-300"
                 >
                   <div className="mb-8">
-                    <h2 className="text-xl font-bold">{sub.name}</h2>
+                    <h2 className="text-xl font-bold capitalize">{sub.name}</h2>
                     <div className="flex items-baseline mt-4">
                       <span className="text-4xl font-extrabold">₱{sub.price}</span>
                       <span className="ml-1 text-sm font-medium text-gray-500">/ {sub.duration_months} mo</span>
@@ -152,9 +151,6 @@ export default function SelectPlans() {
           </motion.div>
         )}
       </div>
-
-      <ToastContainer position="top-right" autoClose={3000} />
-      {loading && <FullScreenLoader message={loadingMessage} />}
     </>
   );
 }

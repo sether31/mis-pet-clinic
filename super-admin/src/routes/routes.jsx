@@ -1,20 +1,22 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
-// protected route component
+// components
 import ProtectedRoute from "../components/ProtectedRoute";
 // context
 import UserProvider from "../contexts/UserProvider";
 import UIProvider from "../contexts/UiProvider";
+// layout
+import DashboardLayout from "../layouts/DashboardLayout";
 // pages
+  // auth
 import NotFound from "../pages/NotFound";
 import Login from "../pages/auth/Login";
-import DashboardLayout from "../layouts/DashboardLayout";
+  // main
 import Dashboard from "../pages/dashboard/Dashboard";
 import ClinicApplications from "../pages/dashboard/ClinicApplications";
 import RegisteredClinics from "../pages/dashboard/RegisteredClinics";
 import PlatformAnalytics from "../pages/dashboard/PlatformAnalytics";
 import NotFoundDashboard from "../pages/dashboard/NotFoundDashboard";
 import SubscriptionPlans from "../pages/dashboard/SubscriptionPlans"
-
 
 
 export const routes = createBrowserRouter([
