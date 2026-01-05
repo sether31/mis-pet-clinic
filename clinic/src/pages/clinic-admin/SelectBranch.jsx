@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../../hooks/useUI'
 // utils
 import wait from '../../utils/wait';
 import { clearSession } from '../../utils/clearSession';
 // components
 import { authFetch } from '../../utils/authFetch';
-import FullScreenLoader from '../../components/FullLoader';
+
 import Button from '../../components/Button';
 // icons
 import { HiOutlineBuildingOffice2, HiPlus, HiArrowRight } from "react-icons/hi2";
@@ -21,9 +22,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function SelectBranch() {
   const navigate = useNavigate();
+  const { showLoader, hideLoader } = useUI();
   const [branches, setBranches] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('loading');
   const [activeTab, setActiveTab] = useState('approved'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(null);
@@ -37,7 +37,7 @@ export default function SelectBranch() {
   ];
 
   const fetchBranches = useCallback(async () => {
-    setLoading(true);
+    showLoader();
     try {
       const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-branches.php`, {}, ['clinic_admin']);
       if(!response.success) {
@@ -49,7 +49,7 @@ export default function SelectBranch() {
       console.error("Error fetching branches:", err);
       toast.error("Something went wrong");
     } finally {
-      setLoading(false);
+      hideLoader();
     } 
   }, []);
 
@@ -77,8 +77,7 @@ export default function SelectBranch() {
   const handleSelect = async (branch) => {
     // approve branch
     if(activeTab === 'approved') {
-      setLoading(true);
-      setLoadingMessage('Checking...')
+      showLoader("Checking...")
 
       try {
         const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/check-subscription-history.php`, {
@@ -96,11 +95,13 @@ export default function SelectBranch() {
         }
 
         // regardless if expired or rejected go to dashboard
-        setLoadingMessage('Redirecting to dashboard...');
+        showLoader("Checking...")
         navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
       } catch(error) {
         toast.error("Failed to verify branch status.");
-        setLoading(false);
+        hideLoader();
+      } finally {
+        hideLoader();
       }
 
       // suspended
@@ -117,10 +118,10 @@ export default function SelectBranch() {
   }
 
   const handleLogout = async () => {
-    setLoading(true);
-    setLoadingMessage('Logging out...')
+    showLoader("Logging out...");
     await wait(1500);
     clearSession();
+    hideLoader();
     navigate('/clinic/login', { replace: true });
   };
 
@@ -235,9 +236,6 @@ export default function SelectBranch() {
           )}
         </section>
       </div>
-
-      <ToastContainer position="top-right" autoClose={3000} />
-      {loading && <FullScreenLoader message={loadingMessage} />}
 
       <AnimatePresence>
         {isModalOpen && (

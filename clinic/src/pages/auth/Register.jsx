@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../../hooks/useUI';
 // utils
 import { validateEmail } from '../../utils/validateEmail'
 import wait from '../../utils/wait';
@@ -10,17 +11,14 @@ import wait from '../../utils/wait';
 import Input from '../../components/Input';
 import InputImage from '../../components/InputImage';
 import Button from '../../components/Button';
-import FullScreenLoader from '../../components/FullLoader';
 import OTPInput from '../../components/OtpInput';
 // icons
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { IoPersonOutline } from "react-icons/io5";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
-import { MdFormatBold } from 'react-icons/md';
 
 const API_URL = import.meta.env.VITE_API_URL;
-
 const initialFormState = {
   clinicName: '',
   completeAddress: '',
@@ -49,11 +47,11 @@ const initialFormState = {
 }
 
 export default function Register() {
+  const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [showOTP, setShowOTP] = useState(false); 
   const [tempUserId, setTempUserId] = useState(null); 
-  const [loading, setLoading] = useState(false);
 
   const inputLabels = {
     clinicName: "Clinic Name",
@@ -225,7 +223,7 @@ export default function Register() {
     });
 
     // check email
-    if(form.email && !ValidateEmail(form.email)) {
+    if(form.email && !validateEmail(form.email)) {
       newErrors.email = "Invalid email.";
     }
   
@@ -260,14 +258,14 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    showLoader("Submitting...")
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
     if(Object.keys(validationErrors).length > 0) {
       await wait(1000);
       toast.error("Please fill in all required fields correctly.");
-      setLoading(false);
+      hideLoader();
       return;  
     }
 
@@ -286,7 +284,7 @@ export default function Register() {
         } else {
           toast.error(data.message);
         }
-        setLoading(false);
+        hideLoader();
         return;
       }
       toast.success("OTP was sent to your email");
@@ -296,12 +294,12 @@ export default function Register() {
       console.log("OTP verify error:", error);
       toast.error("Something went wrong");
     }
-    setLoading(false);
+    hideLoader();
   };
 
   // OTP verification
   const handleOTPComplete = async (otp) => {
-    setLoading(true);
+    showLoader("Verifying...")
 
     const fd = new FormData();
     fd.append("temp_user_id", tempUserId);
@@ -331,7 +329,7 @@ export default function Register() {
         setErrors(prev => ({ ...prev, otp: '' }));
         // reset form
         setForm(initialFormState);
-        setLoading(false);
+        hideLoader();
         setShowOTP(false);
       } else {
         setErrors(prev => ({ ...prev, otp: data.message }));
@@ -342,7 +340,7 @@ export default function Register() {
       toast.error("Something went wrong");
     }
 
-    setLoading(false);
+    hideLoader();
   };
 
 
@@ -688,7 +686,7 @@ export default function Register() {
                           value={service}
                           checked={form.services.includes(service)}
                           onChange={handleChange}
-                          className='accent-[var(--clr-primary)]'
+                          className='accent-(--clr-primary)'
                         />
                         {' '} {serviceLabels[service]}
                       </label>
@@ -739,11 +737,7 @@ export default function Register() {
             error={errors.otp} 
           />
         )}
-
-        {loading && <FullScreenLoader />}
       </div>   
-
-      <ToastContainer position="top-right" autoClose={3000} />
       
       <motion.div
         className="h-screen w-screen bg-(--clr-primary) fixed top-0 z-100 hidden lg:block overflow-hidden"

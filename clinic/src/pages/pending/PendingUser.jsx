@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../../hooks/useUI';
 // utils
 import wait from '../../utils/wait';
 import { authFetch } from '../../utils/authFetch'
@@ -18,6 +19,7 @@ import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
 import { IoLogOut, IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
 import { FaCircleInfo, FaCircleCheck } from "react-icons/fa6";
+
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -46,12 +48,12 @@ const initialFormState = {
 }
 
 export default function PendingUser() {
+  const navigate = useNavigate();
+  const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState('')
+  const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState();
-  const navigate = useNavigate()
 
   const inputLabels = {
     clinicName: "Clinic Name",
@@ -77,7 +79,7 @@ export default function PendingUser() {
   };
 
   const checkAccess = async (isManualRefresh = false) => {
-    if (isManualRefresh) setLoading(true);
+    if(isManualRefresh) showLoader();
 
     try {
       // check role
@@ -117,12 +119,14 @@ export default function PendingUser() {
         // check if user status updated on server side
         if(user.status === 'approved' && clinic.status === 'approved') {
           setStatus("approved");
+          showLoader("Logging in...");
           toast.success("Your account has been approved!");
 
           if(new_token) {
             localStorage.setItem('access_token', new_token);
           }
           await wait(2000);
+          hideLoader();
           navigate('/clinic/select-branch', { replace: true });
           return;
         }
@@ -171,7 +175,7 @@ export default function PendingUser() {
     } catch(err) {
       if(isManualRefresh) toast.error("Failed to refresh status.");
     } finally {
-      if (isManualRefresh) setLoading(false);
+      if (isManualRefresh) hideLoader();
     }
   };
 
@@ -289,14 +293,14 @@ export default function PendingUser() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    showLoader("Submitting...")
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
     if(Object.keys(validationErrors).length > 0) {
       await wait(1000);
       toast.error("Please fill in all required fields correctly.");
-      setLoading(false);
+      hideLoader();
       return;  
     }
 
@@ -317,7 +321,7 @@ export default function PendingUser() {
 
       if(!res.success) {
         toast.error("Something went wrong")
-        setLoading(false);
+        hideLoader();
         return;
       }
       toast.success("Clinic details successfully updated!");
@@ -326,15 +330,16 @@ export default function PendingUser() {
     } catch(error) {
       toast.error("Something went wrong");
     }
-    setLoading(false);
+    hideLoader();
   };
 
   const handleLogout = async () => {
-    setLoading(true);
+    showLoader("Logging out...")
     toast.info("Logging out...");
     localStorage.clear(); 
     await wait(1200);
-    navigate('/login', { replace: true });
+    hideLoader();
+    navigate('/clinic/login', { replace: true });
   };
 
 
@@ -350,7 +355,6 @@ export default function PendingUser() {
             variant="secondary" 
             className="flex items-center justify-center gap-1 cursor-pointer w-max"
             onClick={handleLogout}
-            load={loading}
           >
             <IoLogOut />
             Logout
@@ -383,333 +387,327 @@ export default function PendingUser() {
         
         {/* check feedback */}
         <div className="mb-8">
-        {status === "approved" ? (
-          <div className="p-4 border-l-4 border-green-500 bg-green-50">
-            <div className="flex items-center gap-2 mb-2 text-green-700">
-              <FaCircleCheck size={20} />
-              <h3 className="text-lg font-bold">Verification Successful</h3>
-            </div>
-            <p className="text-sm font-medium text-(--clr-text-header)">
-              Your clinic has been approved! Redirecting you to select branch...
-            </p>
-          </div>
-        ) : status === "rejected" ? (
-          <div className="p-4 border-l-4 border-red-400 bg-red-50">
-            <div className="flex items-center gap-2 mb-2 text-red-700">
-              <IoWarningOutline size={20} />
-              <h3 className="text-lg font-bold">Action Required: Verification Issue</h3>
-            </div>
-            <p className="text-sm font-medium text-red-800">
-              Reason: {feedback || "Please review your documents and resubmit."}
-            </p>
-          </div>
-        ) : (
-          <div className="p-4 border-l-4 bg-amber-50 border-amber-200">
-            <div className="flex items-center gap-2 mb-2 text-amber-700">
-              <FaCircleInfo size={20} />
-              <h3 className="text-lg font-bold">Verification In Progress</h3>
-            </div>
-            <p className="text-sm font-medium text-amber-800">
-              Hello, we are currently verifying your data. You can update your details below if you noticed any mistakes.
-            </p>
-          </div>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <section className='grid gap-4'>
-          {/* Clinic Information */}
-          <div className='pb-8 mb-5 border-gray-300 border-b'>
-            <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-              <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
-              <span>Clinic Information</span>
-            </h1>
-            
-            <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-              <Input
-                value={form.clinicName}
-                label="Clinic Name"
-                labelStyle="mb-1 ml-1"
-                id="clinicName"
-                name="clinicName"
-                isImportant={true}
-                placeholder="Enter your clinic name"
-                onChange={handleChange}
-                error={errors.clinicName}
-              />
-
-              <Input
-                value={form.completeAddress}
-                label="Complete Address"
-                labelStyle="mb-1 ml-1"
-                id="completeAddress"
-                name="completeAddress"
-                isImportant={true}
-                placeholder="Street, Barangay, Building No., etc."
-                onChange={handleChange}
-                error={errors.completeAddress}
-              />
-
-              <Input
-                value={form.municipality}
-                label="City/Municipality"
-                labelStyle="mb-1 ml-1"
-                id="municipality"
-                name="municipality"
-                isImportant={true}
-                placeholder="Binangonan"
-                onChange={handleChange}
-                error={errors.municipality}
-              />
-
-              <Input
-                value={form.province}
-                label="Province"
-                labelStyle="mb-1 ml-1"
-                id="province"
-                name="province"
-                isImportant={true}
-                placeholder="Rizal"
-                onChange={handleChange}
-                error={errors.province}
-              />
-
-              
-              <Input
-                value={form.zipCode}
-                label="Zip Code"
-                labelStyle="mb-1 ml-1"
-                id="zipCode"
-                name="zipCode"
-                isImportant={true}
-                placeholder="Rizal"
-                onChange={handleChange}
-                error={errors.zipCode}
-              />
-
-              <Input
-                value={form.est}
-                label="Year Establish"
-                labelStyle="mb-1 ml-1"
-                id="est"
-                name="est"
-                isImportant={true}
-                placeholder="2025"
-                onChange={handleChange}
-                error={errors.est}
-              />
-
-              <div className='mb-4'>
-                <label htmlFor='clinicDescription' className='ml-1 text-base font-medium text-gray-700'>
-                  Clinic Description {' '}
-                  <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={form.clinicDescription} 
-                  id="clinicDescription"
-                  name="clinicDescription"
-                  className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
-                    ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
-                    ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
-                  `}
-                  placeholder="Brief description of your clinic, specialization, and what makes you unique..."
-                  onChange={handleChange} 
-                ></textarea>
-                {(errors.clinicDescription && errors.clinicDescription !== "valid") && (
-                  <p className="flex items-center text-sm text-red-500">
-                    <HiMiniExclamationCircle size={16} />
-                    {errors.clinicDescription}
-                  </p>
-                )}
+          {status === "approved" ? (
+            <div className="p-4 border-l-4 border-green-500 bg-green-50">
+              <div className="flex items-center gap-2 mb-2 text-green-700">
+                <FaCircleCheck size={20} />
+                <h3 className="text-lg font-bold">Verification Successful</h3>
               </div>
-
-              <div>
-                <Input
-                  value={form.website}
-                  label="Website"
-                  labelStyle="mb-1 ml-1"
-                  id="website"
-                  name="website"
-                  isOptional={true}
-                  placeholder="https://www.clinic.com"
-                  onChange={handleChange}
-                  error={errors.website}
-                />
-
-                <Input
-                  value={form.facebook}
-                  label="Facebook"
-                  labelStyle="mb-1 ml-1"
-                  id="facebook"
-                  name="facebook"
-                  isOptional={true}
-                  placeholder="https://facebook.com/"
-                  onChange={handleChange}
-                  error={errors.facebook}
-                />
-              </div>
-            </div>
-          </div>
-
-
-          {/* Business & licensing Information */}
-          <div className='pb-8 mb-5 border-gray-300 border-b-1'>
-            <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-              <CiCreditCard1 className='text-(--clr-text-header)' />
-              <span>Business & licensing Information</span>
-            </h1>
-            <div className='flex items-center gap-2 p-3 mb-6 text-sm font-medium text-blue-800 border border-blue-100 rounded-lg bg-blue-50'>
-              <FaCircleInfo />
-              <p>
-                Security Requirement: Please re-upload your document images for every update to ensure data integrity.
+              <p className="text-sm font-medium text-(--clr-text-header)">
+                Your clinic has been approved! Redirecting you to select branch...
               </p>
             </div>
-            <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-              <InputImage
-                label="Tin Number Picture"
-                name="tinNumberPic"
-                required={true}
-                onChange={handleChange}
-                error={errors.tinNumberPic}
-              />
-
-              <Input
-                value={form.tinNumber}
-                label="Tin Number"
-                labelStyle="mb-1 ml-1"
-                id="tinNumber"
-                isImportant={true}
-                name="tinNumber"
-                placeholder="123-456-789-000"
-                onChange={handleChange}
-                error={errors.tinNumber}
-              />
-
-              <InputImage
-                label="Business Permit Picture"
-                name="businessPermitPic"
-                required={true}
-                onChange={handleChange}
-                error={errors.businessPermitPic}
-              />
-
-              <Input
-                value={form.businessPermitNumber}
-                label="Business Permit Number"
-                labelStyle="mb-1 ml-1"
-                id="businessPermitNumber"
-                isImportant={true}
-                name="businessPermitNumber"
-                placeholder="BP-2025-12345"
-                onChange={handleChange}
-                error={errors.businessPermitNumber}
-              />
-
-              <InputImage
-                label="Veterinarian License Picture"
-                name="vetLicensePic"
-                required={true}
-                onChange={handleChange}
-                error={errors.vetLicensePic}
-              />
-
-              <Input
-                value={form.vetLicenseNumber}
-                label="Veterinarian License Number"
-                labelStyle="mb-1 ml-1"
-                id="vetLicenseNumber"
-                isImportant={true}
-                name="vetLicenseNumber"
-                placeholder="12345"
-                onChange={handleChange}
-                error={errors.vetLicenseNumber}
-              />
+          ) : status === "rejected" ? (
+            <div className="p-4 border-l-4 border-red-400 bg-red-50">
+              <div className="flex items-center gap-2 mb-2 text-red-700">
+                <IoWarningOutline size={20} />
+                <h3 className="text-lg font-bold">Action Required: Verification Issue</h3>
+              </div>
+              <p className="text-sm font-medium text-red-800">
+                Reason: {feedback || "Please review your documents and resubmit."}
+              </p>
             </div>
-          </div>
-            
-          {/* Operations */}
-          <div className='pb-8 mb-5 border-gray-300 border-b-1'>
-            <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-              <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
-              <span>Operating Hours</span>
-            </h1>
-            <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
-              <div className='flex flex-col gap-4 sm:flex-row'>
+          ) : (
+            <div className="p-4 border-l-4 bg-amber-50 border-amber-200">
+              <div className="flex items-center gap-2 mb-2 text-amber-700">
+                <FaCircleInfo size={20} />
+                <h3 className="text-lg font-bold">Verification In Progress</h3>
+              </div>
+              <p className="text-sm font-medium text-amber-800">
+                Hello, we are currently verifying your data. You can update your details below if you noticed any mistakes.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <section className='grid gap-4'>
+            {/* Clinic Information */}
+            <div className='pb-8 mb-5 border-gray-300 border-b'>
+              <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
+                <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
+                <span>Clinic Information</span>
+              </h1>
+              
+              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
                 <Input
-                  value={form.clinicStartTime} 
-                  type='time'
-                  label="Operating hours start time"
+                  value={form.clinicName}
+                  label="Clinic Name"
                   labelStyle="mb-1 ml-1"
-                  id="clinicStartTime"
-                  isOptional={true}
-                  name="clinicStartTime"
-                  placeholder="6:00 AM"
+                  id="clinicName"
+                  name="clinicName"
+                  isImportant={true}
+                  placeholder="Enter your clinic name"
                   onChange={handleChange}
-                  error={errors.clinicStartTime}
+                  error={errors.clinicName}
                 />
+
                 <Input
-                  value={form.clinicEndTime} 
-                  type='time'
-                  label="Operating hours end time"
+                  value={form.completeAddress}
+                  label="Complete Address"
                   labelStyle="mb-1 ml-1"
-                  id="clinicEndTime"
-                  isOptional={true}
-                  name="clinicEndTime"
-                  placeholder="10:00 PM"
+                  id="completeAddress"
+                  name="completeAddress"
+                  isImportant={true}
+                  placeholder="Street, Barangay, Building No., etc."
                   onChange={handleChange}
-                  error={errors.clinicEndTime}
+                  error={errors.completeAddress}
+                />
+
+                <Input
+                  value={form.municipality}
+                  label="City/Municipality"
+                  labelStyle="mb-1 ml-1"
+                  id="municipality"
+                  name="municipality"
+                  isImportant={true}
+                  placeholder="Binangonan"
+                  onChange={handleChange}
+                  error={errors.municipality}
+                />
+
+                <Input
+                  value={form.province}
+                  label="Province"
+                  labelStyle="mb-1 ml-1"
+                  id="province"
+                  name="province"
+                  isImportant={true}
+                  placeholder="Rizal"
+                  onChange={handleChange}
+                  error={errors.province}
+                />
+
+                
+                <Input
+                  value={form.zipCode}
+                  label="Zip Code"
+                  labelStyle="mb-1 ml-1"
+                  id="zipCode"
+                  name="zipCode"
+                  isImportant={true}
+                  placeholder="Rizal"
+                  onChange={handleChange}
+                  error={errors.zipCode}
+                />
+
+                <Input
+                  value={form.est}
+                  label="Year Establish"
+                  labelStyle="mb-1 ml-1"
+                  id="est"
+                  name="est"
+                  isImportant={true}
+                  placeholder="2025"
+                  onChange={handleChange}
+                  error={errors.est}
+                />
+
+                <div className='mb-4'>
+                  <label htmlFor='clinicDescription' className='ml-1 text-base font-medium text-gray-700'>
+                    Clinic Description {' '}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={form.clinicDescription} 
+                    id="clinicDescription"
+                    name="clinicDescription"
+                    className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
+                      ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
+                      ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
+                    `}
+                    placeholder="Brief description of your clinic, specialization, and what makes you unique..."
+                    onChange={handleChange} 
+                  ></textarea>
+                  {(errors.clinicDescription && errors.clinicDescription !== "valid") && (
+                    <p className="flex items-center text-sm text-red-500">
+                      <HiMiniExclamationCircle size={16} />
+                      {errors.clinicDescription}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Input
+                    value={form.website}
+                    label="Website"
+                    labelStyle="mb-1 ml-1"
+                    id="website"
+                    name="website"
+                    isOptional={true}
+                    placeholder="https://www.clinic.com"
+                    onChange={handleChange}
+                    error={errors.website}
+                  />
+
+                  <Input
+                    value={form.facebook}
+                    label="Facebook"
+                    labelStyle="mb-1 ml-1"
+                    id="facebook"
+                    name="facebook"
+                    isOptional={true}
+                    placeholder="https://facebook.com/"
+                    onChange={handleChange}
+                    error={errors.facebook}
+                  />
+                </div>
+              </div>
+            </div>
+
+
+            {/* Business & licensing Information */}
+            <div className='pb-8 mb-5 border-gray-300 border-b'>
+              <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
+                <CiCreditCard1 className='text-(--clr-text-header)' />
+                <span>Business & licensing Information</span>
+              </h1>
+              <div className='flex items-center gap-2 p-3 mb-6 text-sm font-medium text-blue-800 border border-blue-100 rounded-lg bg-blue-50'>
+                <FaCircleInfo />
+                <p>
+                  Security Requirement: Please re-upload your document images for every update to ensure data integrity.
+                </p>
+              </div>
+              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+                <InputImage
+                  label="Tin Number Picture"
+                  name="tinNumberPic"
+                  required={true}
+                  onChange={handleChange}
+                  error={errors.tinNumberPic}
+                />
+
+                <Input
+                  value={form.tinNumber}
+                  label="Tin Number"
+                  labelStyle="mb-1 ml-1"
+                  id="tinNumber"
+                  isImportant={true}
+                  name="tinNumber"
+                  placeholder="123-456-789-000"
+                  onChange={handleChange}
+                  error={errors.tinNumber}
+                />
+
+                <InputImage
+                  label="Business Permit Picture"
+                  name="businessPermitPic"
+                  required={true}
+                  onChange={handleChange}
+                  error={errors.businessPermitPic}
+                />
+
+                <Input
+                  value={form.businessPermitNumber}
+                  label="Business Permit Number"
+                  labelStyle="mb-1 ml-1"
+                  id="businessPermitNumber"
+                  isImportant={true}
+                  name="businessPermitNumber"
+                  placeholder="BP-2025-12345"
+                  onChange={handleChange}
+                  error={errors.businessPermitNumber}
+                />
+
+                <InputImage
+                  label="Veterinarian License Picture"
+                  name="vetLicensePic"
+                  required={true}
+                  onChange={handleChange}
+                  error={errors.vetLicensePic}
+                />
+
+                <Input
+                  value={form.vetLicenseNumber}
+                  label="Veterinarian License Number"
+                  labelStyle="mb-1 ml-1"
+                  id="vetLicenseNumber"
+                  isImportant={true}
+                  name="vetLicenseNumber"
+                  placeholder="12345"
+                  onChange={handleChange}
+                  error={errors.vetLicenseNumber}
                 />
               </div>
             </div>
-          </div>
-
-          <div className='p-4 bg-gray-200 rounded-md'>
-            <h1 className='mb-1 font-medium text-md'>TERMS & CONDITION</h1>
-            <div className='flex items-center gap-1'>
-              <input
-                type="checkbox"
-                name="agreeTerms"
-                checked={form.agreeTerms}
-                onChange={handleChange}
-                className='accent-(--clr-primary)'
-              />
-              <label htmlFor="emergency-service">I agree to terms and conditions</label>
+              
+            {/* Operations */}
+            <div className='pb-8 mb-5 border-gray-300 border-b'>
+              <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
+                <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
+                <span>Operating Hours</span>
+              </h1>
+              <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
+                <div className='flex flex-col gap-4 sm:flex-row'>
+                  <Input
+                    value={form.clinicStartTime} 
+                    type='time'
+                    label="Operating hours start time"
+                    labelStyle="mb-1 ml-1"
+                    id="clinicStartTime"
+                    isOptional={true}
+                    name="clinicStartTime"
+                    placeholder="6:00 AM"
+                    onChange={handleChange}
+                    error={errors.clinicStartTime}
+                  />
+                  <Input
+                    value={form.clinicEndTime} 
+                    type='time'
+                    label="Operating hours end time"
+                    labelStyle="mb-1 ml-1"
+                    id="clinicEndTime"
+                    isOptional={true}
+                    name="clinicEndTime"
+                    placeholder="10:00 PM"
+                    onChange={handleChange}
+                    error={errors.clinicEndTime}
+                  />
+                </div>
+              </div>
             </div>
-            {errors.agreeTerms && (
-              <p className="flex items-center mt-1 text-sm text-red-500">{errors.agreeTerms}</p>
-            )}
-            <p>By registering, you confirm that all information provided is accurate and that you agree to the platform’s rules, verification process, privacy policy, and acceptable use guidelines.</p>
+
+            <div className='p-4 bg-gray-200 rounded-md'>
+              <h1 className='mb-1 font-medium text-md'>TERMS & CONDITION</h1>
+              <div className='flex items-center gap-1'>
+                <input
+                  type="checkbox"
+                  name="agreeTerms"
+                  checked={form.agreeTerms}
+                  onChange={handleChange}
+                  className='accent-(--clr-primary)'
+                />
+                <label htmlFor="emergency-service">I agree to terms and conditions</label>
+              </div>
+              {errors.agreeTerms && (
+                <p className="flex items-center mt-1 text-sm text-red-500">{errors.agreeTerms}</p>
+              )}
+              <p>By registering, you confirm that all information provided is accurate and that you agree to the platform’s rules, verification process, privacy policy, and acceptable use guidelines.</p>
+            </div>
+          </section>
+
+          <div className="flex flex-col items-center gap-3 mt-8 md:flex-row">
+            <Button 
+              type="submit" 
+              variant="primary" 
+              className="w-full lg:w-[200px] cursor-pointer"
+            >
+              Update your clinic
+            </Button>
+
+            <Button 
+              type="button" 
+              variant="secondary" 
+              className="w-full lg:w-[200px] cursor-pointer flex gap-1 items-center justify-center"
+              onClick={() => checkAccess(true)}
+            >
+              <IoRefreshOutline />
+              Refresh status
+            </Button>
           </div>
-        </section>
-
-        <div className="flex flex-col items-center gap-3 mt-8 md:flex-row">
-          <Button 
-            type="submit" 
-            variant="primary" 
-            className="w-full lg:w-[200px] cursor-pointer"
-            load={loading}
-          >
-            Update your clinic
-          </Button>
-
-          <Button 
-            type="button" 
-            variant="secondary" 
-            className="w-full lg:w-[200px] cursor-pointer flex gap-1 items-center justify-center"
-            onClick={() => checkAccess(true)}
-            load={loading}
-          >
-            <IoRefreshOutline size={18} className={loading ? "animate-spin" : ""} />
-            Refresh status
-          </Button>
-        </div>
-      </form>
-
-
-        {loading && <FullScreenLoader />}
+        </form> 
       </div>   
 
-      <ToastContainer position="top-right" autoClose={3000} />    
       <motion.div
         className="h-screen w-screen bg-(--clr-primary) fixed top-0 z-100 hidden lg:block overflow-hidden"
         initial={{ y: 0 }}

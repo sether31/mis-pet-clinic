@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../../hooks/useUI';
 // utils
 import { validateEmail } from '../../utils/validateEmail'
 import { validRoleToken } from '../../utils/validRoleToken';
@@ -25,6 +26,8 @@ import { SlLock } from 'react-icons/sl';
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -37,9 +40,6 @@ export default function Login() {
   });
   const [showOTP, setShowOTP] = useState(false); 
   const [userId, setUserId] = useState(null); 
-  const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('Loading...');
-  const navigate = useNavigate();
 
   useEffect(() => {
     const checkToken = async () => {
@@ -54,8 +54,7 @@ export default function Login() {
           return;
         }
 
-        setLoading(true);
-        setLoadingMessage('Logging in...')
+        showLoader("Logging in...");
         await wait(2000);
 
         if(role === 'clinic_admin' && (status === 'pending' || status === 'rejected')) {
@@ -64,7 +63,7 @@ export default function Login() {
           navigate(getDashboardByRole(role), { replace: true });
         }
       } finally {
-        setLoading(false); 
+        hideLoader();
       }
     };
 
@@ -97,8 +96,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setLoadingMessage('Loading...');
+    showLoader();
 
     setErrors({ email: "", password: ""});
     
@@ -113,7 +111,7 @@ export default function Login() {
     }
     setErrors(newErrors);
     if(Object.keys(newErrors).length > 0) {
-      setLoading(false);
+      hideLoader();
       return;
     } 
 
@@ -134,25 +132,24 @@ export default function Login() {
           setErrors({ password: data.message });
         }
         toast.error(data.message);
-        setLoading(false);
+        hideLoader();
         return;
       }
 
       setUserId(data.user_id);
-      setLoading(false);
+      hideLoader();
       setShowOTP(true);
       toast.success(data.message);
     } catch(error) {
       console.log("Fetch error:", error);
       toast.error("Something went wrong");
     } finally{
-      setLoading(false);
+      hideLoader();
     }
   }
 
   const handleOTPComplete = async (otp) => {
-    setLoading(true);
-    setLoadingMessage('Verifying OTP...');
+    showLoader('Verifying OTP...');
 
     try {
       const res = await fetch(`${API_URL}/api/auth/login-otp.php`, {
@@ -164,7 +161,7 @@ export default function Login() {
 
       if(!data.success) {
         setErrors(prev => ({ ...prev, otp: data.message }));
-        setLoading(false);
+        hideLoader();
         toast.error(data.message);
         return;
       }
@@ -185,7 +182,7 @@ export default function Login() {
       console.log("OTP verify error:", error);
       toast.error('Something went wrong');
     } finally{
-      setLoading(false);
+      hideLoader();
     }
   };
 
@@ -274,7 +271,6 @@ export default function Login() {
                     type="submit" 
                     variant="primary" 
                     className="w-full mt-4 cursor-pointer"
-                    load={loading}
                   >
                     Login
                   </Button>
@@ -311,12 +307,6 @@ export default function Login() {
           setShowOTP={setShowOTP}
           error={errors.otp} 
         />
-      )}
-
-      <ToastContainer position="top-right" autoClose={3000} />
-
-      {loading && (
-        <FullScreenLoader message={loadingMessage} />
       )}
     </>
   )

@@ -1,6 +1,8 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 // components
 import ProtectedRoute from "../components/ProtectedRoute";
+// hooks
+import UIProvider from "../contexts/UiProvider";
 // layout
 import ClinicLayout from "../layouts/ClinicLayout";
 import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
@@ -15,10 +17,16 @@ import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";
 import SelectBranch from "../pages/clinic-admin/SelectBranch";
 import SelectPlans from "../pages/clinic-admin/SelectPlans";
 
+
 export const routes = createBrowserRouter([
   { path: "*", element: <NotFound /> },
   {
     path: "/clinic",
+    element: (
+      <UIProvider>
+        <Outlet />
+      </UIProvider>
+    ),
     children: [
       // auth
       { path: "login", element: <Login /> },
