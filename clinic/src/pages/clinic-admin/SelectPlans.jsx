@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 // hooks
@@ -30,8 +30,9 @@ const cardVariants = {
 };
 
 export default function SelectPlans() {
-  const { showLoader, hideLoader } = useUI();
   const navigate = useNavigate();
+  const { branchId } = useParams();
+  const { showLoader, hideLoader } = useUI();
   const [subscriptions, setSubscriptions] = useState([]);
 
   useEffect(() => {
@@ -56,8 +57,33 @@ export default function SelectPlans() {
     fetchSubscription();
   }, [])
 
+  const handleSelectPlan = async (sub) => {
+    showLoader();
+    try {
+      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/payments/subscription-payment.php`, {
+        method: 'POST',
+        body: JSON.stringify({
+          subscription_id: sub.subscription_id,
+          branch_id: branchId,
+          amount: sub.price,
+          plan_name: sub.name
+        })
+      }, ['clinic_admin']);
+
+      if(response.success && response.checkout_url) {
+        window.location.href = response.checkout_url;
+      } else {
+        toast.error("Something went wrong.");
+        hideLoader();
+      }
+    } catch(err) {
+      toast.error("Service unavailable");
+      hideLoader();
+    }
+  };
+
   const handleClose = () => {
-    navigate("/clinic/select-branch")
+    navigate("/clinic/select-branch");
   }
 
   return (
@@ -141,6 +167,7 @@ export default function SelectPlans() {
                   </ul>
 
                   <button
+                    onClick={() => handleSelectPlan(sub)}
                     className="mt-10 w-full py-3.5 bg-gray-900 text-white rounded-lg font-bold hover:bg-(--clr-primary) transition-colors active:scale-95 cursor-pointer duration-300 ease-in-out"
                   >
                     Select {sub.name} Plan

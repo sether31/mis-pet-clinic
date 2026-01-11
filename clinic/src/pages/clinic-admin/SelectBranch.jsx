@@ -80,23 +80,23 @@ export default function SelectBranch() {
       showLoader("Checking...")
 
       try {
+        await wait(1000);
         const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/check-subscription-history.php`, {
           method: 'POST',
           body: JSON.stringify({ branch_id: branch.branch_id })
         }, ['clinic_admin']);
 
         localStorage.setItem('active_clinic_id', branch.branch_id);
-
-        if(!res.hasSubHistory) {
+        console.log(res)
+        if(res && res.hasSubHistory === true) {
+          toast.info("Welcome");
+          await wait(500);
+          navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
+        } else {
           toast.info("Please select a subscription plan to get started.");
-          await wait(1000);
+          await wait(500);
           navigate(`/clinic/${branch.branch_id}/admin/select-plan`, { replace: true });
-          return;
         }
-
-        // regardless if expired or rejected go to dashboard
-        showLoader("Checking...")
-        navigate(`/clinic/${branch.branch_id}/admin/dashboard`, { replace: true });
       } catch(error) {
         toast.error("Failed to verify branch status.");
         hideLoader();

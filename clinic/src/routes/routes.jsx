@@ -16,6 +16,8 @@ import PendingUser from "../pages/pending/PendingUser";
 import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";
 import SelectBranch from "../pages/clinic-admin/SelectBranch";
 import SelectPlans from "../pages/clinic-admin/SelectPlans";
+import PaymentSuccess from "../pages/clinic-admin/payments/PaymentSuccess";
+import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
 
 
 export const routes = createBrowserRouter([
@@ -33,6 +35,22 @@ export const routes = createBrowserRouter([
       { path: "register", element: <Register /> },
       { path: "forgotPassword", element: "" },
       { path: "pending-user", element: <PendingUser />},
+      {
+        path: "payment-success",
+        element: (
+          <ProtectedRoute allowedRoles={['clinic_admin']}>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "payment-failed",
+        element: (
+          <ProtectedRoute allowedRoles={['clinic_admin']}>
+            <PaymentFailed />
+          </ProtectedRoute>
+        )
+      },
 
       // clinic layout
       {
