@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../config/Database.php';
-require_once __DIR__ . '/../../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 
 $decodedToken = validate_auth(['clinic_admin']);
 $adminId = $decodedToken->user_id;
@@ -30,7 +30,7 @@ try {
   }
 
   // full Path for to find the folder phy location
-  $physicalBaseDir = dirname(__DIR__, 3) . "/uploads/clinic/" . $branchId . "/";  
+  $physicalBaseDir = dirname(__DIR__, 4) . "/uploads/clinic/" . $branchId . "/";  
   // what will send to db
   $dbBaseDir = "uploads/clinic/" . $branchId . "/";
   $fileMapping = [
@@ -48,7 +48,7 @@ try {
       // fix deletion 
       $oldDbPath = $branch[$info['col']];
       // use the physical root to find the file on the hard drive
-      $oldPhysicalPath = dirname(__DIR__, 3) . "/" . $oldDbPath;
+      $oldPhysicalPath = dirname(__DIR__, 4) . "/" . $oldDbPath;
       if($oldDbPath && file_exists($oldPhysicalPath)) {
         unlink($oldPhysicalPath);
       }

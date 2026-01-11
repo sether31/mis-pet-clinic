@@ -41,7 +41,7 @@ export default function SelectPlans() {
       try {
         // check if branch is already activated
         const statusRes = await authFetch(
-          `${API_URL}/api/clinic/clinic-admin/verify-branch.php`, 
+          `${API_URL}/api/clinic/clinic-admin/branches/verify-branch.php`, 
           { 
             method: 'POST', 
             body: JSON.stringify({ branch_id: branchId }) 

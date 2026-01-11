@@ -39,7 +39,7 @@ export default function SelectBranch() {
   const fetchBranches = useCallback(async () => {
     showLoader();
     try {
-      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-branches.php`, {}, ['clinic_admin']);
+      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branches.php`, {}, ['clinic_admin']);
       if(!response.success) {
         toast.error("Something went wrong");
         return;
