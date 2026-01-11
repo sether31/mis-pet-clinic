@@ -81,13 +81,12 @@ export default function SelectBranch() {
 
       try {
         await wait(1000);
-        const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/check-subscription-history.php`, {
+        const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/check-subscription-history.php`, {
           method: 'POST',
           body: JSON.stringify({ branch_id: branch.branch_id })
         }, ['clinic_admin']);
 
         localStorage.setItem('active_clinic_id', branch.branch_id);
-        console.log(res)
         if(res && res.hasSubHistory === true) {
           toast.info("Welcome");
           await wait(500);

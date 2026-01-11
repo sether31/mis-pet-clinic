@@ -36,26 +36,39 @@ export default function SelectPlans() {
   const [subscriptions, setSubscriptions] = useState([]);
 
   useEffect(() => {
-    const fetchSubscription = async () => {
+    const guardNewUserOnly = async () => {
       showLoader();
       try {
-        const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-active-plans.php`, {}, ['clinic_admin']);
-        if(!response.success) {
-          toast.error("Something went wrong");
-          hideLoader();
+        // check if branch is already activated
+        const statusRes = await authFetch(
+          `${API_URL}/api/clinic/clinic-admin/verify-branch.php`, 
+          { 
+            method: 'POST', 
+            body: JSON.stringify({ branch_id: branchId }) 
+          }, 
+          ['clinic_admin']
+        );
+
+        // if already active
+        if(statusRes.success && statusRes.hasSubscription === true) {
+          navigate(`/clinic/${branchId}/admin/dashboard`);
           return;
         }
-        setSubscriptions(response.data);
+        // if not fetch the subscription plans
+        const plansRes = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/get-active-subscription.php`, {}, ['clinic_admin']);
+        
+        if(plansRes.success) {
+          setSubscriptions(plansRes.data);
+        }
       } catch(err) {
-        console.error("Error fetching branches:", err);
-        toast.error("Something went wrong");
+        navigate("/clinic/select-branch");
       } finally {
         hideLoader();
       }
     }
 
-    fetchSubscription();
-  }, [])
+    if (branchId) guardNewUserOnly();
+  }, [branchId]);
 
   const handleSelectPlan = async (sub) => {
     showLoader();
