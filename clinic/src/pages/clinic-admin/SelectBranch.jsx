@@ -205,6 +205,24 @@ export default function SelectBranch() {
                       {branch.status || branch.branch_status}
                     </span>
                   </div>
+
+                  {activeTab === 'approved' && branch.end_date && (
+                    <div className="mt-2 mb-4">
+                      {branch.days_left > 0 ? (
+                        <span className={`text-[11px] font-bold px-2 py-1 rounded-md border ${
+                          branch.days_left <= 7 
+                            ? 'bg-orange-50 text-orange-600 border-orange-200' 
+                            : 'bg-green-100 text-(--clr-text-header) border-green-200'
+                        }`}>
+                          {branch.days_left} DAYS LEFT
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-red-50 text-red-600 border border-red-200">
+                          SUBSCRIPTION EXPIRED
+                        </span>
+                      )}
+                    </div>
+                  )}
                   
                   <h3 className="mb-2 text-2xl font-bold leading-tight text-gray-900">{branch.name || branch.branch_name}</h3>
                   <p className="flex-1 text-sm leading-relaxed text-gray-500">
