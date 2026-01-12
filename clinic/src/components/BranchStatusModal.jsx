@@ -85,7 +85,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
       }
 
       // fetch data
-      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/get-branch-data.php`, 
+      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-data.php`, 
       {
         method: 'POST',
         body: JSON.stringify({ branch_id: branch.branch_id })
@@ -289,7 +289,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
     });
 
     try {
-      const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/update-new-branch.php`, {
+      const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/update-new-branch.php`, {
         method: "POST",
         body: formData
       }, ['clinic_admin']);

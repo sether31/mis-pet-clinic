@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../config/Database.php';
-require_once __DIR__ . '/../../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 
 // Validate clinic_admin session
 $admin = validate_auth(['clinic_admin']);

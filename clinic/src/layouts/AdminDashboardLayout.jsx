@@ -17,7 +17,7 @@ export default function AdminDashboardLayout() {
       try {
         setIsVerifying(true);
         
-        const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/verify-branch.php`, {
+        const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/verify-branch.php`, {
           method: 'POST',
           body: JSON.stringify({ branch_id: branchId })
         }, ['clinic_admin']);
