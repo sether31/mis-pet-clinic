@@ -206,16 +206,25 @@ export default function SelectBranch() {
                     </span>
                   </div>
 
-                  {activeTab === 'approved' && branch.end_date && (
+                  {activeTab === 'approved' && (
                     <div className="mt-2 mb-4">
-                      {branch.days_left > 0 ? (
+                      {!branch.end_date ? (
+                        // new branch no subscription yet
+                        <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-gray-100 text-gray-600 border border-gray-200">
+                          NO ACTIVE SUBSCRIPTION
+                        </span>
+                        
+                        /* active subscription */
+                      ) : branch.days_left > 0 ? (          
                         <span className={`text-[11px] font-bold px-2 py-1 rounded-md border ${
                           branch.days_left <= 7 
                             ? 'bg-orange-50 text-orange-600 border-orange-200' 
                             : 'bg-green-100 text-(--clr-text-header) border-green-200'
                         }`}>
-                          {branch.days_left} DAYS LEFT
+                          {branch.days_left} {branch.days_left === 1 ? 'DAY' : 'DAYS'} LEFT
                         </span>
+
+                        /* expired subcription */
                       ) : (
                         <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-red-50 text-red-600 border border-red-200">
                           SUBSCRIPTION EXPIRED
