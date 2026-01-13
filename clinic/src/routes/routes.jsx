@@ -69,7 +69,7 @@ export const routes = createBrowserRouter([
 
           // users
           { 
-            path: ":branchId/admin", 
+            path: ":branchId/portal", 
             element: (
               <ProtectedRoute allowedRoles={['clinic_admin']}>
                 <AdminDashboardLayout />,

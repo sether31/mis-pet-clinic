@@ -51,7 +51,7 @@ export default function SelectPlans() {
 
         // if already active
         if(statusRes.success && statusRes.hasSubscription === true) {
-          navigate(`/clinic/${branchId}/admin/dashboard`);
+          navigate(`/clinic/${branchId}/portal/dashboard`);
           return;
         }
         // if not fetch the subscription plans
