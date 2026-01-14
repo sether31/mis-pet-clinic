@@ -3,9 +3,11 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 // hooks
 import UIProvider from "../contexts/UiProvider";
+import UserProvider from "../contexts/UserProvider";
 // layout
 import ClinicLayout from "../layouts/ClinicLayout";
-import AdminDashboardLayout from "../layouts/AdminDashboardLayout";
+import BranchVerificationLayout from "../layouts/BranchVerificationLayout";
+import SidebarLayout from "../layouts/SidebarLayout";
 // pages
 import NotFound from "../pages/NotFound";
   // auth
@@ -13,11 +15,12 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import PendingUser from "../pages/pending/PendingUser";
   // clinic admin
-import AdminDashboard from "../pages/clinic-admin/dashboard/AdminDashboard";
+import AdminDashboard from "../pages/portal/dashboard/AdminDashboard";
 import SelectBranch from "../pages/clinic-admin/SelectBranch";
 import SelectPlans from "../pages/clinic-admin/SelectPlans";
 import PaymentSuccess from "../pages/clinic-admin/payments/PaymentSuccess";
 import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
+import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 
 
 export const routes = createBrowserRouter([
@@ -25,39 +28,27 @@ export const routes = createBrowserRouter([
   {
     path: "/clinic",
     element: (
-      <UIProvider>
-        <Outlet />
-      </UIProvider>
+      <UserProvider>
+        <UIProvider>
+          <Outlet />
+        </UIProvider>
+      </UserProvider>
     ),
     children: [
-      // auth
+      // authentication
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
       { path: "forgotPassword", element: "" },
-      { path: "pending-user", element: <PendingUser />},
-      {
-        path: "payment-success",
-        element: (
-          <ProtectedRoute allowedRoles={['clinic_admin']}>
-            <PaymentSuccess />
-          </ProtectedRoute>
-        )
-      },
-      {
-        path: "payment-failed",
-        element: (
-          <ProtectedRoute allowedRoles={['clinic_admin']}>
-            <PaymentFailed />
-          </ProtectedRoute>
-        )
-      },
+      { path: "pending-user", element: <PendingUser /> },
+      { path: "payment-success", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentSuccess /></ProtectedRoute> },
+      { path: "payment-failed", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentFailed /></ProtectedRoute> },
 
-      // clinic layout
+      // clinic
       {
         path: "",
         element: <ClinicLayout />,
         children: [
-          { index: true, element: <Navigate to="/select-branch" replace /> },
+          { index: true, element: <Navigate to="/clinic/select-branch" replace /> },
           {
             path: "select-branch",
             element: (
@@ -66,20 +57,30 @@ export const routes = createBrowserRouter([
               </ProtectedRoute>
             )
           },
-
-          // users
-          { 
-            path: ":branchId/portal", 
-            element: (
-              <ProtectedRoute allowedRoles={['clinic_admin']}>
-                <AdminDashboardLayout />,
-              </ProtectedRoute>
-            ),
+          {
+            path: ":branchId",
             children: [
-              { index: true, element: <AdminDashboard /> },
-              { path: "select-plan", element: <SelectPlans /> },
-              // main dashboard
-              { path: "dashboard", element: <AdminDashboard /> },
+              {
+                element: <BranchVerificationLayout />,
+                children: [
+                  { path: "select-plan", element: <SelectPlans /> },
+                ]
+              },
+
+              // user portal
+              {
+                path: "portal",
+                element: (
+                  <ProtectedRoute allowedRoles={['clinic_admin', 'staff', 'veterinarian', 'groomer']}>
+                    <SidebarLayout />
+                  </ProtectedRoute>
+                ),
+                children: [
+                  { index: true, element: <Navigate to="dashboard" replace /> },
+                  { path: "*", element: <NotFoundDashboard />},
+                  { path: "dashboard", element: <AdminDashboard /> },     
+                ]
+              }
             ]
           }
         ]
@@ -87,4 +88,3 @@ export const routes = createBrowserRouter([
     ]
   },
 ]);
-

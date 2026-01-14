@@ -94,7 +94,7 @@ export default function SelectBranch() {
         } else {
           toast.info("Please select a subscription plan to get started.");
           await wait(500);
-          navigate(`/clinic/${branch.branch_id}/portal/select-plan`, { replace: true });
+          navigate(`/clinic/${branch.branch_id}/select-plan`, { replace: true });
         }
       } catch(error) {
         toast.error("Failed to verify branch status.");
