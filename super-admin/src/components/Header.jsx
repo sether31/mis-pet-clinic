@@ -52,7 +52,6 @@ export default function Header() {
           </h2>
         </div>
 
-        {/* Right Side: Actions */}
         <div className='flex items-center gap-3'>
           <button className='p-2.5 rounded-xl bg-(--clr-black) text-(--clr-text-secondary) cursor-pointer hover:opacity-85 transition-all duration-300 relative group'>
             <MdOutlineNotifications size={20} />
