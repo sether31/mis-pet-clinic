@@ -8,7 +8,6 @@ import notFoundPic from '../assets/images/notFound.gif';
 export default function NotFound() {
   const auth = validRoleToken(); 
   const role = auth?.role;
-  console.log(role)
 
   const goHome = (role) => {
     switch(role) {

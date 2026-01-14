@@ -7,7 +7,7 @@ import FullScreenLoader from '../components/FullLoader';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function AdminDashboardLayout() {
+export default function BranchVerificationLayout() {
   const { branchId } = useParams();
   const navigate = useNavigate();
   const [isVerifying, setIsVerifying] = useState(true);

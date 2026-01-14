@@ -1,4 +1,4 @@
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 // hooks
 import { useUser } from '../hooks/useUser'
@@ -8,10 +8,6 @@ import { LuSettings } from "react-icons/lu";
 
 const links = [
   { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Clinic Applications', path: '/clinic-applications' },
-  { label: 'Registered Clinics', path: '/registered-clinics' },
-  { label: 'Subscription Plans', path : '/subscription-plans' },
-  { label: 'Platform Analytics', path: '/platform-analytics' }
 ];
 
 export default function Header() {
@@ -21,11 +17,16 @@ export default function Header() {
   const getPageTitle = () => {
     const path = location.pathname;
 
-    if(path === '/' || path === '/dashboard' || path === '/dashboard/') {
-      return 'Dashboard';
-    }
-    const match = links.find(item => item.path === path || `${item.path}/` === path);
-    return match ? match.label : 'Page Not Found';
+    // check if we are in dashboard or portal root
+    const isDashboard = path.endsWith('/portal') || path.endsWith('/portal/') || path.includes('/portal/dashboard');
+    
+    if (isDashboard) return 'Dashboard';
+
+    // check if have match
+    const match = links.find(item => path.includes(`/portal${item.path}`));
+    if (match) return match.label;
+
+    return 'Page Not Found'; 
   };
 
   const pageTitle = getPageTitle();
