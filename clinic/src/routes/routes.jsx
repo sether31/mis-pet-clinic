@@ -15,13 +15,15 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import PendingUser from "../pages/pending/PendingUser";
   // clinic admin
-import AdminDashboard from "../pages/portal/dashboard/AdminDashboard";
 import SelectBranch from "../pages/clinic-admin/SelectBranch";
 import SelectPlans from "../pages/clinic-admin/SelectPlans";
 import PaymentSuccess from "../pages/clinic-admin/payments/PaymentSuccess";
 import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
+  // portal
+import { DashboardSwitch } from "../pages/portal/dashboard/DashboardSwitch";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
+
 
 
 export const routes = createBrowserRouter([
@@ -79,7 +81,7 @@ export const routes = createBrowserRouter([
                 children: [
                   { index: true, element: <Navigate to="dashboard" replace /> },
                   { path: "*", element: <NotFoundDashboard />},
-                  { path: "dashboard", element: <AdminDashboard /> },     
+                  { path: "dashboard", element: <DashboardSwitch /> },     
                   { path: "staff-management", element: (
                     <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']}>
                       <StaffManagement />
