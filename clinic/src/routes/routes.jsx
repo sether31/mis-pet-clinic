@@ -21,6 +21,7 @@ import SelectPlans from "../pages/clinic-admin/SelectPlans";
 import PaymentSuccess from "../pages/clinic-admin/payments/PaymentSuccess";
 import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
+import StaffManagement from "../pages/portal/staff-management/StaffManagement";
 
 
 export const routes = createBrowserRouter([
@@ -71,7 +72,7 @@ export const routes = createBrowserRouter([
               {
                 path: "portal",
                 element: (
-                  <ProtectedRoute allowedRoles={['clinic_admin', 'staff', 'veterinarian', 'groomer']}>
+                  <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']}>
                     <SidebarLayout />
                   </ProtectedRoute>
                 ),
@@ -79,6 +80,11 @@ export const routes = createBrowserRouter([
                   { index: true, element: <Navigate to="dashboard" replace /> },
                   { path: "*", element: <NotFoundDashboard />},
                   { path: "dashboard", element: <AdminDashboard /> },     
+                  { path: "staff-management", element: (
+                    <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']}>
+                      <StaffManagement />
+                    </ProtectedRoute>
+                  ) }, 
                 ]
               }
             ]

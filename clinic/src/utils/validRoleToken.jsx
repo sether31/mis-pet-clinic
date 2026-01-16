@@ -1,7 +1,7 @@
 import { jwtDecode } from 'jwt-decode';
 
 export function validRoleToken(allowedRoles = [
-  'clinic_admin', 'staff', 'veterinarian', 'groomer'
+  'clinic_admin', 'branch_admin', 'staff', 'veterinarian', 'groomer'
 ]) {
   const token = localStorage.getItem('access_token');
   if(!token) return null;
