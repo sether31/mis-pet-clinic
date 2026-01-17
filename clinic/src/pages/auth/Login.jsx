@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
+import { jwtDecode } from 'jwt-decode';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../hooks/useUI';
+import { useUser } from '../../hooks/useUser';
 // utils
 import { validateEmail } from '../../utils/validateEmail'
 import { validRoleToken } from '../../utils/validRoleToken';
-import getDashboardByRole from '../../utils/getDashboardByRole';
 import wait from '../../utils/wait';
 // components
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
-import FullScreenLoader from '../../components/FullLoader';
 // image
 import loginPic from '../../assets/images/login-pic.png';
 // icons
@@ -21,13 +21,12 @@ import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
 
 
-
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login() {
   const navigate = useNavigate();
   const { showLoader, hideLoader } = useUI();
+  const { setUser } = useUser();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -47,20 +46,26 @@ export default function Login() {
         const user = validRoleToken();
         if(!user) return;
 
-        const { role, status } = user;
-
-        if(!getDashboardByRole(role)) {
-          localStorage.clear();
-          return;
-        }
+        const { role, status, branch_id } = user;
 
         showLoader("Logging in...");
         await wait(2000);
 
-        if(role === 'clinic_admin' && (status === 'pending' || status === 'rejected')) {
-          navigate('/clinic/pending-user', { replace: true });
+        if(role === 'clinic_admin') {
+          // check if admin is pending
+          if(status === 'pending' || status === 'rejected') {
+            navigate('/clinic/pending-user', { replace: true });
+          } else {
+            navigate('/clinic/select-branch', { replace: true });
+          }
         } else {
-          navigate(getDashboardByRole(role), { replace: true });
+          // staff redirection
+          if(branch_id) {
+            navigate(`/clinic/${branch_id}/portal/dashboard`, { replace: true });
+          } else {
+            localStorage.clear();
+            toast.error("Access denied: No branch assigned to this account.");
+          }
         }
       } finally {
         hideLoader();
@@ -167,20 +172,33 @@ export default function Login() {
       }
 
       localStorage.setItem("access_token", data.access_token);
+      const decoded = jwtDecode(data.access_token);
+      setUser(decoded);
       toast.success(data.message);
-      await wait(2000);
+      await wait(1000);
       setShowOTP(false);
 
-      const { role, status } = validRoleToken();
+      const { role, status, branch_id } = validRoleToken();
 
-      if(role === "clinic_admin" && status === "pending") {
-        navigate("/clinic/pending-user", { replace: true });
+      if(role === "clinic_admin") {
+        // check if admin is pending
+        if(status === "pending") {
+          navigate("/clinic/pending-user", { replace: true });
+        } else {
+          navigate("/clinic/select-branch", { replace: true });
+        }
       } else {
-        navigate(getDashboardByRole(role), { replace: true });
+        // staff redirection
+        if(branch_id) {
+          navigate(`/clinic/${branch_id}/portal/dashboard`, { replace: true });
+        } else {
+          toast.error("Access denied: No branch assigned to this account.");
+          navigate("/clinic/login");
+        }
       }
     } catch(error) {
       console.log("OTP verify error:", error);
-      toast.error('Something went wrong');
+      toast.error(error.message || 'Something went wrong');
     } finally{
       hideLoader();
     }
@@ -278,7 +296,7 @@ export default function Login() {
               </form>
 
               <motion.p variants={formItemVariants}>
-                <Link to="/forgotPassword" className="text-base font-medium text-gray-700 hover:text-gray-600 mt-2 text-right block">
+                <Link to="/forgotPassword" className="block mt-2 text-base font-medium text-right text-gray-700 hover:text-gray-600">
                   Forgot Password?
                 </Link>
               </motion.p>

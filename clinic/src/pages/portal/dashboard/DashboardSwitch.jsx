@@ -1,5 +1,8 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 // hooks
 import { useUser } from "../../../hooks/useUser";
+import { useUI } from "../../../hooks/useUI";
 // pages
 import AdminDashboard from "./AdminDashboard";
 import BranchAdminDashboard from "./BranchAdminDashboard";
@@ -9,12 +12,33 @@ import StaffDashboard from "./StaffDashboard";
 
 
 export function DashboardSwitch() {
-  const { user } = useUser();
+  const navigate = useNavigate();
+  const { user, loading } = useUser();
+  const { showLoader, hideLoader } = useUI();
 
-  if (user.role === 'clinic_admin') return <AdminDashboard />;
-  if (user.role === 'branch_admin') return <BranchAdminDashboard />;
-  if (user.role === 'veterinarian') return <VeterinarianDashboard />;
-  if (user.role === 'groomer') return <GroomerDashboard />;
+  useEffect(() => {
+    if(loading) {
+      showLoader();
+    } else {
+      hideLoader();
+    }
+    
+    return () => hideLoader();
+  }, [loading, showLoader, hideLoader]);
+
+
+  if(!user) {
+    navigate('/clinic/login', { replace: true });
+    return null;
+  }
   
-  return <StaffDashboard />;
+  const dashboards = {
+    clinic_admin: <AdminDashboard />,
+    branch_admin: <BranchAdminDashboard />,
+    veterinarian: <VeterinarianDashboard />,
+    groomer: <GroomerDashboard />,
+  };
+
+  
+  return dashboards[user.role] || <StaffDashboard />;
 }
