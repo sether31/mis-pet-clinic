@@ -137,7 +137,9 @@ export default function SelectPlans() {
                   <div className="mb-8">
                     <h2 className="text-xl font-bold capitalize">{sub.name}</h2>
                     <div className="flex items-baseline mt-4">
-                      <span className="text-4xl font-extrabold">₱{sub.price}</span>
+                      <span className="text-4xl font-extrabold">
+                        ₱{Number(sub.price).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                      </span>
                       <span className="ml-1 text-sm font-medium text-gray-500">/ {sub.duration_months} mo</span>
                     </div>
                   </div>

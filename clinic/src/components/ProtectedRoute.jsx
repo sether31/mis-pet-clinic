@@ -1,58 +1,58 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-
-import FullScreenLoader from "./FullLoader";
-import wait from "../utils/wait";
-import { validRoleToken } from "../utils/validRoleToken";
-import getDashboardByRole from "../utils/getDashboardByRole";
+import { Navigate, useParams } from "react-router-dom";
+// hooks
+import { useUser } from "../hooks/useUser";
+import { useUI } from "../hooks/useUI"; 
+// utils
+import { getDashboardByRole } from "../utils/getDashboardByRole";
 
 export default function ProtectedRoute({ children, allowedRoles = [] }) {
-  const [checking, setChecking] = useState(true);
+  const { user, loading: userLoading } = useUser();
+  const { showLoader, hideLoader } = useUI(); 
+  const { branchId } = useParams();
   const [redirect, setRedirect] = useState(null);
-  const [message, setMessage] = useState("Loading...");
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const checkToken = async () => {
-      const user = validRoleToken();
+    if(userLoading) {
+      showLoader("Verifying access..."); 
+      return;
+    }
 
-      // check if invalid
-      if(!user) {
-        setMessage("Session expired. Redirecting to login...");
-        await wait(1500);
-        setRedirect("/clinic/login");
-        setChecking(false);
-        return;
-      }
+    // check if have user
+    if(!user) {
+      hideLoader();
+      setRedirect("/clinic/login");
+      return;
+    }
 
-      const { role, status } = user;
+    const { role, status, branch_id: userBranchId } = user;
 
-      // if clinic admin pending
-      if(role === "clinic_admin" && status === "pending") {
-        setRedirect("/clinic/pending-user");
-        setChecking(false);
-        return;
-      }
+    // check if pending admin
+    if (role === "clinic_admin" && (status === "pending" || status === "rejected")) {
+      hideLoader();
+      setRedirect("/clinic/pending-user");
+      return;
+    }
 
-      // check if roles are not allowed
-      if(allowedRoles.length && !allowedRoles.includes(role)) {
-        setRedirect(getDashboardByRole(role));
-        setChecking(false);
-        return;
-      }
+    // check role auth
+    if(allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+      hideLoader();
+      
+      // get the params id or user as fallback
+      const target = getDashboardByRole(role, branchId || userBranchId);
 
-      setChecking(false);
-    };
+      setRedirect(target || "/clinic/login");
+      return;
+    }
 
-    checkToken();
-  }, [allowedRoles]);
-
-  if(checking) {
-    return <FullScreenLoader message={message} />;
-  }
+    setIsAuthorized(true);
+    hideLoader();
+  }, [user, userLoading, allowedRoles, branchId, showLoader, hideLoader]);
 
   if(redirect) {
     return <Navigate to={redirect} replace />;
   }
 
-  return children;
+  return isAuthorized ? children : null;
 }
