@@ -178,7 +178,7 @@ export default function Login() {
       await wait(1000);
       setShowOTP(false);
 
-      const { role, status, branch_id } = validRoleToken();
+      const { role, status, branch_id } = decoded;
 
       if(role === "clinic_admin") {
         // check if admin is pending
