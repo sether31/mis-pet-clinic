@@ -24,7 +24,7 @@ if(!$email || !$password || !$platform) {
 
 // check roles
 $allowedRoles = $platform === "web" ?
-  ['clinic_admin', 'staff', 'veterinarian', 'groomer'] :
+  ['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff'] :
   ['pet_owner'];
 
 $stmt = $pdo->prepare(

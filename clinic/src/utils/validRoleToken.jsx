@@ -7,7 +7,7 @@ export function validRoleToken(allowedRoles = [
   if(!token) return null;
 
   try {
-    const { exp, role, status } = jwtDecode(token); 
+    const { exp, role, status, branch_id, permissions, fname, lname, email, user_id } = jwtDecode(token);
 
     if(!exp || exp * 1000 < Date.now()) {
       localStorage.removeItem('access_token');
@@ -15,7 +15,20 @@ export function validRoleToken(allowedRoles = [
     }
 
     // check if allowed
-    return allowedRoles.includes(role) ? { role, status } : null;
+    if(!allowedRoles.includes(role)) {
+      return null;
+    }
+
+    return { 
+      user_id,
+      role, 
+      status, 
+      branch_id,       
+      permissions: permissions || [], 
+      fname,
+      lname,
+      email
+    };
   } catch {
     localStorage.removeItem('access_token');
     return null;
