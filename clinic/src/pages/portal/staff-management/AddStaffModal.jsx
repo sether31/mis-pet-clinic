@@ -16,7 +16,7 @@ export default function AddStaffModal({ initialData, onClose, onRefresh, branchI
   const [errors, setErrors] = useState({});
 
   const userRoles = [
-    { id: 4, label: 'Branch Manager' },
+    { id: 3, label: 'Branch Manager' },
     { id: 4, label: 'Veterinarian' },
     { id: 5, label: 'Groomer' },
     { id: 6, label: 'Support Staff' }
