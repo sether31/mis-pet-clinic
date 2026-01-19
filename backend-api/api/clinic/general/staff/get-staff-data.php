@@ -2,14 +2,13 @@
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
 
-
 validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
 header('Content-Type: application/json');
 
 $branch_id = $_GET['branch_id'] ?? null;
 
-if (!$branch_id) {
+if(!$branch_id) {
   echo json_encode(["success" => false, "message" => "Branch ID is required"]);
   exit;
 }
@@ -37,14 +36,34 @@ try {
   $stmt->execute([':branch_id' => $branch_id]);
   $staff = $stmt->fetchAll();
 
-  // decode permission json string back to normal array
+  // initialize count data
+  $cardData = [
+    "total" => count($staff),
+    "active" => 0,
+    "vets" => 0,
+    "groomers" => 0,
+    "staff" => 0,
+    "onDuty" => 0 
+  ];
+
   foreach($staff as &$member) {
+    // decode permissions
     $member['permissions'] = json_decode($member['permissions'] ?? '[]');
+    
+    // count active
+    if ((int)$member['status'] === 1) $cardData['active']++;
+    
+    // count role
+    $role = strtolower($member['role_name']);
+    if ($role === 'veterinarian') $cardData['vets']++;
+    elseif ($role === 'groomer') $cardData['groomers']++;
+    elseif ($role === 'staff') $cardData['staff']++;
   }
 
   echo json_encode([
     "success" => true,
-    "data" => $staff
+    "data" => $staff,
+    "cardData" => $cardData 
   ]);
 
 } catch(Exception $e) {
