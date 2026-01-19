@@ -141,7 +141,7 @@ export default function AddStaffModal({ initialData, onClose, onRefresh, branchI
           branch_id: branchId,
           status: form.is_active
         })
-      }, ['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
+      });
       
       if(response.success) {
         toast.success(response.message || "Staff saved successfully");

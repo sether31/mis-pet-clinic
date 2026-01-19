@@ -39,7 +39,7 @@ export default function SelectBranch() {
   const fetchBranches = useCallback(async () => {
     showLoader();
     try {
-      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branches.php`, {}, ['clinic_admin']);
+      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branches.php`, {});
       if(!response.success) {
         toast.error("Something went wrong");
         return;
@@ -83,7 +83,7 @@ export default function SelectBranch() {
         const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/check-subscription-history.php`, {
           method: 'POST',
           body: JSON.stringify({ branch_id: branch.branch_id })
-        }, ['clinic_admin']);
+        });
 
         if(res && res.hasSubHistory === true) {
           toast.info("Welcome");

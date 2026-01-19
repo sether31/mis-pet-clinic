@@ -89,7 +89,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
       {
         method: 'POST',
         body: JSON.stringify({ branch_id: branch.branch_id })
-      }, ['clinic_admin']);
+      });
 
       
       if(response.success && response.data) {
@@ -292,7 +292,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
       const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/update-new-branch.php`, {
         method: "POST",
         body: formData
-      }, ['clinic_admin']);
+      });
 
       if(!res.success) {
         toast.error("Something went wrong")

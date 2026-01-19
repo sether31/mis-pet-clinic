@@ -25,8 +25,7 @@ export default function StaffManagement() {
     try {
       const response = await authFetch(
         `${import.meta.env.VITE_API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`,
-        { method: 'GET' },
-        ['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']
+        { method: 'GET' }
       );
       if (response.success) {
         setStaffData(response.data);
@@ -56,7 +55,7 @@ export default function StaffManagement() {
             branch_id: branchId,
             status: newStatus
           })
-        }, ['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']
+        }
       );
 
       if(response.success) {

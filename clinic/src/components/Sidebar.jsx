@@ -13,7 +13,12 @@ import { LuUsers } from 'react-icons/lu';
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
-  { label: 'Staff Management', path: 'staff-management', icon: LuUsers },
+  { 
+    label: 'Staff Management', 
+    path: 'staff-management', 
+    icon: LuUsers, 
+    requiredPermission: 'staff_management' 
+  },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -23,6 +28,23 @@ export default function Sidebar({className, open, setOpen}) {
   const { branchId } = useParams();
   const { user } = useUser(); 
   const [branchName, setBranchName] = useState("");
+
+  const visibleItems = sidebarItems.filter(item => {
+    // if clinic admin allow all
+    if(user?.role === 'clinic_admin') return true;
+
+    // check staff permission 
+    if(item.requiredPermission) {
+      return user?.permissions?.includes(item.requiredPermission);
+    }
+
+    // check if have specific roles
+    if(item.allowedRoles) {
+      return item.allowedRoles.includes(user?.role);
+    }
+
+    return true;
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -78,9 +100,8 @@ export default function Sidebar({className, open, setOpen}) {
       {/* nav links */}
       <nav className='flex flex-col justify-between h-full px-4 mt-6'>
         <div className='grid gap-2'>
-          {sidebarItems.map((item) => {
-            const isActive = location.pathname.endsWith(item.path);
-
+          {visibleItems.map((item) => { 
+            const isActive = location.pathname.includes(`/portal/${item.path}`);
             return (
               <SidebarItem
                 key={item.path}

@@ -1,11 +1,6 @@
-import { validRoleToken } from './validRoleToken';
 
-export const authFetch = async (url, options = {}, allowedRoles = []) => {
-  const user = validRoleToken(allowedRoles);
 
-  if(!user) {
-    return { success: false, error: 'Unauthorized', status: 401 };
-  }
+export const authFetch = async (url, options = {}) => {
 
   const token = localStorage.getItem("access_token");
   const headers = {

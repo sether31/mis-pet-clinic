@@ -241,7 +241,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
       const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/add-new-branch.php`, {
         method: "POST",
         body: formData
-      }, ['clinic_admin']);
+      });
 
       if(!res.success) {
         toast.error("Something went wrong")
