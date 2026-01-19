@@ -40,6 +40,7 @@ try {
   $cardData = [
     "total" => count($staff),
     "active" => 0,
+    "branch_admin" => 0,
     "vets" => 0,
     "groomers" => 0,
     "staff" => 0,
@@ -55,7 +56,8 @@ try {
     
     // count role
     $role = strtolower($member['role_name']);
-    if ($role === 'veterinarian') $cardData['vets']++;
+    if ($role === 'branch_admin') $cardData['branch_admin']++;
+    elseif ($role === 'veterinarian') $cardData['vets']++;
     elseif ($role === 'groomer') $cardData['groomers']++;
     elseif ($role === 'staff') $cardData['staff']++;
   }
