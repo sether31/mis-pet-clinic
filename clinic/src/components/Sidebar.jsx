@@ -31,7 +31,7 @@ export default function Sidebar({className, open, setOpen}) {
         // get branch name
         const fetchBranchName = async () => {
           try {
-            const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-name.php?branch_id=${branchId}`, {}, ['clinic_admin', 'staff', 'veterinarian', 'groomer']);
+            const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-name.php?branch_id=${branchId}`, {}, ['clinic_admin', 'branch_admin', 'staff', 'veterinarian', 'groomer']);
             if(response.success) {
               setBranchName(response.branch_name);
             }

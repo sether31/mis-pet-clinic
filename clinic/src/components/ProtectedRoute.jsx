@@ -1,58 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Navigate, useParams } from "react-router-dom";
-// hooks
 import { useUser } from "../hooks/useUser";
-import { useUI } from "../hooks/useUI"; 
-// utils
+import { useUI } from "../hooks/useUI";
 import { getDashboardByRole } from "../utils/getDashboardByRole";
 
-export default function ProtectedRoute({ children, allowedRoles = [] }) {
-  const { user, loading: userLoading } = useUser();
-  const { showLoader, hideLoader } = useUI(); 
+export default function ProtectedRoute({ children, requiredPermission, allowedRoles = [] }) {
+  const { user, loading } = useUser();
+  const { showLoader, hideLoader } = useUI();
   const { branchId } = useParams();
-  const [redirect, setRedirect] = useState(null);
-  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    if(userLoading) {
-      showLoader("Verifying access..."); 
-      return;
-    }
+    loading ? showLoader("Checking permissions...") : hideLoader();
+    return () => hideLoader();
+  }, [loading]);
 
-    // check if have user
-    if(!user) {
-      hideLoader();
-      setRedirect("/clinic/login");
-      return;
-    }
+  if (loading) return null;
 
-    const { role, status, branch_id: userBranchId } = user;
+  if (!user) return <Navigate to="/clinic/login" replace />;
 
-    // check if pending admin
-    if (role === "clinic_admin" && (status === "pending" || status === "rejected")) {
-      hideLoader();
-      setRedirect("/clinic/pending-user");
-      return;
-    }
+  const isGlobalAdmin = user.role === 'clinic_admin';
+  const hasRoleMatch = allowedRoles.includes(user.role);
+  const hasPermission = user.permissions?.includes(requiredPermission);
 
-    // check role auth
-    if(allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-      hideLoader();
-      
-      // get the params id or user as fallback
-      const target = getDashboardByRole(role, branchId || userBranchId);
+  const isAuthorized = isGlobalAdmin || hasRoleMatch || (requiredPermission && hasPermission);
 
-      setRedirect(target || "/clinic/login");
-      return;
-    }
-
-    setIsAuthorized(true);
-    hideLoader();
-  }, [user, userLoading, allowedRoles, branchId, showLoader, hideLoader]);
-
-  if(redirect) {
-    return <Navigate to={redirect} replace />;
+  if(!isAuthorized) {
+    const fallback = getDashboardByRole(user.role, branchId || user.branch_id);
+    return <Navigate to={fallback || "/clinic/login"} replace />;
   }
 
-  return isAuthorized ? children : null;
+  return children;
 }

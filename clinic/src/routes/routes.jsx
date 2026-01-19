@@ -83,16 +83,16 @@ export const routes = createBrowserRouter([
                   { path: "*", element: <NotFoundDashboard />},
                   { path: "dashboard", element: <DashboardSwitch /> },     
                   { path: "staff-management", element: (
-                    <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']}>
+                    <ProtectedRoute requiredPermission="staff_management">
                       <StaffManagement />
                     </ProtectedRoute>
-                  ) }, 
+                  )}, 
                 ]
-              }
+              },
             ]
           }
         ]
       }
-    ]
+    ],
   },
 ]);
