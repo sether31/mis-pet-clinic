@@ -39,7 +39,7 @@ export default function SelectBranch() {
   const fetchBranches = useCallback(async () => {
     showLoader();
     try {
-      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branches.php`, {}, ['clinic_admin']);
+      const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branches.php`, {});
       if(!response.success) {
         toast.error("Something went wrong");
         return;
@@ -80,20 +80,16 @@ export default function SelectBranch() {
       showLoader("Checking...")
 
       try {
-        await wait(1000);
         const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/check-subscription-history.php`, {
           method: 'POST',
           body: JSON.stringify({ branch_id: branch.branch_id })
-        }, ['clinic_admin']);
+        });
 
-        localStorage.setItem('active_clinic_id', branch.branch_id);
         if(res && res.hasSubHistory === true) {
           toast.info("Welcome");
-          await wait(500);
           navigate(`/clinic/${branch.branch_id}/portal/dashboard`, { replace: true });
         } else {
           toast.info("Please select a subscription plan to get started.");
-          await wait(500);
           navigate(`/clinic/${branch.branch_id}/select-plan`, { replace: true });
         }
       } catch(error) {
@@ -118,10 +114,10 @@ export default function SelectBranch() {
 
   const handleLogout = async () => {
     showLoader("Logging out...");
-    await wait(1500);
+    await wait(500);
     clearSession();
-    hideLoader();
     navigate('/clinic/login', { replace: true });
+    hideLoader();
   };
 
   return (

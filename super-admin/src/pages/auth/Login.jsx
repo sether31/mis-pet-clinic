@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
-import { delay, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // utils
@@ -17,8 +17,6 @@ import loginPic from '../../assets/images/login-pic.png';
 // icons
 import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
-
-
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -45,7 +43,7 @@ export default function Login() {
       if(role) {
         setLoading(true);
         setLoadingMessage('Logging in...');
-        await wait(1500);
+        await wait(1000);
         navigate('/dashboard', { replace: true });
       }
     }
@@ -54,7 +52,6 @@ export default function Login() {
 
   
   
-
   // handle input
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -135,7 +132,7 @@ export default function Login() {
     setLoadingMessage('Verifying OTP...');
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/login-otp.php`, {
+      const res = await fetch(`${API_URL}/api/auth/login-otp-super-admin.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, otp })
@@ -149,7 +146,7 @@ export default function Login() {
       }
 
       toast.success(data.message);
-      await wait(2000);
+      await wait(1000);
       // save token
       localStorage.setItem("access_token", data.access_token);
       setErrors({ email: "", password: ""});

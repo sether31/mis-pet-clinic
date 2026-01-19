@@ -105,7 +105,7 @@ export default function PendingUser() {
       }
 
       // fetch data
-      const response = await authFetch(`${API_URL}/api/auth/get-pending-user-data.php`, {}, ['clinic_admin']);
+      const response = await authFetch(`${API_URL}/api/auth/get-pending-user-data.php`, {});
       if(response.success && response.data) {
         const { user, clinic, new_token } = response.data;
         const newStatus = clinic.status;
@@ -317,7 +317,7 @@ export default function PendingUser() {
       const res = await authFetch(`${API_URL}/api/auth/update-pending-user-data.php`, {
         method: "POST",
         body: formData
-      }, ['clinic_admin']);
+      });
 
       if(!res.success) {
         toast.error("Something went wrong")

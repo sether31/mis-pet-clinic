@@ -41,7 +41,7 @@ export default function PaymentSuccess() {
             branch_id,
             subscription_id: sub_id
           })
-        }, ['clinic_admin']);
+        });
 
         if(response.success) {
           toast.success("Subscription activated successfully!");

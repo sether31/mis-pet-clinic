@@ -17,7 +17,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
       : "border-gray-300";
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className="flex flex-col w-full gap-1">
       {/* label */}
       {label && (
         <label
@@ -35,7 +35,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
         className={`flex items-center justify-between gap-2 px-3 py-2 border rounded-lg bg-white ${borderColor}`}
       >
         {type !== "password" ? (
-          <div className='flex items-center gap-2 w-full'>
+          <div className='flex items-center w-full gap-2'>
             {icon && <span>{icon}</span>}
             <input 
               id={id || undefined}
@@ -47,12 +47,12 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
         ) : (
           // password
           <>
-            <div className='flex items-center gap-2 w-full'>
+            <div className='flex items-center w-full gap-2'>
               {icon && <span>{icon}</span>}
               <input 
                 id={id || undefined}
                 type={showPass ? "text" : "password"} 
-                className="flex-1 bg-transparent outline-none w-full" 
+                className="flex-1 w-full bg-transparent outline-none" 
                 {...props} 
               />
             </div>
@@ -68,7 +68,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
       </div>
 
       {error && error !== "valid" && (
-        <p className="flex items-center text-sm text-red-500">
+        <p className="flex items-center gap-0.5 text-xs text-red-500">
           <HiMiniExclamationCircle size={16} />
           {error}
         </p>

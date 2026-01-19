@@ -1,52 +1,69 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { jwtDecode } from 'jwt-decode';
+// hooks
+import { useUser } from '../hooks/useUser';
+// utils
+import { authFetch } from '../utils/authFetch';
 // icons
 import { RxHamburgerMenu } from "react-icons/rx"
 import { MdOutlineClose } from "react-icons/md"
 import { RiDashboardLine } from "react-icons/ri"
-import { authFetch } from '../utils/authFetch';
-
+import { LuUsers } from 'react-icons/lu';
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
+  { 
+    label: 'Staff Management', 
+    path: 'staff-management', 
+    icon: LuUsers, 
+    requiredPermission: 'staff_management' 
+  },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Sidebar({className, open, setOpen}) {
   const location = useLocation();
-  const { branchId } = useParams()
+  const { branchId } = useParams();
+  const { user } = useUser(); 
   const [branchName, setBranchName] = useState("");
-  const [userRole, setUserRole] = useState("");
+
+  const visibleItems = sidebarItems.filter(item => {
+    // if clinic admin allow all
+    if(user?.role === 'clinic_admin') return true;
+
+    // check staff permission 
+    if(item.requiredPermission) {
+      return user?.permissions?.includes(item.requiredPermission);
+    }
+
+    // check if have specific roles
+    if(item.allowedRoles) {
+      return item.allowedRoles.includes(user?.role);
+    }
+
+    return true;
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-
     if(token) {
       try {
-        const decoded = jwtDecode(token);
-        console.log(decoded)
-        // get role
-        const role = decoded.role || "User";
-        setUserRole(role.replace('_', ' '));
-
         // get branch name
         const fetchBranchName = async () => {
           try {
-            const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-name.php?branch_id=${branchId}`, {}, ['clinic_admin']);
+            const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-name.php?branch_id=${branchId}`, {}, ['clinic_admin', 'branch_admin', 'staff', 'veterinarian', 'groomer']);
             if(response.success) {
-              console.log(response.branch_name)
               setBranchName(response.branch_name);
             }
           } catch(err) {
-            setBranchName("Branch Name");
+            setBranchName("Clinic Portal");
           }
         };
 
       if (branchId) fetchBranchName();
-      } catch (error) {
+      } catch(error) {
         console.error("Invalid token:", error);
       }
     }
@@ -69,8 +86,8 @@ export default function Sidebar({className, open, setOpen}) {
           animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="pr-2 text-xl font-medium truncate" title={branchName}>{branchName}</h1>
-          <h2 className="text-sm capitalize">{userRole} portal</h2>
+          <h1 className="pr-4 text-xl font-medium truncate" title={branchName}>{branchName}</h1>
+          <h2 className="text-sm capitalize">{user?.role?.replace(/_/g, ' ')} portal</h2>
         </motion.div>
         
         {/* hamburger */}
@@ -83,9 +100,8 @@ export default function Sidebar({className, open, setOpen}) {
       {/* nav links */}
       <nav className='flex flex-col justify-between h-full px-4 mt-6'>
         <div className='grid gap-2'>
-          {sidebarItems.map((item) => {
-            const isActive = location.pathname.endsWith(item.path);
-
+          {visibleItems.map((item) => { 
+            const isActive = location.pathname.includes(`/portal/${item.path}`);
             return (
               <SidebarItem
                 key={item.path}

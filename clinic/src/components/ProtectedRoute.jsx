@@ -1,57 +1,32 @@
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, useParams } from "react-router-dom";
+import { useUser } from "../hooks/useUser";
+import { useUI } from "../hooks/useUI";
+import { getDashboardByRole } from "../utils/getDashboardByRole";
 
-import FullScreenLoader from "./FullLoader";
-import wait from "../utils/wait";
-import { validRoleToken } from "../utils/validRoleToken";
-import getDashboardByRole from "../utils/getDashboardByRole";
-
-export default function ProtectedRoute({ children, allowedRoles = [] }) {
-  const [checking, setChecking] = useState(true);
-  const [redirect, setRedirect] = useState(null);
-  const [message, setMessage] = useState("Loading...");
+export default function ProtectedRoute({ children, requiredPermission, allowedRoles = [] }) {
+  const { user, loading } = useUser();
+  const { showLoader, hideLoader } = useUI();
+  const { branchId } = useParams();
 
   useEffect(() => {
-    const checkToken = async () => {
-      const user = validRoleToken();
+    loading ? showLoader("Checking permissions...") : hideLoader();
+    return () => hideLoader();
+  }, [loading]);
 
-      // check if invalid
-      if(!user) {
-        setMessage("Session expired. Redirecting to login...");
-        await wait(1500);
-        setRedirect("/clinic/login");
-        setChecking(false);
-        return;
-      }
+  if (loading) return null;
 
-      const { role, status } = user;
+  if (!user) return <Navigate to="/clinic/login" replace />;
 
-      // if clinic admin pending
-      if(role === "clinic_admin" && status === "pending") {
-        setRedirect("/clinic/pending-user");
-        setChecking(false);
-        return;
-      }
+  const isGlobalAdmin = user.role === 'clinic_admin';
+  const hasRoleMatch = allowedRoles.includes(user.role);
+  const hasPermission = user.permissions?.includes(requiredPermission);
 
-      // check if roles are not allowed
-      if(allowedRoles.length && !allowedRoles.includes(role)) {
-        setRedirect(getDashboardByRole(role));
-        setChecking(false);
-        return;
-      }
+  const isAuthorized = isGlobalAdmin || hasRoleMatch || (requiredPermission && hasPermission);
 
-      setChecking(false);
-    };
-
-    checkToken();
-  }, [allowedRoles]);
-
-  if(checking) {
-    return <FullScreenLoader message={message} />;
-  }
-
-  if(redirect) {
-    return <Navigate to={redirect} replace />;
+  if(!isAuthorized) {
+    const fallback = getDashboardByRole(user.role, branchId || user.branch_id);
+    return <Navigate to={fallback || "/clinic/login"} replace />;
   }
 
   return children;

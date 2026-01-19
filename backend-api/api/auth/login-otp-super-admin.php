@@ -6,7 +6,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../service/Jwt.php';  
-require_once __DIR__ . '/../../service/Otp.php';
+require_once __DIR__ . '/../../service/Otp.php'; 
 
 try {
   $pdo = (new Database())->pdo;
@@ -37,41 +37,13 @@ try {
     throw new Exception("User not found");
   }
 
-  $permissions = [];
-  $branchId = null;
-
-  if ($user['role_name'] === 'clinic_admin') {
-    // all access for admin
-    $permissions = ['all_access']; 
-    $branchId = null;
-  } else { 
-    // fetch staff branch and their permission
-    $stmtStaff = $pdo->prepare(
-      "SELECT branch_id, permissions 
-      FROM branch_staff_tb 
-      WHERE user_id = :user_id AND status = '1'
-      LIMIT 1"
-    );
-    $stmtStaff->execute([":user_id" => $userId]);
-    $staffBranch = $stmtStaff->fetch();
-
-    if(!$staffBranch) {
-      throw new Exception("Your account has been deactivated. Please contact your Administrator.");
-    }
-
-    $permissions = json_decode($staffBranch['permissions'] ?? '[]', true);
-    $branchId = $staffBranch['branch_id'];
-  }
-
   $payload = [
     "user_id" => $user['user_id'],
     "role" => $user['role_name'],
     "email" => $user['email'],
     "fname" => $user['first_name'],
     "lname" => $user['last_name'],
-    "status" => $user['status'],
-    "permissions" => $permissions, 
-    "branch_id" => $branchId
+    "status" => $user['status']
   ];
 
   $accessToken = createJWT($payload, 1000000000);
@@ -79,8 +51,7 @@ try {
   echo json_encode([
     "success" => true,
     "message" => "Login successful",
-    "access_token" => $accessToken,
-    "redirect_hint" => $user['role_name'] === 'clinic_admin' ? 'select-branch' : 'portal'
+    "access_token" => $accessToken
   ]);
 
 } catch(Throwable $e) {

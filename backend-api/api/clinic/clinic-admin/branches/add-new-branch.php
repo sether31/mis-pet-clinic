@@ -119,7 +119,7 @@ try {
       return null;
     }
 
-    $baseDir = dirname(__DIR__, 3) . "/uploads/clinic/$branchId/$type/";
+    $baseDir = dirname(__DIR__, 4) . "/uploads/clinic/$branchId/$type/";
     if(!is_dir($baseDir)) {
       mkdir($baseDir, 0777, true);
     }
