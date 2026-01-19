@@ -20,7 +20,7 @@ export default function BranchVerificationLayout() {
         const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/verify-branch.php`, {
           method: 'POST',
           body: JSON.stringify({ branch_id: branchId })
-        }, ['clinic_admin']);
+        });
         
         // check if unauthorized
         if(response.status === 403) {

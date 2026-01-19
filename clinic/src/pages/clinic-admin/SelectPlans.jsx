@@ -45,8 +45,7 @@ export default function SelectPlans() {
           { 
             method: 'POST', 
             body: JSON.stringify({ branch_id: branchId }) 
-          }, 
-          ['clinic_admin']
+          }
         );
 
         // if already active
@@ -55,7 +54,7 @@ export default function SelectPlans() {
           return;
         }
         // if not fetch the subscription plans
-        const plansRes = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/get-active-subscription.php`, {}, ['clinic_admin']);
+        const plansRes = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/get-active-subscription.php`, {});
         
         if(plansRes.success) {
           setSubscriptions(plansRes.data);
@@ -81,7 +80,7 @@ export default function SelectPlans() {
           amount: sub.price,
           plan_name: sub.name
         })
-      }, ['clinic_admin']);
+      });
 
       if(response.success && response.checkout_url) {
         window.location.href = response.checkout_url;
