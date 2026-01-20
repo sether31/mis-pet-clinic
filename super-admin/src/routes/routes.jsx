@@ -43,10 +43,7 @@ export const routes = createBrowserRouter([
       { path: "subscription-plans", element: <SubscriptionPlans />}
     ]
   },
-  {
-    path: '*',
-    element: <NotFound />
-  }
+  { path: '*', element: <NotFound /> },
 ], {
   basename: "/super-admin" 
 });
