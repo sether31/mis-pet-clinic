@@ -1,18 +1,44 @@
-import notFoundPic from '../assets/images/notFound.gif';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+// image
+import notFoundPic from '../assets/images/notFound.gif';
 
-export default function NotFound() {
+export default function NotFound() {  
   return (
-    <div className='flex flex-col items-center justify-center h-screen gap-4 container-xl bg-(--clr-bg-page)'>
-      <img src={notFoundPic} alt="corgi with box on his head" className='w-auto' />
-      <h1 className='text-3xl font-bold lg:text-4xl'>404 - Page Not Found</h1>
-      <p>The page you’re looking for doesn’t exist or may have been moved.</p>
-      <Link 
-        className='px-6 py-2 font-medium rounded-md bg-(--clr-primary) text-(--clr-text-secondary) hover:opacity-98 hover:scale-95 ease-in-out duration-500' 
-        to="/dashboard"
+    <div className='flex flex-col items-center justify-center min-h-screen px-6 py-12 text-center bg-(--clr-bg-page)'>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col items-center max-w-lg"
       >
-        Go Home
-      </Link>
+        <div className="relative mb-8">
+           <img 
+            src={notFoundPic} 
+            alt="Page not found" 
+            className='w-64 h-auto rounded-2xl' 
+          />
+          
+          <div className="absolute -bottom-4 -right-4 bg-(--clr-primary) text-(--clr-text-secondary) font-black px-4 py-2 rounded-lg transform rotate-12 shadow-lg">
+            404
+          </div>
+        </div>
+
+        <h1 className='mb-4 text-4xl font-extrabold tracking-tight sm:text-5xl'>
+          Lost in the Clinic?
+        </h1>
+        
+        <p className='mb-10 text-lg leading-relaxed text-gray-500'>
+          The page you’re looking for doesn’t exist.
+        </p>
+
+        <Link 
+          className='px-8 py-3 font-bold rounded-xl bg-(--clr-primary) text-(--clr-text-secondary) hover:-translate-y-1 transition-all duration-300 ease-in-out' 
+          to="/login"
+        >
+          Back to Login
+        </Link>
+      </motion.div>
     </div>
-  )
+  );
 }
