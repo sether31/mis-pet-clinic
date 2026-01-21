@@ -10,9 +10,16 @@ import { RxHamburgerMenu } from "react-icons/rx"
 import { MdOutlineClose } from "react-icons/md"
 import { RiDashboardLine } from "react-icons/ri"
 import { LuUsers } from 'react-icons/lu';
+import { FaRegCalendarAlt } from "react-icons/fa";
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
+  { 
+    label: 'Appointment Management', 
+    path: 'appointment-management', 
+    icon: FaRegCalendarAlt, 
+    requiredPermission: 'appointment_management' 
+  },
   { 
     label: 'Staff Management', 
     path: 'staff-management', 

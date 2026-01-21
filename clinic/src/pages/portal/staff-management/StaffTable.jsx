@@ -40,7 +40,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
       <div className="flex flex-col justify-between gap-4 p-4 bg-white border-b border-gray-300 lg:flex-row">
         
         {/* tabs */}
-        <div className="flex p-1 bg-gray-100 rounded-lg lg:w-fit">
+        <div className="flex justify-center p-1 bg-gray-100 rounded-lg lg:w-fit">
           {[
             {id:"all", label:"All"}, 
             {id:"active", label:"Active"}, 
@@ -58,7 +58,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(Number(e.target.value))} className="border rounded-lg px-2 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer">
             {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
           </select>

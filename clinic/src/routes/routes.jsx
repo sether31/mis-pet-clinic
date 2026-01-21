@@ -23,6 +23,7 @@ import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
 import { DashboardSwitch } from "../pages/portal/dashboard/DashboardSwitch";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
+import AppointmentManagement from "../pages/portal/appointment-management/AppointmentManagement";
 
 
 
@@ -82,6 +83,11 @@ export const routes = createBrowserRouter([
                   { index: true, element: <Navigate to="dashboard" replace /> },
                   { path: "*", element: <NotFoundDashboard />},
                   { path: "dashboard", element: <DashboardSwitch /> },     
+                  { path: "appointment-management", element: (
+                    <ProtectedRoute requiredPermission="appointment_management">
+                      <AppointmentManagement />
+                    </ProtectedRoute>
+                  )},
                   { path: "staff-management", element: (
                     <ProtectedRoute requiredPermission="staff_management">
                       <StaffManagement />

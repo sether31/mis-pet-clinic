@@ -64,7 +64,7 @@ export default function StaffManagement() {
         fetchStaffData(); 
       } else {
         console.error(response.message)
-        toast.error();
+        toast.error(response.message || "Something went wrong");
       }
     } catch (error) {
       console.error("Toggle Error:", error);
