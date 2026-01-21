@@ -25,7 +25,7 @@ try {
 
   // get user 
   $stmtUser = $pdo->prepare(
-    "SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name, status
+    "SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name
     FROM user_tb u
     JOIN roles_tb r ON u.role_id = r.role_id
     WHERE u.user_id = :user_id"
@@ -41,9 +41,9 @@ try {
     "user_id" => $user['user_id'],
     "role" => $user['role_name'],
     "email" => $user['email'],
+    "name" => $user['first_name'] . ' ' . $user['last_name'],
     "fname" => $user['first_name'],
-    "lname" => $user['last_name'],
-    "status" => $user['status']
+    "lname" => $user['last_name']
   ];
 
   $accessToken = createJWT($payload, 1000000000);

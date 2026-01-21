@@ -67,7 +67,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
       </div>
 
       {error && error !== "valid" && (
-        <p className="flex items-center text-sm text-red-500">
+        <p className="flex items-center text-xs text-red-500">
           <HiMiniExclamationCircle size={16} />
           {error}
         </p>
