@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../hooks/useUI';
+import { usePlatform } from '../../hooks/usePlatform';
 // utils
 import { validateEmail } from '../../utils/validateEmail'
 import wait from '../../utils/wait';
@@ -17,6 +18,7 @@ import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/h
 import { IoPersonOutline } from "react-icons/io5";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaBusinessTimeSolid } from "react-icons/lia";
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 const initialFormState = {
@@ -47,6 +49,7 @@ const initialFormState = {
 }
 
 export default function Register() {
+  const { platformData } = usePlatform();
   const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
   const [errors, setErrors] = useState({});
@@ -349,7 +352,21 @@ export default function Register() {
     <>
       <div className='mb-20 container-xl'>
         <div className='flex flex-col items-center justify-between gap-4 my-5 md:flex-row'>
-          <h1 className='text-2xl font-medium'>LOGO</h1>
+          <div className="flex gap-2 items-center">
+            {platformData?.platform_logo && (
+              <img 
+                src={`${API_URL}/${platformData.platform_logo}`} 
+                alt="Logo" 
+                className="h-6 w-auto object-contain rounded-sm"
+                onError={(e) => (e.target.style.display = 'none')} 
+              />
+            )}
+            
+            <h1 className="text-2xl font-bold text-(--clr-text-header) tracking-tight">
+              {platformData?.platform_name || "LOGO"}
+            </h1>
+          </div>
+          
           <h1 className='flex items-center gap-1 text-base'>
             Already have an account? 
             <Link to="/clinic/login" className='underline text-(--clr-text-header) hover:opacity-75'>Sign in</Link>

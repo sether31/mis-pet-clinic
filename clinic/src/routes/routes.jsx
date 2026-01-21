@@ -1,7 +1,8 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 // components
 import ProtectedRoute from "../components/ProtectedRoute";
-// hooks
+// context
+import PlatformProvider from "../contexts/PlatformProvider";
 import UIProvider from "../contexts/UiProvider";
 import UserProvider from "../contexts/UserProvider";
 // layout
@@ -25,18 +26,18 @@ import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
 import AppointmentManagement from "../pages/portal/appointment-management/AppointmentManagement";
 
-
-
 export const routes = createBrowserRouter([
   { path: "*", element: <NotFound /> },
   {
     path: "/clinic",
     element: (
-      <UserProvider>
-        <UIProvider>
-          <Outlet />
-        </UIProvider>
-      </UserProvider>
+      <PlatformProvider>
+        <UserProvider>
+          <UIProvider>
+            <Outlet />
+          </UIProvider>
+        </UserProvider>
+      </PlatformProvider>
     ),
     children: [
       // authentication
