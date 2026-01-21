@@ -273,7 +273,7 @@ export default function Login() {
                 )}
                 
                 <h1 className="text-2xl font-bold text-(--clr-text-header) tracking-tight">
-                  {platformData?.platform_name || "Pet Clinic"}
+                  {platformData?.platform_name || "LOGO"}
                 </h1>
               </motion.div>
 

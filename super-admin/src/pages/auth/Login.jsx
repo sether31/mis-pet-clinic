@@ -230,10 +230,10 @@ export default function Login() {
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={formItemVariants} className="flex gap-2 items-center mb-6">
+              <motion.div variants={formItemVariants} className="flex gap-2 items-center my-2">
                 {platformData?.platform_logo && (
                   <img 
-                    src={`${API_URL}/${platformData.platform_logo.replace(/^\//, '')}`} 
+                    src={`${API_URL}/${platformData.platform_logo}`} 
                     alt="Logo" 
                     className="h-6 w-auto object-contain rounded-sm"
                     onError={(e) => (e.target.style.display = 'none')} 
@@ -241,7 +241,7 @@ export default function Login() {
                 )}
                 
                 <h1 className="text-2xl font-bold text-(--clr-text-header) tracking-tight">
-                  {platformData?.platform_name || "Pet Clinic"}
+                  {platformData?.platform_name || "LOGO"}
                 </h1>
               </motion.div>
               

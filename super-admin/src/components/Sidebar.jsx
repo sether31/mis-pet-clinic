@@ -60,7 +60,7 @@ export default function Sidebar({className, open, setOpen}) {
           <div className="flex gap-2 items-center pr-4 truncate">
             {platformData?.platform_logo && (
               <img 
-                src={`${API_URL}/${platformData.platform_logo.replace(/^\//, '')}`} 
+                src={`${API_URL}/${platformData.platform_logo}`} 
                 alt="Logo" 
                 className="h-6 w-auto object-contain rounded-sm"
                 onError={(e) => (e.target.style.display = 'none')} 
@@ -68,7 +68,7 @@ export default function Sidebar({className, open, setOpen}) {
             )}
             
             <h1 className="text-xl font-bold text-(--clr-text-header) tracking-tight">
-              {platformData?.platform_name || "Pet Clinic"}
+              {platformData?.platform_name || "LOGO"}
             </h1>
           </div>
         
