@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
+import { jwtDecode } from 'jwt-decode';
 import { motion } from 'framer-motion';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// hooks
+import { useUser } from '../../hooks/useUser';
+import { useUI } from '../../hooks/useUI';
 // utils
 import { validateEmail } from '../../utils/validateEmail'
 import wait from '../../utils/wait'
@@ -11,16 +14,21 @@ import { validRoleToken } from '../../utils/validRoleToken';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import OTPInput from '../../components/OtpInput';
-import FullScreenLoader from '../../components/FullScreenLoader';
 // image
 import loginPic from '../../assets/images/login-pic.png';
 // icons
 import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
+import { usePlatform } from '../../hooks/usePlatform';
+
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { setUser } = useUser();
+  const { platformData } = usePlatform();
+  const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState({
     email: "",
     password: ""
@@ -33,17 +41,20 @@ export default function Login() {
   const [showOTP, setShowOTP] = useState(false); 
   const [userId, setUserId] = useState(null); 
   const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('Loading...');
-  const navigate = useNavigate();
-
 
   useEffect(() => {
     const checkToken = async () => {
+      const token = localStorage.getItem("access_token");
       const role = validRoleToken(['super_admin']);
-      if(role) {
+    
+      if(role && token) {
+        const decoded = jwtDecode(token);
+        setUser(decoded);
+        
         setLoading(true);
-        setLoadingMessage('Logging in...');
+        showLoader('Logging in...');
         await wait(1000);
+        hideLoader();
         navigate('/dashboard', { replace: true });
       }
     }
@@ -79,7 +90,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setLoadingMessage('Loading...');
+    showLoader('Loading...');
     
     let newErrors = {};
     if(!form.email.trim()){
@@ -92,7 +103,7 @@ export default function Login() {
     }
     setErrors(newErrors);
     if(Object.keys(newErrors).length > 0) {
-      setLoading(false);
+      hideLoader();
       return;
     } 
 
@@ -123,13 +134,13 @@ export default function Login() {
       console.log("Fetch error:", error);
       toast.error("Something went wrong");
     } finally {
-      setLoading(false);
+      hideLoader();
     }
   }
 
   const handleOTPComplete = async (otp) => {
     setLoading(true);
-    setLoadingMessage('Verifying OTP...');
+    showLoader('Verifying OTP...');
 
     try {
       const res = await fetch(`${API_URL}/api/auth/login-otp-super-admin.php`, {
@@ -145,6 +156,10 @@ export default function Login() {
         return;
       }
 
+      localStorage.setItem("access_token", data.access_token);
+      const decoded = jwtDecode(data.access_token);
+      setUser(decoded);
+
       toast.success(data.message);
       await wait(1000);
       // save token
@@ -156,7 +171,7 @@ export default function Login() {
       console.log("OTP verify error:", error);
       toast.error("Something went wrong");
     } finally {
-      setLoading(false);
+      hideLoader();
     }
   };
 
@@ -174,6 +189,16 @@ export default function Login() {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100 } },
   };
+
+  if(!platformData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-gray-400 font-medium text-xl">
+          Loading...
+        </div>
+      </div>
+    );
+  }
   
 
   return (
@@ -205,7 +230,21 @@ export default function Login() {
               initial="hidden"
               animate="visible"
             >
-              <motion.h1 variants={formItemVariants} className='mb-4 text-xl font-medium'>LOGO</motion.h1>
+              <motion.div variants={formItemVariants} className="flex gap-2 items-center mb-6">
+                {platformData?.platform_logo && (
+                  <img 
+                    src={`${API_URL}/${platformData.platform_logo.replace(/^\//, '')}`} 
+                    alt="Logo" 
+                    className="h-6 w-auto object-contain rounded-sm"
+                    onError={(e) => (e.target.style.display = 'none')} 
+                  />
+                )}
+                
+                <h1 className="text-2xl font-bold text-(--clr-text-header) tracking-tight">
+                  {platformData?.platform_name || "Pet Clinic"}
+                </h1>
+              </motion.div>
+              
               <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-(--clr-primary)'>Login in to your Account</motion.h1>
 
               <motion.p variants={formItemVariants} className="mb-6 text-gray-600">
@@ -245,7 +284,6 @@ export default function Login() {
                     type="submit" 
                     variant="primary" 
                     className="w-full mt-4 cursor-pointer"
-                    load={loading}
                   >
                     Login
                   </Button>
@@ -270,12 +308,6 @@ export default function Login() {
           setShowOTP={setShowOTP}
           error={errors.otp} 
         />
-      )}
-
-      <ToastContainer position="top-right" autoClose={3000} />
-
-      {loading && (
-        <FullScreenLoader message={loadingMessage} />
       )}
     </>
   )

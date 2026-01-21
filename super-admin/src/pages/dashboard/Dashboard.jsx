@@ -21,7 +21,7 @@ export default function Dashboard() {
         {/* greet header */}
         <header className='mb-6'>
           <h1 className='text-2xl font-semibold'>
-            Welcome Back, {user?.fname} {user?.lname}!
+            Welcome Back, {user?.name}!
           </h1>
           <p className='text-sm capitalize opacity-70'>
             {user?.role?.replace('_', ' ')}

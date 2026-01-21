@@ -11,7 +11,9 @@ const links = [
   { label: 'Clinic Applications', path: '/clinic-applications' },
   { label: 'Registered Clinics', path: '/registered-clinics' },
   { label: 'Subscription Plans', path : '/subscription-plans' },
-  { label: 'Platform Analytics', path: '/platform-analytics' }
+  { label: 'Platform Analytics', path: '/platform-analytics' },
+  // nav links
+  { label: 'Settings', path: '/settings' },
 ];
 
 export default function Header() {
@@ -34,7 +36,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-(--clr-primary) border-b border-white/10">
-      <div className="flex items-center justify-between flex-1 px-6 container-xl">
+      <div className="flex items-center justify-between flex-1 container-xl">
         <div className="flex flex-col">
           <motion.h1 
             key={pageTitle} 
@@ -60,9 +62,9 @@ export default function Header() {
             </span>
           </button>
 
-          <button className='p-2.5 rounded-xl bg-(--clr-black) text-(--clr-text-secondary) cursor-pointer hover:opacity-85 transition-all duration-300'>
+          <Link to="/settings" className='p-2.5 rounded-xl bg-(--clr-black) text-(--clr-text-secondary) cursor-pointer hover:opacity-85 transition-all duration-300'>
             <LuSettings size={20} />
-          </button>
+          </Link>
         </div>
       </div>
     </header>
