@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../hooks/useUI'
+import { usePlatform } from '../../hooks/usePlatform';
 // utils
 import wait from '../../utils/wait';
 import { clearSession } from '../../utils/clearSession';
@@ -17,11 +18,11 @@ import { IoLogOut } from "react-icons/io5";
 import AddBranchModal from '../../components/AddBranchModal';
 import BranchStatusModal from '../../components/BranchStatusModal';
 
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function SelectBranch() {
   const navigate = useNavigate();
+  const { platformData } = usePlatform();
   const { showLoader, hideLoader } = useUI();
   const [branches, setBranches] = useState([]);
   const [activeTab, setActiveTab] = useState('approved'); 
@@ -124,9 +125,22 @@ export default function SelectBranch() {
     <>
       <div className="min-h-screen bg-(--clr-bg-page) flex flex-col">
         {/* nav */}
-        <nav className="fixed top-0 left-0 z-50 w-full bg-(--clr-primary) border-b border-gray-300">
+        <nav className="fixed top-0 left-0 z-50 w-full border-b border-gray-300">
           <div className="flex items-center justify-between px-6 py-4 mx-auto container-xl">
-            <span className="text-xl font-bold tracking-tight">LOGO</span>
+            <div className="flex gap-2 items-center">
+              {platformData?.platform_logo && (
+                <img 
+                  src={`${API_URL}/${platformData.platform_logo}`} 
+                  alt="Logo" 
+                  className="h-6 w-auto object-contain rounded-sm"
+                  onError={(e) => (e.target.style.display = 'none')} 
+                />
+              )}
+              
+              <h1 className="text-2xl font-bold text-(--clr-text-header) tracking-tight">
+                {platformData?.platform_name || "LOGO"}
+              </h1>
+          </div>
            
             <button 
               type="button" 

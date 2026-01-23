@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../hooks/useUI';
+import { usePlatform } from '../hooks/usePlatform';
 // utils
 import wait from '../utils/wait';
 import { authFetch } from '../utils/authFetch';
@@ -46,6 +47,7 @@ const initialFormState = {
 }
 
 export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
+  const { platformData } = usePlatform();
   const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
   const [errors, setErrors] = useState({});
@@ -268,7 +270,21 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
       >
         {/* nav */}
         <div className='container-xl flex items-center justify-between gap-4 my-5'>
-          <h1 className='text-2xl font-medium'>LOGO</h1>
+          <div className="flex gap-2 items-center">
+            {platformData?.platform_logo && (
+              <img 
+                src={`${API_URL}/${platformData.platform_logo}`} 
+                alt="Logo" 
+                className="h-6 w-auto object-contain rounded-sm"
+                onError={(e) => (e.target.style.display = 'none')} 
+              />
+            )}
+            
+            <h1 className="text-2xl font-bold text-(--clr-text-header) tracking-tight">
+              {platformData?.platform_name || "LOGO"}
+            </h1>
+          </div>
+
           <button onClick={onClose}  className="text-gray-400 cursor-pointer hover:text-red-500">
             <HiXCircle size={32} />
           </button>

@@ -1,7 +1,8 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 // components
 import ProtectedRoute from "../components/ProtectedRoute";
-// hooks
+// context
+import PlatformProvider from "../contexts/PlatformProvider";
 import UIProvider from "../contexts/UiProvider";
 import UserProvider from "../contexts/UserProvider";
 // layout
@@ -23,19 +24,20 @@ import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
 import { DashboardSwitch } from "../pages/portal/dashboard/DashboardSwitch";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
-
-
+import AppointmentManagement from "../pages/portal/appointment-management/AppointmentManagement";
 
 export const routes = createBrowserRouter([
   { path: "*", element: <NotFound /> },
   {
     path: "/clinic",
     element: (
-      <UserProvider>
-        <UIProvider>
-          <Outlet />
-        </UIProvider>
-      </UserProvider>
+      <PlatformProvider>
+        <UserProvider>
+          <UIProvider>
+            <Outlet />
+          </UIProvider>
+        </UserProvider>
+      </PlatformProvider>
     ),
     children: [
       // authentication
@@ -82,6 +84,11 @@ export const routes = createBrowserRouter([
                   { index: true, element: <Navigate to="dashboard" replace /> },
                   { path: "*", element: <NotFoundDashboard />},
                   { path: "dashboard", element: <DashboardSwitch /> },     
+                  { path: "appointment-management", element: (
+                    <ProtectedRoute requiredPermission="appointment_management">
+                      <AppointmentManagement />
+                    </ProtectedRoute>
+                  )},
                   { path: "staff-management", element: (
                     <ProtectedRoute requiredPermission="staff_management">
                       <StaffManagement />

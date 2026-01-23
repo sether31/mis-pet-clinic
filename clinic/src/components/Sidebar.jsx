@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 // hooks
 import { useUser } from '../hooks/useUser';
+import { usePlatform } from '../hooks/usePlatform'
 // utils
 import { authFetch } from '../utils/authFetch';
 // icons
@@ -10,9 +11,16 @@ import { RxHamburgerMenu } from "react-icons/rx"
 import { MdOutlineClose } from "react-icons/md"
 import { RiDashboardLine } from "react-icons/ri"
 import { LuUsers } from 'react-icons/lu';
+import { FaRegCalendarAlt } from "react-icons/fa";
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
+  { 
+    label: 'Appointment Management', 
+    path: 'appointment-management', 
+    icon: FaRegCalendarAlt, 
+    requiredPermission: 'appointment_management' 
+  },
   { 
     label: 'Staff Management', 
     path: 'staff-management', 
@@ -27,6 +35,7 @@ export default function Sidebar({className, open, setOpen}) {
   const location = useLocation();
   const { branchId } = useParams();
   const { user } = useUser(); 
+  const { platformData } = usePlatform();
   const [branchName, setBranchName] = useState("");
 
   const visibleItems = sidebarItems.filter(item => {
@@ -79,21 +88,35 @@ export default function Sidebar({className, open, setOpen}) {
       ${open ? 'w-64' : 'w-18'} ${className}}`}
     >
       {/* header */}
-      <div className={`p-4 flex items-center justify-between bg-(--clr-primary) ${open ? '' : 'border-b border-b-black'}`}>
+       <div className={`p-4 flex items-center justify-between  ${open ? 'bg-(--clr-black)' : 'bg-(--clr-primary) border-b border-b-black'}`}>
         <motion.div
-          className="overflow-hidden whitespace-nowrap text-(--clr-text-secondary)"
+          className="overflow-hidden whitespace-nowrap text-(--clr-text-secondary) w-full"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="pr-4 text-xl font-medium truncate" title={branchName}>{branchName}</h1>
-          <h2 className="text-sm capitalize">{user?.role?.replace(/_/g, ' ')} portal</h2>
+          <div className="flex gap-2 items-center pr-4 truncate">
+            {platformData?.platform_logo && (
+              <img 
+                src={`${API_URL}/${platformData.platform_logo}`} 
+                alt="Logo" 
+                className="h-6 w-auto object-contain rounded-sm"
+                onError={(e) => (e.target.style.display = 'none')} 
+              />
+            )}
+            
+            <h1 className="text-xl font-bold text-(--clr-text-header) tracking-tight">
+              {platformData?.platform_name || "LOGO"}
+            </h1>
+          </div>
+        
+          <h2 className="text-sm capitalize">{user?.role.replace(/_/g, ' ')} Portal</h2>
         </motion.div>
         
         {/* hamburger */}
         <div onClick={toggleMenu} className='cursor-pointer'>
           <RxHamburgerMenu className={`hover:text-(--clr-text-secondary) duration-300 ease-in-out ${open ? 'hidden' : 'block'}`} size={32} />
-          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out hover:text-(--clr-text-secondary) ${open ? 'block' : 'hidden'}`} size={32} />
+          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out text-(--clr-text-secondary) ${open ? 'block' : 'hidden'}`} size={32} />
         </div>
       </div>
 

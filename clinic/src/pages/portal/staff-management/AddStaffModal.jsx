@@ -33,6 +33,7 @@ export default function AddStaffModal({ initialData, onClose, onRefresh, branchI
 
   const availablePermissions = [
     { id: "role_dashboard", label: "Role Dashboard"},
+    { id: "appointment_management", label: "Appointment Management"},
     { id: "staff_management", label: "Staff Management"}
   ];
 

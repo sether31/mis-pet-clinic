@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../hooks/useUI';
 import { useUser } from '../../hooks/useUser';
+import { usePlatform } from '../../hooks/usePlatform';
 // utils
 import { validateEmail } from '../../utils/validateEmail'
 import { validRoleToken } from '../../utils/validRoleToken';
@@ -21,12 +22,14 @@ import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
 
 
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login() {
   const navigate = useNavigate();
-  const { showLoader, hideLoader } = useUI();
   const { setUser } = useUser();
+  const { platformData } = usePlatform();
+  const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -218,6 +221,16 @@ export default function Login() {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100 } },
   };
+
+  if(!platformData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-gray-400 font-medium text-xl">
+          Loading...
+        </div>
+      </div>
+    );
+  }
   
 
   return (
@@ -249,7 +262,21 @@ export default function Login() {
               initial="hidden"
               animate="visible"
             >
-              <motion.h1 variants={formItemVariants} className='mb-4 text-xl font-medium'>LOGO</motion.h1>
+              <motion.div variants={formItemVariants} className="flex gap-2 items-center my-2">
+                {platformData?.platform_logo && (
+                  <img 
+                    src={`${API_URL}/${platformData.platform_logo}`} 
+                    alt="Logo" 
+                    className="h-6 w-auto object-contain rounded-sm"
+                    onError={(e) => (e.target.style.display = 'none')} 
+                  />
+                )}
+                
+                <h1 className="text-2xl font-bold text-(--clr-text-header) tracking-tight">
+                  {platformData?.platform_name || "LOGO"}
+                </h1>
+              </motion.div>
+
               <motion.h1 variants={formItemVariants} className='mb-4 text-4xl font-bold text-(--clr-text-header)'>Login in to your Account</motion.h1>
 
               <motion.p variants={formItemVariants} className="mb-6 text-gray-600">

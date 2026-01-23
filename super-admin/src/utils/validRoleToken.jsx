@@ -5,14 +5,15 @@ export function validRoleToken(allowedRoles = []) {
   if(!token) return null;
 
   try {
-    const { exp, role } = jwtDecode(token);
+    const decoded = jwtDecode(token);
+    const { exp, role } = decoded;
     // check token
     if(!exp || exp * 1000 < Date.now()) {
       localStorage.removeItem('access_token');
       return null;
     }
 
-    return allowedRoles.includes(role) ? role : null;
+    return allowedRoles.includes(role) ? decoded : null;
   } catch {
     localStorage.removeItem('access_token');
     return null;

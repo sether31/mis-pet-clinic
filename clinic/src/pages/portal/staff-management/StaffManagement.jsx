@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
-
+// sections
 import AddStaffModal from './AddStaffModal';
 import StaffCard from './StaffCard';
 import StaffTable from './StaffTable';
@@ -14,10 +14,10 @@ import StaffTable from './StaffTable';
 
 export default function StaffManagement() {
   const { branchId } = useParams();
-  
   const [activeTab, setActiveTab] = useState('staffList'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [staffData, setStaffData] = useState([]);
+  const [cardData, setCardData] = useState(null)
   const [selectedStaff, setSelectedStaff] = useState(null);
 
   const fetchStaffData = useCallback(async () => {
@@ -27,11 +27,12 @@ export default function StaffManagement() {
         `${import.meta.env.VITE_API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`,
         { method: 'GET' }
       );
-      if (response.success) {
+      if(response.success) {
         setStaffData(response.data);
+        setCardData(response.cardData);
       }
-    } catch (error) {
-      console.error("Fetch Error:", error);
+    } catch(error) {
+      console.error("error:", error);
     }
   }, [branchId]);
 
@@ -63,7 +64,7 @@ export default function StaffManagement() {
         fetchStaffData(); 
       } else {
         console.error(response.message)
-        toast.error();
+        toast.error(response.message || "Something went wrong");
       }
     } catch (error) {
       console.error("Toggle Error:", error);
@@ -83,7 +84,7 @@ export default function StaffManagement() {
           </div>
         </div>
 
-        <StaffCard />
+        <StaffCard data={cardData} />
 
         <div className="mt-8">
           {/* tabs */}

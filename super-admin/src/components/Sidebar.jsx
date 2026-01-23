@@ -1,6 +1,11 @@
-import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+// hooks
+import { useUser } from '../hooks/useUser'
+import { usePlatform } from '../hooks/usePlatform'
+import { useUI } from '../hooks/useUI'
+// utils
+import wait from '../utils/wait'
 // icons
 import { RxHamburgerMenu } from "react-icons/rx"
 import { MdOutlineClose } from "react-icons/md"
@@ -9,10 +14,6 @@ import { CgFileDocument } from "react-icons/cg"
 import { LuBuilding2 } from "react-icons/lu"
 import { TbGraph, TbLogout } from "react-icons/tb"
 import { MdOutlineSubscriptions } from "react-icons/md";
-// hooks
-import { useUI } from '../hooks/useUI'
-// utils
-import wait from '../utils/wait'
 
 const sidebarItems = [
   { label: 'Dashboard', path: '/dashboard', icon: RiDashboardLine },
@@ -22,10 +23,14 @@ const sidebarItems = [
   { label: 'Platform Analytics', path: '/platform-analytics', icon: TbGraph }
 ];
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Sidebar({className, open, setOpen}) {
-  const { showLoader, hideLoader } = useUI();
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, setUser } = useUser();
+  const { platformData } = usePlatform();
+  const { showLoader, hideLoader } = useUI();
 
   const toggleMenu = () => {
     setOpen(!open);
@@ -35,30 +40,46 @@ export default function Sidebar({className, open, setOpen}) {
     showLoader('Logging out...');
     await wait(1000);
     localStorage.clear();
+    setUser(null);
     navigate('/login', { replace: true });
     hideLoader();
   }
   return (
     <aside 
       className={`fixed top-0 left-0 z-100 border-r h-screen bg-(--clr-primary) transition-all duration-500 ease-in-out
-      ${open ? 'w-64' : 'w-18'} ${className}}`}
+      ${open ? 'w-64' : 'w-18'} ${className}`}
     >
       {/* header */}
-      <div className={`p-4 flex items-center justify-between bg-(--clr-primary) ${open ? '' : 'border-b border-b-black'}`}>
+      <div className={`p-4 flex items-center justify-between  ${open ? 'bg-(--clr-black)' : 'bg-(--clr-primary) border-b border-b-black'}`}>
         <motion.div
-          className="overflow-hidden whitespace-nowrap text-(--clr-text-secondary)"
+          className="overflow-hidden whitespace-nowrap text-(--clr-text-secondary) w-full"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-xl font-medium">PETCARE</h1>
-          <h2 className="text-sm">Super Admin Portal</h2>
+          <div className="flex gap-2 items-center pr-4 truncate">
+            {platformData?.platform_logo && (
+              <img 
+                src={`${API_URL}/${platformData.platform_logo}`} 
+                alt="Logo" 
+                className="h-6 w-auto object-contain rounded-sm"
+                onError={(e) => (e.target.style.display = 'none')} 
+              />
+            )}
+            
+            <h1 className="text-xl font-bold text-(--clr-text-header) tracking-tight">
+              {platformData?.platform_name || "LOGO"}
+            </h1>
+          </div>
+        
+
+          <h2 className="text-sm capitalize">{user?.role.replace(/_/g, ' ')} Portal</h2>
         </motion.div>
         
         {/* hamburger */}
         <div onClick={toggleMenu} className='cursor-pointer'>
           <RxHamburgerMenu className={`hover:text-(--clr-text-secondary) duration-300 ease-in-out ${open ? 'hidden' : 'block'}`} size={32} />
-          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out hover:text-(--clr-text-secondary) ${open ? 'block' : 'hidden'}`} size={32} />
+          <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out text-(--clr-text-secondary) ${open ? 'block' : 'hidden'}`} size={32} />
         </div>
       </div>
 

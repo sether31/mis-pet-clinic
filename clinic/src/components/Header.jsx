@@ -8,7 +8,10 @@ import { LuSettings } from "react-icons/lu";
 
 const links = [
   { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Appointment Management', path: '/appointment-management' },
   { label: 'Staff Management', path: '/staff-management' },
+  // other links
+  { label: 'Settings', path: '/settings'},
 ];
 
 export default function Header() {
