@@ -1,8 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { 
-  HiSearch, HiPencilAlt, HiPlus, HiArchive, 
-  HiRefresh, HiChevronUp, HiChevronDown
-} from 'react-icons/hi';
+import {  HiSearch, HiPencilAlt, HiPlus, HiArchive,  HiRefresh } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi2';
 
 export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate }) {
