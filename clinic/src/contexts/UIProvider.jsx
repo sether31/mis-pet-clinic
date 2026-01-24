@@ -21,7 +21,7 @@ export default function UIProvider({children}) {
   };
 
   return (
-    <UIContext.Provider value={{showLoader, hideLoader}}>
+    <UIContext.Provider value={{showLoader, hideLoader, loading}}>
       {children}
       <ToastContainer 
         position="top-right" 
