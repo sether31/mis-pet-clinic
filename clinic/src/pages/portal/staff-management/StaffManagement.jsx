@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+// hooks
+import { useUI } from '../../../hooks/useUI';
 // utils
 import { authFetch } from '../../../utils/authFetch';
 // components
@@ -10,10 +12,9 @@ import AddStaffModal from './AddStaffModal';
 import StaffCard from './StaffCard';
 import StaffTable from './StaffTable';
 
-
-
 export default function StaffManagement() {
   const { branchId } = useParams();
+  const { showLoader, hideLoader } = useUI();
   const [activeTab, setActiveTab] = useState('staffList'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [staffData, setStaffData] = useState([]);
@@ -22,6 +23,9 @@ export default function StaffManagement() {
 
   const fetchStaffData = useCallback(async () => {
     if (!branchId) return; 
+    
+    showLoader('Fetching staff records...');
+    
     try {
       const response = await authFetch(
         `${import.meta.env.VITE_API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`,
@@ -33,6 +37,8 @@ export default function StaffManagement() {
       }
     } catch(error) {
       console.error("error:", error);
+    } finally {
+      hideLoader(); 
     }
   }, [branchId]);
 
@@ -46,6 +52,7 @@ export default function StaffManagement() {
 
     if (!window.confirm(`Are you sure you want to ${actionText} this staff member?`)) return;
 
+    showLoader(`Please wait, ${actionText} staff...`);
     try {
       const response = await authFetch(
         `${import.meta.env.VITE_API_URL}/api/clinic/general/staff/update-staff-status.php`,
@@ -69,6 +76,8 @@ export default function StaffManagement() {
     } catch (error) {
       console.error("Toggle Error:", error);
       toast.error("Something went wrong");
+    } finally {
+      hideLoader();
     }
   };
 
