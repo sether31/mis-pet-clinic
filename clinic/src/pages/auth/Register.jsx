@@ -375,7 +375,7 @@ export default function Register() {
         
         <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-(--clr-text-header)'>Register Your Clinic</h1>
         <p className='mb-12 text-base'> 
-          Create your clinic account to get started with the ${platformData.platform_name} Platform. <br />
+          Create your clinic account to get started with the {platformData?.platform_name} Platform. <br />
           Please provide accurate information so we can verify your clinic and set up your account.
         </p>
 
