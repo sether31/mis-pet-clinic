@@ -8,7 +8,7 @@ import { usePlatform } from '../hooks/usePlatform'
 import { authFetch } from '../utils/authFetch';
 // icons
 import { RxHamburgerMenu } from "react-icons/rx"
-import { MdOutlineClose } from "react-icons/md"
+import { MdOutlineClose, MdOutlineHomeRepairService } from "react-icons/md"
 import { RiDashboardLine } from "react-icons/ri"
 import { LuUsers } from 'react-icons/lu';
 import { FaRegCalendarAlt } from "react-icons/fa";
@@ -27,6 +27,12 @@ const sidebarItems = [
     icon: LuUsers, 
     requiredPermission: 'staff_management' 
   },
+  { 
+    label: 'Service Management', 
+    path: 'service-management', 
+    icon: MdOutlineHomeRepairService, 
+    requiredPermission: 'service_management' 
+  },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -36,7 +42,7 @@ export default function Sidebar({className, open, setOpen}) {
   const { branchId } = useParams();
   const { user } = useUser(); 
   const { platformData } = usePlatform();
-  const [branchName, setBranchName] = useState("");
+  const [selectedBranch, setSelectedBranch] = useState("");
 
   const visibleItems = sidebarItems.filter(item => {
     // if clinic admin allow all
@@ -62,12 +68,12 @@ export default function Sidebar({className, open, setOpen}) {
         // get branch name
         const fetchBranchName = async () => {
           try {
-            const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-name.php?branch_id=${branchId}`, {}, ['clinic_admin', 'branch_admin', 'staff', 'veterinarian', 'groomer']);
+            const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-name.php?branch_id=${branchId}`);
             if(response.success) {
-              setBranchName(response.branch_name);
+              setSelectedBranch(response);
             }
           } catch(err) {
-            setBranchName("Clinic Portal");
+            setSelectedBranch("Clinic Portal");
           }
         };
 
@@ -95,18 +101,18 @@ export default function Sidebar({className, open, setOpen}) {
           animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex gap-2 items-center pr-4 truncate">
+          <div className="flex items-center gap-2">
             {platformData?.platform_logo && (
               <img 
                 src={`${API_URL}/${platformData.platform_logo}`} 
                 alt="Logo" 
-                className="h-6 w-auto object-contain rounded-sm"
+                className="object-contain w-auto h-6 rounded-sm"
                 onError={(e) => (e.target.style.display = 'none')} 
               />
             )}
             
-            <h1 className="text-xl font-bold text-(--clr-text-header) tracking-tight">
-              {platformData?.platform_name || "LOGO"}
+            <h1 title={selectedBranch?.branch_name} className="text-xl font-bold text-(--clr-text-header) tracking-tight pr-2 truncate">
+              {selectedBranch?.branch_name || "LOGO"}
             </h1>
           </div>
         
