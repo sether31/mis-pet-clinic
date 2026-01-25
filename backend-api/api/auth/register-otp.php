@@ -126,17 +126,32 @@ try {
     ];
 
     $stmtService = $pdo->prepare(
-      "INSERT INTO branch_service_tb (branch_id, service_id, price, duration) 
-      VALUES (:branch_id, :service_id, :price, :duration)"
+      "INSERT INTO branch_service_tb (
+        branch_id, 
+        service_id, 
+        assigned_role,
+        custom_name, 
+        custom_description, 
+        price, 
+        duration
+      ) 
+      SELECT 
+        :branch_id, 
+        service_id, 
+        'veterinarian', 
+        name,        
+        description,    
+        price,       
+        duration   
+      FROM service_tb 
+      WHERE service_id = :service_id"
     );
 
     foreach($servicesArray as $serviceLabel) {
       if(isset($serviceMap[$serviceLabel])) {
         $stmtService->execute([
-          'branch_id' => $branchId, 
-          'service_id' => $serviceMap[$serviceLabel], 
-          'price' => 0.00,    
-          'duration' => null  
+          ':branch_id' => $branchId, 
+          ':service_id' => $serviceMap[$serviceLabel]
         ]);
       }
     }

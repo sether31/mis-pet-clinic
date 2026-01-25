@@ -10,6 +10,7 @@ const links = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Appointment Management', path: '/appointment-management' },
   { label: 'Staff Management', path: '/staff-management' },
+  { label: 'Service Management', path: '/service-management' },
   // other links
   { label: 'Settings', path: '/settings'},
 ];
