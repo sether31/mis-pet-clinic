@@ -8,7 +8,7 @@ import { useUI } from '../hooks/useUI'
 import wait from '../utils/wait'
 // icons
 import { RxHamburgerMenu } from "react-icons/rx"
-import { MdOutlineClose } from "react-icons/md"
+import { MdOutlineClose, MdOutlineHomeRepairService } from "react-icons/md"
 import { RiDashboardLine } from "react-icons/ri"
 import { CgFileDocument } from "react-icons/cg"
 import { LuBuilding2 } from "react-icons/lu"
@@ -20,6 +20,7 @@ const sidebarItems = [
   { label: 'Clinic Applications', path: '/clinic-applications', icon: CgFileDocument },
   { label: 'Registered Clinics', path: '/registered-clinics', icon: LuBuilding2 },
   { label: 'Subscription Plans', path: '/subscription-plans', icon: MdOutlineSubscriptions},
+  { label: 'Service Management', path: '/service-management', icon: MdOutlineHomeRepairService},
   { label: 'Platform Analytics', path: '/platform-analytics', icon: TbGraph }
 ];
 
@@ -57,17 +58,17 @@ export default function Sidebar({className, open, setOpen}) {
           animate={{ opacity: open ? 1 : 0, x: open ? 0 : -20 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex gap-2 items-center pr-4 truncate">
+          <div className="flex items-center gap-2">
             {platformData?.platform_logo && (
               <img 
                 src={`${API_URL}/${platformData.platform_logo}`} 
                 alt="Logo" 
-                className="h-6 w-auto object-contain rounded-sm"
+                className="object-contain w-auto h-6 rounded-sm"
                 onError={(e) => (e.target.style.display = 'none')} 
               />
             )}
             
-            <h1 className="text-xl font-bold text-(--clr-text-header) tracking-tight">
+            <h1 title={platformData?.platform_name} className="text-xl font-bold text-(--clr-text-header) tracking-tight pr-4 truncate">
               {platformData?.platform_name || "LOGO"}
             </h1>
           </div>

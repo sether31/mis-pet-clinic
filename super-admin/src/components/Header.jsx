@@ -11,6 +11,7 @@ const links = [
   { label: 'Clinic Applications', path: '/clinic-applications' },
   { label: 'Registered Clinics', path: '/registered-clinics' },
   { label: 'Subscription Plans', path : '/subscription-plans' },
+  { label: 'Service Management', path: '/service-management' },
   { label: 'Platform Analytics', path: '/platform-analytics' },
   // nav links
   { label: 'Settings', path: '/settings' },
