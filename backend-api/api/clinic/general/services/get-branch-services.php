@@ -3,8 +3,6 @@ require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
 
 validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
-header('Content-Type: application/json');
-
 $branch_id = $_GET['branch_id'] ?? null;
 
 if(!$branch_id || $branch_id === 'undefined') {
@@ -27,13 +25,23 @@ try {
     "total" => count($services),
     "active" => 0,
     "vets" => 0,
-    "groomers" => 0
+    "groomers" => 0,
+    "staff" => 0
   ];
 
   foreach($services as $s) {
-    if((int)$s['status'] === 1) $cardData['active']++;
-    if($s['assigned_role'] === 'veterinarian') $cardData['vets']++;
-    if($s['assigned_role'] === 'groomer') $cardData['groomers']++;
+    if((int)$s['status'] === 1) {
+      $cardData['active']++;
+    }
+
+    // count based on assigned_role
+    if($s['assigned_role'] === 'veterinarian') {
+        $cardData['vets']++;
+    } else if($s['assigned_role'] === 'groomer') {
+        $cardData['groomers']++;
+    } else if($s['assigned_role'] === 'support_staff' || $s['assigned_role'] === 'staff') {
+      $cardData['staff']++;
+    }
   }
   
   echo json_encode(["success" => true, "data" => $services, "cardData" => $cardData]);
