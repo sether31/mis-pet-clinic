@@ -87,14 +87,6 @@ try {
   $servicesArray = json_decode($services, true);
 
   if(!empty($servicesArray)) {
-    $serviceMap = [
-      'general_checkup' => 1,
-      'vaccination' => 2,
-      'surgery' => 3,
-      'grooming' => 4,
-      'emergency_service' => 5
-    ];
-
     $stmtService = $pdo->prepare(
       "INSERT INTO branch_service_tb (
         branch_id, 
@@ -109,21 +101,19 @@ try {
         :branch_id, 
         service_id, 
         'veterinarian', 
-        name,         
-        description,   
-        price,         
-        duration
+        name,        
+        description,    
+        price,       
+        duration   
       FROM service_tb 
       WHERE service_id = :service_id"
     );
 
-    foreach($servicesArray as $serviceLabel) {
-      if(isset($serviceMap[$serviceLabel])) {
-        $stmtService->execute([
-          ':branch_id' => $branchId, 
-          ':service_id' => $serviceMap[$serviceLabel]
-        ]);
-      }
+    foreach($servicesArray as $id) {
+      $stmtService->execute([
+        ':branch_id' => $branchId, 
+        ':service_id' => $id
+      ]);
     }
   }
 
