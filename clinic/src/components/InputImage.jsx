@@ -67,7 +67,7 @@ export default function InputImage({
         </div>
       )}
 
-      <label className="ml-1 text-base font-medium text-gray-700">
+      <label className="ml-1 text-sm font-medium text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
 
@@ -80,7 +80,7 @@ export default function InputImage({
       />
 
       {error && error !== "valid" && (
-        <p className="flex items-center text-sm text-red-500">
+        <p className="flex items-center text-xs text-red-500">
           <HiMiniExclamationCircle size={16} /> {error}
         </p>
       )}
