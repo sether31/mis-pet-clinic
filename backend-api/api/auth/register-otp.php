@@ -116,14 +116,13 @@ try {
   $services = $_POST['services'] ?? '[]';
   $servicesArray = json_decode($services, true);
 
-  if(!empty($servicesArray)) {
-    $serviceMap = [
-      'general_checkup' => 1,
-      'vaccination' => 2,
-      'surgery' => 3,
-      'grooming' => 4,
-      'emergency_service' => 5
-    ];
+  // services
+$services = $_POST['services'] ?? '[]';
+$servicesArray = json_decode($services, true);
+
+if(!empty($servicesArray)) {
+    // We no longer need a hardcoded $serviceMap! 
+    // $servicesArray already contains the IDs from service_tb.
 
     $stmtService = $pdo->prepare(
       "INSERT INTO branch_service_tb (
@@ -147,15 +146,14 @@ try {
       WHERE service_id = :service_id"
     );
 
-    foreach($servicesArray as $serviceLabel) {
-      if(isset($serviceMap[$serviceLabel])) {
+    foreach($servicesArray as $id) {
+        // Just execute using the ID sent from React
         $stmtService->execute([
           ':branch_id' => $branchId, 
-          ':service_id' => $serviceMap[$serviceLabel]
+          ':service_id' => $id
         ]);
-      }
     }
-  }
+}
 
 
   // file upload
@@ -166,7 +164,7 @@ try {
 
     $baseDir = dirname(__DIR__, 2) . "/uploads/clinic/$branchId/$type/";
     if(!is_dir($baseDir)) {
-      mkdir($baseDir, 0777, true);
+      mkdir($baseDir, 0755, true);
     }
 
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
