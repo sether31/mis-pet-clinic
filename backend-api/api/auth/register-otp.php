@@ -111,19 +111,11 @@ try {
 
   $branchId = $pdo->lastInsertId();
 
-
   // services
   $services = $_POST['services'] ?? '[]';
   $servicesArray = json_decode($services, true);
 
-  // services
-$services = $_POST['services'] ?? '[]';
-$servicesArray = json_decode($services, true);
-
-if(!empty($servicesArray)) {
-    // We no longer need a hardcoded $serviceMap! 
-    // $servicesArray already contains the IDs from service_tb.
-
+  if(!empty($servicesArray)) {
     $stmtService = $pdo->prepare(
       "INSERT INTO branch_service_tb (
         branch_id, 
@@ -147,13 +139,12 @@ if(!empty($servicesArray)) {
     );
 
     foreach($servicesArray as $id) {
-        // Just execute using the ID sent from React
-        $stmtService->execute([
-          ':branch_id' => $branchId, 
-          ':service_id' => $id
-        ]);
+      $stmtService->execute([
+        ':branch_id' => $branchId, 
+        ':service_id' => $id
+      ]);
     }
-}
+  }
 
 
   // file upload
