@@ -11,6 +11,7 @@ import Header from '../../../components/Header';
 import AddStaffModal from './AddStaffModal';
 import StaffCard from './StaffCard';
 import StaffTable from './StaffTable';
+import StaffSchedule from './StaffSchedule';
 
 export default function StaffManagement() {
   const { branchId } = useParams();
@@ -20,6 +21,7 @@ export default function StaffManagement() {
   const [staffData, setStaffData] = useState([]);
   const [cardData, setCardData] = useState(null)
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchStaffData = useCallback(async () => {
     if (!branchId) return; 
@@ -81,6 +83,13 @@ export default function StaffManagement() {
     }
   };
 
+  const filteredStaff = staffData.filter(staff => {
+    const fullName = `${staff.fname} ${staff.lname}`.toLowerCase();
+    const role = (staff.role_name || "").toLowerCase();
+    const search = searchTerm.toLowerCase();
+    return fullName.includes(search) || role.includes(search);
+  });
+
   return (
     <div className="bg-(--clr-bg-page) min-h-screen">
       <Header />
@@ -97,16 +106,16 @@ export default function StaffManagement() {
 
         <div className="mt-8">
           {/* tabs */}
-          <div className="flex w-full max-w-md p-1 mx-auto mb-6 bg-gray-200 rounded-2xl lg:mx-0">
+          <div className="flex w-full max-w-md p-1 mx-auto mb-6 bg-gray-100 rounded-2xl lg:mx-0">
             <button 
               onClick={() => setActiveTab('staffList')} 
-              className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${activeTab === 'staffList' ? 'bg-white text-black' : 'text-gray-500'}`}
+              className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${activeTab === 'staffList' ? 'bg-(--clr-primary) text-(--clr-text-secondary)' : 'text-gray-500'}`}
             >
               Staff list
             </button>
             <button 
               onClick={() => setActiveTab('schedule')} 
-              className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${activeTab === 'schedule' ? 'bg-white text-black' : 'text-gray-500'}`}
+              className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${activeTab === 'schedule' ? 'bg-(--clr-primary) text-(--clr-text-secondary)' : 'text-gray-500'}`}
             >
               Schedule
             </button>
@@ -128,9 +137,11 @@ export default function StaffManagement() {
               />
             </div>
           ) : (
-            <div key="schedule" className="flex flex-col items-center justify-center py-20 bg-white border border-gray-100 rounded-3xl">
-              <h1 className="text-xl font-bold">Schedule</h1>
-            </div>
+            <StaffSchedule
+              staffData={filteredStaff} // Pass the filtered list
+              searchTerm={searchTerm}
+              onSearch={setSearchTerm} // Just updates state, no API call
+            />
           )}
         </div>
       </section>

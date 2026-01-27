@@ -23,6 +23,7 @@ try {
       u.last_name as lname, 
       u.email, 
       u.role_id, 
+      u.profile_picture as profile_pic,
       r.role_name,
       bs.staff_id,
       bs.branch_id,
@@ -36,7 +37,27 @@ try {
   $stmt->execute([':branch_id' => $branch_id]);
   $staff = $stmt->fetchAll();
 
-  // initialize count data
+  // get schedules and filter branch_id via staff_id
+  $schedStmt = $pdo->prepare(
+    "SELECT sch.staff_id, sch.day_of_week, sch.is_available, sch.start_time, sch.end_time 
+    FROM branch_staff_schedule_tb sch
+    JOIN branch_staff_tb bs ON sch.staff_id = bs.staff_id
+    WHERE bs.branch_id = :branch_id"
+  );
+  $schedStmt->execute([':branch_id' => $branch_id]);
+  $allSchedules = $schedStmt->fetchAll();
+
+  // group schedules by staff_id
+  $schedulesByStaff = [];
+  foreach ($allSchedules as $s) {
+    $schedulesByStaff[$s['staff_id']][$s['day_of_week']] = [
+      'is_workday' => (bool)$s['is_available'],
+      'start' => substr($s['start_time'], 0, 5), 
+      'end' => substr($s['end_time'], 0, 5)
+    ];
+  }
+
+  // initialize card data
   $cardData = [
     "total" => count($staff),
     "active" => 0,
@@ -48,26 +69,29 @@ try {
   ];
 
   foreach($staff as &$member) {
-    // decode permissions
-    $member['permissions'] = json_decode($member['permissions'] ?? '[]');
-    
+    $member['schedule'] = $schedulesByStaff[$member['staff_id']] ?? (object)[];
+    // decode permissions 
+    $member['permissions'] = json_decode($member['permissions'] ?? '[]') ?: [];
     // count active
-    if ((int)$member['status'] === 1) $cardData['active']++;
-    
-    // count role
+    if((int)$member['status'] === 1) $cardData['active']++; 
+    // count roles 
     $role = strtolower($member['role_name']);
-    if ($role === 'branch_admin') $cardData['branch_admin']++;
-    elseif ($role === 'veterinarian') $cardData['vets']++;
-    elseif ($role === 'groomer') $cardData['groomers']++;
-    elseif ($role === 'staff') $cardData['staff']++;
+    if(str_contains($role, 'manager') || str_contains($role, 'admin')) {
+      $cardData['branch_admin']++;
+    } elseif(str_contains($role, 'veterinarian')) {
+      $cardData['vets']++;
+    } elseif(str_contains($role, 'groomer')) {
+      $cardData['groomers']++;
+    } else {
+      $cardData['staff']++;
+    }
   }
 
   echo json_encode([
-    "success" => true,
-    "data" => $staff,
-    "cardData" => $cardData 
+      "success" => true,
+      "data" => $staff,
+      "cardData" => $cardData 
   ]);
-
 } catch(Exception $e) {
   echo json_encode([
     "success" => false,
