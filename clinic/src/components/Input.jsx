@@ -14,7 +14,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
       ? "border-green-500"
       : error
       ? "border-red-500"
-      : "border-gray-300";
+      : "border-gray-300 focus-within:border-(--clr-black)";
 
   return (
     <div className="flex flex-col w-full gap-1">
@@ -22,7 +22,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
       {label && (
         <label
           htmlFor={id || undefined}
-          className={`text-base font-medium text-gray-700 ${labelStyle}`}
+          className={`text-sm ml-1 font-medium text-gray-700 ${labelStyle}`}
         >
           {label}{" "}
           {isImportant && <span className="text-red-500">*</span>}

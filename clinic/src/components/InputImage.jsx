@@ -5,14 +5,17 @@ import noImage from '../assets/images/no-image.jpg';
 export default function InputImage({
   label = "Upload Image",
   name = "image",
-  required = true,
+  required = false,
   className = "",
   size = '150px',
   isPreview = false,
   error,
-  onChange
+  onChange,
+  existingImage = null
 }) {
   const [preview, setPreview] = useState(null);
+
+  const displayImage = preview || (existingImage ? `${import.meta.env.VITE_API_URL}/${existingImage}` : noImage);
 
   const borderColor =
   error === "valid"
@@ -44,30 +47,21 @@ export default function InputImage({
       {/* Preview */}
       {isPreview && (
         <div
-          className='mb-4 overflow-hidden bg-gray-300 rounded-lg'
+          className='mb-2 overflow-hidden bg-gray-300 rounded-lg'
           style={{ width: size, height: size }}
         >
-          {preview ? (
-            <a href={preview} target="_blank" rel="noopener noreferrer">
-              <img
-                src={preview}
-                alt="preview"
-                className="object-cover w-full h-full rounded-lg"
-              />
-            </a>
-          ) : (
             <a rel="noopener noreferrer">
               <img
-                src={noImage}
+                src={displayImage}
                 alt="preview"
                 className="object-cover w-full h-full rounded-lg"
               />
             </a>
-          )}
+       
         </div>
       )}
 
-      <label className="ml-1 text-base font-medium text-gray-700">
+      <label className="ml-1 text-sm font-medium text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
 
@@ -80,7 +74,7 @@ export default function InputImage({
       />
 
       {error && error !== "valid" && (
-        <p className="flex items-center text-sm text-red-500">
+        <p className="flex items-center text-xs text-red-500">
           <HiMiniExclamationCircle size={16} /> {error}
         </p>
       )}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 // hooks
@@ -50,7 +50,23 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
   const { platformData } = usePlatform();
   const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
+  const [dbServices, setDbServices] = useState([]);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const fetchMasterServices = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/public-data/get-services.php`);
+        const data = await res.json();
+        if(data.success) {
+          setDbServices(data.data);
+        }
+      } catch(err) {
+        console.error("Failed to fetch services", err);
+      }
+    };
+    fetchMasterServices();
+  }, []);
 
   const inputLabels = {
     clinicName: "Clinic Name",
@@ -74,14 +90,6 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     vetLicensePic: "Veterinarian License Picture"
   };
 
-  const serviceLabels = {
-    general_checkup: "General Checkup",
-    vaccination: "Vaccination",
-    surgery: "Surgery",
-    grooming: "Grooming",
-    emergency_service: "Emergency Service"
-  };
-
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     setForm(prev => ({
@@ -100,21 +108,20 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
 
     // check service
     if(name === "services") {
+      const serviceId = Number(value); 
       const selected = [...form.services];
+      const index = selected.indexOf(serviceId);
 
-      if(checked) {
-        selected.push(value);
+      if(index === -1) {
+        selected.push(serviceId); 
       } else {
-        selected.splice(selected.indexOf(value), 1);
+        selected.splice(index, 1); 
       }
-
       setForm(prev => ({ ...prev, services: selected }));
-
       setErrors(prev => ({
         ...prev,
-        services: selected.length === 0 ? "Select at least one service." : ""
+        services: selected.length === 0 ? "Select at least one service." : "valid"
       }));
-
       return;
     }
 
@@ -298,7 +305,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
           {/* registration */}
           <form onSubmit={handleSubmit}>
             <section className='grid gap-4'>
-              {/* Clinic Information */}
+              {/* clinic information */}
               <div className='pb-8 mb-5 border-b border-gray-300'>
                 <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
                   <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
@@ -380,7 +387,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                   />
 
                   <div className='mb-4'>
-                    <label htmlFor='clinicDescription' className='ml-1 text-base font-medium text-gray-700'>
+                    <label htmlFor='clinicDescription' className='ml-1 text-sm font-medium text-gray-700'>
                       Clinic Description {' '}
                       <span className="text-red-500">*</span>
                     </label>
@@ -396,7 +403,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                       onChange={handleChange} 
                     ></textarea>
                     {(errors.clinicDescription && errors.clinicDescription !== "valid") && (
-                      <p className="flex items-center text-sm text-red-500">
+                      <p className="flex items-center text-xs text-red-500">
                         <HiMiniExclamationCircle size={16} />
                         {errors.clinicDescription}
                       </p>
@@ -431,76 +438,88 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                 </div>
               </div>
 
-              {/* Business & licensing Information */}
+              {/* business & licensing information */}
               <div className='pb-8 mb-5 border-b border-gray-300'>
                 <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
                   <CiCreditCard1 className='text-(--clr-text-header)' />
                   <span>Business & licensing Information</span>
                 </h1>
-                <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-                  <InputImage
-                    label="Tin Number Picture"
-                    name="tinNumberPic"
-                    required={true}
-                    onChange={handleChange}
-                    error={errors.tinNumberPic}
-                  />
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6'>
+                  {/* tin id */}
+                  <div className="flex flex-col">
+                    <InputImage
+                      className="mt-4"
+                      label="Tin Number Picture"
+                      name="tinNumberPic"
+                      required={true}
+                      isPreview={true}
+                      onChange={handleChange}
+                      error={errors.tinNumberPic}
+                    />
+                    <Input
+                      value={form.tinNumber}
+                      label="Tin Number"
+                      labelStyle="mb-1 ml-1 mt-2"
+                      id="tinNumber"
+                      isImportant={true}
+                      name="tinNumber"
+                      placeholder="123-456-789-000"
+                      onChange={handleChange}
+                      error={errors.tinNumber}
+                    />
+                  </div>
 
-                  <Input
-                    value={form.tinNumber}
-                    label="Tin Number"
-                    labelStyle="mb-1 ml-1"
-                    id="tinNumber"
-                    isImportant={true}
-                    name="tinNumber"
-                    placeholder="123-456-789-000"
-                    onChange={handleChange}
-                    error={errors.tinNumber}
-                  />
+                  {/* business permit*/}
+                  <div className="flex flex-col">
+                    <InputImage
+                      className="mt-4"
+                      label="Business Permit Picture"
+                      name="businessPermitPic"
+                      required={true}
+                      isPreview={true}
+                      onChange={handleChange}
+                      error={errors.businessPermitPic}
+                    />
+                    <Input
+                      value={form.businessPermitNumber}
+                      label="Business Permit Number"
+                      labelStyle="mb-1 ml-1 mt-2"
+                      id="businessPermitNumber"
+                      isImportant={true}
+                      name="businessPermitNumber"
+                      placeholder="BP-2025-12345"
+                      onChange={handleChange}
+                      error={errors.businessPermitNumber}
+                    />
+                  </div>
 
-                  <InputImage
-                    label="Business Permit Picture"
-                    name="businessPermitPic"
-                    required={true}
-                    onChange={handleChange}
-                    error={errors.businessPermitPic}
-                  />
-
-                  <Input
-                    value={form.businessPermitNumber}
-                    label="Business Permit Number"
-                    labelStyle="mb-1 ml-1"
-                    id="businessPermitNumber"
-                    isImportant={true}
-                    name="businessPermitNumber"
-                    placeholder="BP-2025-12345"
-                    onChange={handleChange}
-                    error={errors.businessPermitNumber}
-                  />
-
-                  <InputImage
-                    label="Veterinarian License Picture"
-                    name="vetLicensePic"
-                    required={true}
-                    onChange={handleChange}
-                    error={errors.vetLicensePic}
-                  />
-
-                  <Input
-                    value={form.vetLicenseNumber}
-                    label="Veterinarian License Number"
-                    labelStyle="mb-1 ml-1"
-                    id="vetLicenseNumber"
-                    isImportant={true}
-                    name="vetLicenseNumber"
-                    placeholder="12345"
-                    onChange={handleChange}
-                    error={errors.vetLicenseNumber}
-                  />
+                  {/* vet license */}
+                  <div className="flex flex-col">
+                    <InputImage
+                      className="mt-4"
+                      label="Veterinarian License Picture"
+                      name="vetLicensePic"
+                      required={true}
+                      isPreview={true}
+                      onChange={handleChange}
+                      error={errors.vetLicensePic}
+                    />
+                    <Input
+                      value={form.vetLicenseNumber}
+                      label="Veterinarian License Number"
+                      labelStyle="mb-1 ml-1 mt-2"
+                      id="vetLicenseNumber"
+                      isImportant={true}
+                      name="vetLicenseNumber"
+                      placeholder="12345"
+                      onChange={handleChange}
+                      error={errors.vetLicenseNumber}
+                    />
+                  </div>
                 </div>
               </div>
                 
-              {/* Services and Operations */}
+              {/* services and operations */}
               <div className='pb-8 mb-5 border-b border-gray-300'>
                 <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
                   <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
@@ -533,32 +552,87 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                       error={errors.clinicEndTime}
                     />
                   </div>
-      
-                  {/* Services Offered */}
-                  <div>
-                    <h1 className='mb-2 text-base font-medium text-gray-700'>
-                      Services Offered {' '}
-                      <span className="text-red-500">*</span>
+
+                  {/* services */}
+                  <div className="relative">
+                    <h1 className='mb-2 ml-1 text-sm font-medium text-gray-700'>
+                      Services Offered <span className="text-red-500">*</span>
                     </h1>
-                    
-                    <div className='grid grid-cols-1 gap-2 lg:grid-cols-2'>
-                      {['general_checkup','vaccination','surgery','grooming','emergency_service'].map(service => (
-                        <label key={service}>
-                          <input
-                            type="checkbox"
-                            name="services"
-                            value={service}
-                            checked={form.services.includes(service)}
-                            onChange={handleChange}
-                            className='accent-[var(--clr-primary)]'
-                          />
-                          {' '} {serviceLabels[service]}
-                        </label>
-                      ))}
+
+                    {/* custom select box */}
+                    <div 
+                      className={`min-h-[45px] p-2 border rounded-lg cursor-pointer flex flex-wrap gap-2 bg-white transition-all ${
+                        errors.services === "valid" ? "border-green-500" : "border-gray-300 focus-within:border-(--clr-black)"
+                      }`}
+                      onClick={() => {
+                        const el = document.getElementById('services-list');
+                        el.classList.toggle('hidden');
+                      }}
+                    >
+                      {form.services.length === 0 && (
+                        <span className="py-1 ml-2 text-gray-400">Select services...</span>
+                      )}
+                      
+                      {form.services.map(selectedId => {
+                        const serviceDetail = dbServices.find(s => s.service_id == selectedId);
+                        return (
+                          <span 
+                            key={selectedId} 
+                            className="px-3 py-1 bg-(--clr-primary) text-white text-[11px] font-bold rounded-full flex items-center gap-2"
+                          >
+                            {serviceDetail ? serviceDetail.name : "Loading..."}
+                            <button 
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleChange({ target: { name: 'services', value: selectedId } });
+                              }}
+                              className="hover:text-red-200"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
                     </div>
-                    {/* errors */}
-                    {errors.services && (
-                      <p className="mt-1 text-sm text-red-500">{errors.services}</p>
+
+                    {/* dropdown */}
+                    <div 
+                      id="services-list" 
+                      className="absolute z-10 hidden w-full mt-1 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-xl max-h-60"
+                      onMouseLeave={() => document.getElementById('services-list').classList.add('hidden')}
+                    >
+                      {dbServices.length > 0 ? (
+                        dbServices.map(service => (
+                          <div
+                            key={service.service_id}
+                            onClick={() => handleChange({ target: { name: 'services', value: service.service_id } })}
+                            className={`px-4 py-3 text-sm cursor-pointer hover:bg-gray-100 flex justify-between items-center ${
+                              form.services.includes(service.service_id) ? "bg-gray-50 font-bold text-(--clr-primary)" : "text-gray-700"
+                            }`}
+                          >
+                            <div>
+                              <p className="font-medium">{service.name}</p>
+                              {service.description && (
+                                <p className="text-[10px] text-gray-400 line-clamp-1">{service.description}</p>
+                              )}
+                            </div>
+                            {form.services.includes(service.service_id) && (
+                              <span className="text-(--clr-primary) font-bold">✓</span>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm italic text-gray-500">No services found.</div>
+                      )}
+                    </div>
+
+                    {/* error message */}
+                    {errors.services && errors.services !== "valid" && (
+                      <p className="flex items-center mt-1 text-xs text-red-500">
+                        <HiMiniExclamationCircle size={16} />
+                        {errors.services}
+                      </p>
                     )}
                   </div>
                 </div>

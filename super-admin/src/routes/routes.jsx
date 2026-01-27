@@ -18,8 +18,9 @@ import RegisteredClinics from "../pages/dashboard/RegisteredClinics";
 import PlatformAnalytics from "../pages/dashboard/PlatformAnalytics";
 import NotFoundDashboard from "../pages/dashboard/NotFoundDashboard";
 import SubscriptionPlans from "../pages/dashboard/SubscriptionPlans"
+import ServiceManagement from "../pages/service-management/ServiceManagement";
+  // other links
 import Settings from "../pages/Navigation/Settings/Settings";
-
 
 export const routes = createBrowserRouter([
   {
@@ -49,8 +50,10 @@ export const routes = createBrowserRouter([
           { path: "dashboard", element: <Dashboard /> },
           { path: "clinic-applications", element: <ClinicApplications /> },
           { path: "registered-clinics", element: <RegisteredClinics /> },
-          { path: "platform-analytics", element: <PlatformAnalytics /> },
           { path: "subscription-plans", element: <SubscriptionPlans />},
+          { path: "service-management", element: <ServiceManagement />},
+          { path: "platform-analytics", element: <PlatformAnalytics /> },
+          // other links
           { path: "settings", element: <Settings /> },
           { path: "*", element: <NotFoundDashboard /> },
         ]

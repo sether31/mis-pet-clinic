@@ -25,6 +25,7 @@ import { DashboardSwitch } from "../pages/portal/dashboard/DashboardSwitch";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
 import AppointmentManagement from "../pages/portal/appointment-management/AppointmentManagement";
+import ServiceManagement from "../pages/portal/service-management/ServiceManagement";
 
 export const routes = createBrowserRouter([
   { path: "*", element: <NotFound /> },
@@ -92,6 +93,11 @@ export const routes = createBrowserRouter([
                   { path: "staff-management", element: (
                     <ProtectedRoute requiredPermission="staff_management">
                       <StaffManagement />
+                    </ProtectedRoute>
+                  )}, 
+                  { path: "service-management", element: (
+                    <ProtectedRoute requiredPermission="service_management">
+                      <ServiceManagement />
                     </ProtectedRoute>
                   )}, 
                 ]
