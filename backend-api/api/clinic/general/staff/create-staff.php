@@ -2,13 +2,11 @@
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
 
-validate_auth(['clinic_admin']); 
+validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
-header('Content-Type: application/json');
+$data = $_POST;
 
-$data = json_decode(file_get_contents("php://input"), true);
-
-if(!$data) {
+if(empty($data)) {
   echo json_encode(["success" => false, "message" => "No data provided"]);
   exit;
 }
@@ -21,22 +19,20 @@ $branch_id = $data['branch_id'] ?? null;
 $status = $data['status'] ?? 0;
 $password = $data['password'] ?? ''; 
 
-$permissions = isset($data['permissions']) ? json_encode($data['permissions']) : json_encode([]);
+$permissionsArray = isset($data['permissions']) ? json_decode($data['permissions'], true) : [];
+$permissionsJson = json_encode($permissionsArray);
+$scheduleData = isset($data['schedule']) ? json_decode($data['schedule'], true) : [];
 
-// check if empty
 if(empty($fname) || empty($lname) || empty($email) || empty($branch_id) || empty($password)) {
   echo json_encode(["success" => false, "message" => "Missing required fields"]);
   exit;
 }
 
-// hash password
-$hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
 try {
   $pdo = (new Database())->pdo;
   $pdo->beginTransaction();
 
-  // check if the user is already exist
+  // check if email exists
   $checkEmail = $pdo->prepare("SELECT user_id FROM user_tb WHERE email = ? LIMIT 1");
   $checkEmail->execute([$email]);
 
@@ -45,42 +41,74 @@ try {
     exit;
   }
 
-  // insert in user_tb
+  // insert user_tb
+  $hashed_password = password_hash($password, PASSWORD_DEFAULT);
   $userStmt = $pdo->prepare(
     "INSERT INTO user_tb (first_name, last_name, email, password, role_id, status) 
-    VALUES (:fname, :lname, :email, :password, :role_id, :status)"
+    VALUES (:fname, :lname, :email, :password, :role_id, 'approved')"
   );
   $userStmt->execute([
     ':fname' => $fname,
     ':lname' => $lname,
     ':email' => $email,
     ':password' => $hashed_password,
-    ':role_id' => $role_id,
-    ':status' => 'approved'
+    ':role_id' => $role_id
   ]);
 
   $user_id = $pdo->lastInsertId();
+
+  // handle profile picture
+  $profilePicPath = null;
+  if(isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
+    $file = $_FILES['profile_pic'];
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = "staff_" . $user_id . "_" . time() . "." . $ext;
+    
+    $uploadDir = "../../../../uploads/profile_pics/";
+    if(!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+    
+    if(move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+      $profilePicPath = "uploads/profile_pics/" . $filename;
+      $updatePic = $pdo->prepare("UPDATE user_tb SET profile_picture = ? WHERE user_id = ?");
+      $updatePic->execute([$profilePicPath, $user_id]);
+    }
+  }
   
+  // insert branch_staff_tb
   $staffStmt = $pdo->prepare(
-    "INSERT INTO branch_staff_tb (user_id, branch_id, permissions, status) 
-    VALUES (:user_id, :branch_id, :permissions, :status)"
+    "INSERT INTO branch_staff_tb (user_id, branch_id, permissions) 
+    VALUES (:user_id, :branch_id, :permissions)"
   );
   $staffStmt->execute([
     ':user_id' => $user_id,
     ':branch_id' => $branch_id,
-    ':permissions' => json_encode($data['permissions'] ?? []),
-    ':status' => $status
+    ':permissions' => $permissionsJson
   ]);
+
+  // get staff id for staff sched
+  $actual_staff_id = $pdo->lastInsertId();
+
+  if(!empty($scheduleData)) {
+    $schedStmt = $pdo->prepare(
+      "INSERT INTO branch_staff_schedule_tb (staff_id, day_of_week, start_time, end_time, is_available) 
+      VALUES (:staff_id, :day, :start, :end, :available)"
+    );
+
+    foreach ($scheduleData as $dayName => $times) {
+    $schedStmt->execute([
+        ':staff_id' => $actual_staff_id,
+        ':day' => $dayName,
+        ':start' => $times['start'],
+        ':end' => $times['end'],
+        ':available'=> $times['is_workday'] ? 1 : 0
+      ]);
+    }
+  }
 
   $pdo->commit();
+  echo json_encode(["success" => true, "message" => "Staff member created successfully."]);
 
-  echo json_encode([
-    "success" => true, 
-    "message" => "Staff member created successfully."
-  ]);
-} catch(Exception $e) {
-  echo json_encode([
-    "success" => false, 
-    "message" => "Database error: " . $e->getMessage()
-  ]);
+} catch (Exception $e) {
+  if($pdo && $pdo->inTransaction()) $pdo->rollBack();
+  echo json_encode(["success" => false, "message" => "Database error: " . $e->getMessage()]);
 }

@@ -62,7 +62,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
 
           <div className="relative">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-            <input type="text" placeholder="Search staff..." className="w-64 py-2 pl-10 pr-4 text-sm transition-all border border-gray-300 rounded-lg outline-none bg-gray-50 focus:bg-white" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search staff..." className="w-64 py-2 pl-10 pr-4 text-sm transition-all border border-gray-300 rounded-lg outline-none bg-gray-50 focus:ring focus:ring-(--clr-primary)" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
 
           <button onClick={onCreate} className="px-6 py-2 bg-(--clr-primary) text-(--clr-text-secondary) text-[11px] font-black rounded-lg uppercase tracking-widest flex items-center gap-2 hover:opacity-90 transition-all cursor-pointer">
@@ -73,7 +73,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
 
       {/* table */}
       <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left table-fixed">
+        <table className="w-full text-left border-collapse min-w-[1000px]">
           {/* table head */}
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600">
