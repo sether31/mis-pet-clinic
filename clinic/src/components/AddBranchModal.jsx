@@ -444,66 +444,78 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                   <CiCreditCard1 className='text-(--clr-text-header)' />
                   <span>Business & licensing Information</span>
                 </h1>
-                <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-                  <InputImage
-                    label="Tin Number Picture"
-                    name="tinNumberPic"
-                    required={true}
-                    onChange={handleChange}
-                    error={errors.tinNumberPic}
-                  />
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6'>
+                  {/* tin id */}
+                  <div className="flex flex-col">
+                    <InputImage
+                      className="mt-4"
+                      label="Tin Number Picture"
+                      name="tinNumberPic"
+                      required={true}
+                      isPreview={true}
+                      onChange={handleChange}
+                      error={errors.tinNumberPic}
+                    />
+                    <Input
+                      value={form.tinNumber}
+                      label="Tin Number"
+                      labelStyle="mb-1 ml-1 mt-2"
+                      id="tinNumber"
+                      isImportant={true}
+                      name="tinNumber"
+                      placeholder="123-456-789-000"
+                      onChange={handleChange}
+                      error={errors.tinNumber}
+                    />
+                  </div>
 
-                  <Input
-                    value={form.tinNumber}
-                    label="Tin Number"
-                    labelStyle="mb-1 ml-1"
-                    id="tinNumber"
-                    isImportant={true}
-                    name="tinNumber"
-                    placeholder="123-456-789-000"
-                    onChange={handleChange}
-                    error={errors.tinNumber}
-                  />
+                  {/* business permit*/}
+                  <div className="flex flex-col">
+                    <InputImage
+                      className="mt-4"
+                      label="Business Permit Picture"
+                      name="businessPermitPic"
+                      required={true}
+                      isPreview={true}
+                      onChange={handleChange}
+                      error={errors.businessPermitPic}
+                    />
+                    <Input
+                      value={form.businessPermitNumber}
+                      label="Business Permit Number"
+                      labelStyle="mb-1 ml-1 mt-2"
+                      id="businessPermitNumber"
+                      isImportant={true}
+                      name="businessPermitNumber"
+                      placeholder="BP-2025-12345"
+                      onChange={handleChange}
+                      error={errors.businessPermitNumber}
+                    />
+                  </div>
 
-                  <InputImage
-                    label="Business Permit Picture"
-                    name="businessPermitPic"
-                    required={true}
-                    onChange={handleChange}
-                    error={errors.businessPermitPic}
-                  />
-
-                  <Input
-                    value={form.businessPermitNumber}
-                    label="Business Permit Number"
-                    labelStyle="mb-1 ml-1"
-                    id="businessPermitNumber"
-                    isImportant={true}
-                    name="businessPermitNumber"
-                    placeholder="BP-2025-12345"
-                    onChange={handleChange}
-                    error={errors.businessPermitNumber}
-                  />
-
-                  <InputImage
-                    label="Veterinarian License Picture"
-                    name="vetLicensePic"
-                    required={true}
-                    onChange={handleChange}
-                    error={errors.vetLicensePic}
-                  />
-
-                  <Input
-                    value={form.vetLicenseNumber}
-                    label="Veterinarian License Number"
-                    labelStyle="mb-1 ml-1"
-                    id="vetLicenseNumber"
-                    isImportant={true}
-                    name="vetLicenseNumber"
-                    placeholder="12345"
-                    onChange={handleChange}
-                    error={errors.vetLicenseNumber}
-                  />
+                  {/* vet license */}
+                  <div className="flex flex-col">
+                    <InputImage
+                      className="mt-4"
+                      label="Veterinarian License Picture"
+                      name="vetLicensePic"
+                      required={true}
+                      isPreview={true}
+                      onChange={handleChange}
+                      error={errors.vetLicensePic}
+                    />
+                    <Input
+                      value={form.vetLicenseNumber}
+                      label="Veterinarian License Number"
+                      labelStyle="mb-1 ml-1 mt-2"
+                      id="vetLicenseNumber"
+                      isImportant={true}
+                      name="vetLicenseNumber"
+                      placeholder="12345"
+                      onChange={handleChange}
+                      error={errors.vetLicenseNumber}
+                    />
+                  </div>
                 </div>
               </div>
                 
@@ -540,7 +552,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                       error={errors.clinicEndTime}
                     />
                   </div>
-      
+
                   {/* services */}
                   <div className="relative">
                     <h1 className='mb-2 ml-1 text-sm font-medium text-gray-700'>
