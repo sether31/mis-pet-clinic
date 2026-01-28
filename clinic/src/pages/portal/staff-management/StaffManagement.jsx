@@ -13,6 +13,8 @@ import StaffCard from './StaffCard';
 import StaffTable from './StaffTable';
 import StaffSchedule from './StaffSchedule';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function StaffManagement() {
   const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
@@ -30,7 +32,7 @@ export default function StaffManagement() {
     
     try {
       const response = await authFetch(
-        `${import.meta.env.VITE_API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`,
+        `${API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`,
         { method: 'GET' }
       );
       if(response.success) {
@@ -57,7 +59,7 @@ export default function StaffManagement() {
     showLoader(`Please wait, ${actionText} staff...`);
     try {
       const response = await authFetch(
-        `${import.meta.env.VITE_API_URL}/api/clinic/general/staff/update-staff-status.php`,
+        `${API_URL}/api/clinic/general/staff/update-staff-status.php`,
         {
           method: 'POST',
           body: JSON.stringify({
@@ -98,7 +100,7 @@ export default function StaffManagement() {
         <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Staff Management</h1>
-            <p className="text-gray-500">Manage staff, roles, and branch schedules</p>
+            <p className="text-gray-500">Manage staff profiles, assigned roles, and duty schedules</p>
           </div>
         </div>
 
