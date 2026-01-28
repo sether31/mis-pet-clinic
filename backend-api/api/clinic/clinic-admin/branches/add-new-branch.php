@@ -39,9 +39,7 @@ try {
       facebook,
       tin_id_number,
       business_permit_number,
-      vet_license_number,
-      operating_hours_start_time,
-      operating_hours_end_time
+      vet_license_number
     ) VALUES (
       :clinicId,
       :name,
@@ -55,9 +53,7 @@ try {
       :facebook,
       :tinNumber,
       :businessPermitNumber,
-      :vetLicenseNumber,
-      :clinicStartTime,
-      :clinicEndTime
+      :vetLicenseNumber
     )"
   );
 
@@ -74,9 +70,7 @@ try {
     ':facebook' => $_POST['facebook'] ?: null,
     ':tinNumber' => $_POST['tinNumber'],
     ':businessPermitNumber' => $_POST['businessPermitNumber'],
-    ':vetLicenseNumber' => $_POST['vetLicenseNumber'],
-    ':clinicStartTime' => $_POST['clinicStartTime'] ?: null,
-    ':clinicEndTime' => $_POST['clinicEndTime'] ?: null
+    ':vetLicenseNumber' => $_POST['vetLicenseNumber']
   ]);
 
   $branchId = $pdo->lastInsertId();
