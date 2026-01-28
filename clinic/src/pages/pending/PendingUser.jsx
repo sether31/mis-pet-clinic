@@ -16,11 +16,8 @@ import Button from '../../components/Button';
 // icons
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
-import { LiaBusinessTimeSolid } from "react-icons/lia";
 import { IoLogOut, IoRefreshOutline, IoWarningOutline } from "react-icons/io5";
 import { FaCircleInfo, FaCircleCheck } from "react-icons/fa6";
-
-
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -39,8 +36,6 @@ const initialFormState = {
   tinNumber: '',
   businessPermitNumber: '',
   vetLicenseNumber: '',
-  clinicStartTime: '',
-  clinicEndTime: '',
   agreeTerms: false,
   tinNumberPic: null,
   businessPermitPic: null,
@@ -52,6 +47,11 @@ export default function PendingUser() {
   const { platformData } = usePlatform();
   const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
+  const [existingPaths, setExistingPaths] = useState({
+    tinNumberPic: '',
+    businessPermitPic: '',
+    vetLicensePic: ''
+  });
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState();
@@ -71,8 +71,6 @@ export default function PendingUser() {
     tinNumber: "Tin Number",
     businessPermitNumber: "Business Permit Number",
     vetLicenseNumber: "Veterinarian License Number",
-    clinicStartTime: "Clinic Start Time",
-    clinicEndTime: "Clinic End Time",
     agreeTerms: "Terms & Conditions",
     tinNumberPic: "Tin Picture",
     businessPermitPic: "Business Permit Picture",
@@ -106,7 +104,7 @@ export default function PendingUser() {
       }
 
       // fetch data
-      const response = await authFetch(`${API_URL}/api/auth/get-pending-user-data.php`, {});
+      const response = await authFetch(`${API_URL}/api/auth/get-pending-user-data.php`);
       if(response.success && response.data) {
         const { user, clinic, new_token } = response.data;
         const newStatus = clinic.status;
@@ -164,12 +162,15 @@ export default function PendingUser() {
             tinNumber: clinic.license.tin_id_number || '',
             businessPermitNumber: clinic.license.business_permit_number || '',
             vetLicenseNumber: clinic.license.vet_license_number || '',
-            clinicStartTime: clinic.hours.start || '',
-            clinicEndTime: clinic.hours.end || '',
             agreeTerms: true,
             tinNumberPic: null,
             businessPermitPic: null,
             vetLicensePic: null
+          });
+          setExistingPaths({
+            tinNumberPic: clinic.license.tin_id_pic || '',
+            businessPermitPic: clinic.license.business_permit_pic || '',
+            vetLicensePic: clinic.license.vet_license_pic || ''
           });
         }
       }
@@ -193,34 +194,12 @@ export default function PendingUser() {
 
     // check image
     if(type === "file") {
-      setErrors(prev => ({
-        ...prev,
-        [name]: files[0] ? "valid" : `${inputLabels[name]} is required.`
-      }));
-      return;
-    }
+      const isFileProvided = files[0];
+      const hasExisting = existingPaths[name];
 
-    // check time
-    if(name === "clinicStartTime") {
       setErrors(prev => ({
         ...prev,
-        clinicStartTime: value ? "valid" : "",
-        clinicEndTime:
-          form.clinicEndTime || !value
-            ? "valid"
-            : "End time is required if start time is set."
-      }));
-      return;
-    }
-
-    if(name === "clinicEndTime") {
-      setErrors(prev => ({
-        ...prev,
-        clinicEndTime: value ? "valid" : "",
-        clinicStartTime:
-          form.clinicStartTime || !value
-            ? "valid"
-            : "Start time is required if end time is set."
+        [name]: (isFileProvided || hasExisting) ? "valid" : `${inputLabels[name]} is required.`
       }));
       return;
     }
@@ -275,19 +254,13 @@ export default function PendingUser() {
 
     // check image
     ["tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
-      if(!form[field]) {
+      const hasNewFile = form[field] instanceof File;
+      const hasExistingFile = existingPaths[field] && existingPaths[field] !== '';
+
+      if (!hasNewFile && !hasExistingFile) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
     });
-
-    // check time
-    if(form.clinicStartTime && !form.clinicEndTime) {
-      newErrors.clinicEndTime = "End time is required if start time is set.";
-    }
-
-    if(form.clinicEndTime && !form.clinicStartTime) {
-      newErrors.clinicStartTime = "Start time is required if end time is set.";
-    }
 
     return newErrors;
   };
@@ -349,12 +322,12 @@ export default function PendingUser() {
       <div className='mb-20 container-xl'>
         {/* header */}
         <div className='flex items-center justify-between gap-4 my-5'>
-           <div className="flex gap-2 items-center">
+           <div className="flex items-center gap-2">
             {platformData?.platform_logo && (
               <img 
                 src={`${API_URL}/${platformData.platform_logo}`} 
                 alt="Logo" 
-                className="h-6 w-auto object-contain rounded-sm"
+                className="object-contain w-auto h-6 rounded-sm"
                 onError={(e) => (e.target.style.display = 'none')} 
               />
             )}
@@ -437,8 +410,8 @@ export default function PendingUser() {
 
         <form onSubmit={handleSubmit}>
           <section className='grid gap-4'>
-            {/* Clinic Information */}
-            <div className='pb-8 mb-5 border-gray-300 border-b'>
+            {/* clinic information */}
+            <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
                 <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
                 <span>Clinic Information</span>
@@ -571,112 +544,82 @@ export default function PendingUser() {
             </div>
 
 
-            {/* Business & licensing Information */}
-            <div className='pb-8 mb-5 border-gray-300 border-b'>
+            {/* business & licensing information */}
+            <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
                 <CiCreditCard1 className='text-(--clr-text-header)' />
                 <span>Business & licensing Information</span>
               </h1>
-              <div className='flex items-center gap-2 p-3 mb-6 text-sm font-medium text-blue-800 border border-blue-100 rounded-lg bg-blue-50'>
-                <FaCircleInfo />
-                <p>
-                  Security Requirement: Please re-upload your document images for every update to ensure data integrity.
-                </p>
-              </div>
-              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-                <InputImage
-                  label="Tin Number Picture"
-                  name="tinNumberPic"
-                  required={true}
-                  onChange={handleChange}
-                  error={errors.tinNumberPic}
-                />
-
-                <Input
-                  value={form.tinNumber}
-                  label="Tin Number"
-                  labelStyle="mb-1 ml-1"
-                  id="tinNumber"
-                  isImportant={true}
-                  name="tinNumber"
-                  placeholder="123-456-789-000"
-                  onChange={handleChange}
-                  error={errors.tinNumber}
-                />
-
-                <InputImage
-                  label="Business Permit Picture"
-                  name="businessPermitPic"
-                  required={true}
-                  onChange={handleChange}
-                  error={errors.businessPermitPic}
-                />
-
-                <Input
-                  value={form.businessPermitNumber}
-                  label="Business Permit Number"
-                  labelStyle="mb-1 ml-1"
-                  id="businessPermitNumber"
-                  isImportant={true}
-                  name="businessPermitNumber"
-                  placeholder="BP-2025-12345"
-                  onChange={handleChange}
-                  error={errors.businessPermitNumber}
-                />
-
-                <InputImage
-                  label="Veterinarian License Picture"
-                  name="vetLicensePic"
-                  required={true}
-                  onChange={handleChange}
-                  error={errors.vetLicensePic}
-                />
-
-                <Input
-                  value={form.vetLicenseNumber}
-                  label="Veterinarian License Number"
-                  labelStyle="mb-1 ml-1"
-                  id="vetLicenseNumber"
-                  isImportant={true}
-                  name="vetLicenseNumber"
-                  placeholder="12345"
-                  onChange={handleChange}
-                  error={errors.vetLicenseNumber}
-                />
-              </div>
-            </div>
-              
-            {/* Operations */}
-            <div className='pb-8 mb-5 border-gray-300 border-b'>
-              <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
-                <span>Operating Hours</span>
-              </h1>
-              <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
-                <div className='flex flex-col gap-4 sm:flex-row'>
-                  <Input
-                    value={form.clinicStartTime} 
-                    type='time'
-                    label="Operating hours start time"
-                    labelStyle="mb-1 ml-1"
-                    id="clinicStartTime"
-                    isOptional={true}
-                    name="clinicStartTime"
-                    placeholder="6:00 AM"
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6'>
+                {/* tin id */}
+                <div className="flex flex-col">
+                  <InputImage
+                    className="mt-4"
+                    label="Tin Number Picture"
+                    name="tinNumberPic"
+                    isPreview={true}
                     onChange={handleChange}
-                    error={errors.clinicStartTime}
+                    error={errors.tinNumberPic}
+                    existingImage={existingPaths.tinNumberPic}
                   />
                   <Input
-                    value={form.clinicEndTime} 
-                    type='time'
-                    label="Operating hours end time"
-                    labelStyle="mb-1 ml-1"
-                    id="clinicEndTime"
-                    isOptional={true}
-                    name="clinicEndTime"
-                    placeholder="10:00 PM"
+                    value={form.tinNumber}
+                    label="Tin Number"
+                    labelStyle="mb-1 ml-1 mt-2"
+                    id="tinNumber"
+                    isImportant={true}
+                    name="tinNumber"
+                    placeholder="123-456-789-000"
                     onChange={handleChange}
-                    error={errors.clinicEndTime}
+                    error={errors.tinNumber}
+                  />
+                </div>
+
+                {/* business permit*/}
+                <div className="flex flex-col">
+                  <InputImage
+                    className="mt-4"
+                    label="Business Permit Picture"
+                    name="businessPermitPic"
+                    isPreview={true}
+                    onChange={handleChange}
+                    error={errors.businessPermitPic}
+                    existingImage={existingPaths.businessPermitPic}
+                  />
+                  <Input
+                    value={form.businessPermitNumber}
+                    label="Business Permit Number"
+                    labelStyle="mb-1 ml-1 mt-2"
+                    id="businessPermitNumber"
+                    isImportant={true}
+                    name="businessPermitNumber"
+                    placeholder="BP-2025-12345"
+                    onChange={handleChange}
+                    error={errors.businessPermitNumber}
+                  />
+                </div>
+
+                {/* vet license */}
+                <div className="flex flex-col">
+                  <InputImage
+                    className="mt-4"
+                    label="Veterinarian License Picture"
+                    name="vetLicensePic"
+                    isPreview={true}
+                    onChange={handleChange}
+                    error={errors.vetLicensePic}
+                    existingImage={existingPaths.vetLicensePic}
+                  />
+                  <Input
+                    value={form.vetLicenseNumber}
+                    label="Veterinarian License Number"
+                    labelStyle="mb-1 ml-1 mt-2"
+                    id="vetLicenseNumber"
+                    isImportant={true}
+                    name="vetLicenseNumber"
+                    placeholder="12345"
+                    onChange={handleChange}
+                    error={errors.vetLicenseNumber}
                   />
                 </div>
               </div>

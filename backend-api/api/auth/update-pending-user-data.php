@@ -82,7 +82,6 @@ try {
     name = ?, description = ?, address = ?, municipality = ?, 
     province = ?, zip_code = ?, est = ?, website = ?, facebook = ?, 
     tin_id_number = ?, business_permit_number = ?, vet_license_number = ?, 
-    operating_hours_start_time = ?, operating_hours_end_time = ?, 
     status = 'pending', feedback = NULL";
 
   $mainParams = [
@@ -98,8 +97,6 @@ try {
     $_POST['tinNumber'], 
     $_POST['businessPermitNumber'], 
     $_POST['vetLicenseNumber'],
-    $_POST['clinicStartTime'], 
-    $_POST['clinicEndTime']
   ];
 
   if(!empty($imageUpdates)) {
