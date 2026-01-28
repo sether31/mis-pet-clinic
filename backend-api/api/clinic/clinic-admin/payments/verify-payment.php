@@ -98,6 +98,27 @@ try {
       ":renewal" => $months
     ]);
 
+
+    // check if operating hours already exist for this branch
+    $checkHours = $pdo->prepare("SELECT COUNT(*) FROM branch_operating_hours_tb WHERE branch_id = ?");
+    $checkHours->execute([$realBranchId]);
+    $exists = $checkHours->fetchColumn() > 0;
+
+    if(!$exists) {
+      $days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      $stmtHours = $pdo->prepare("INSERT INTO branch_operating_hours_tb (branch_id, day_of_week, start_time, end_time, is_closed) VALUES (?, ?, '06:00:00', '20:00:00', ?)");
+      
+      foreach($days as $day) {
+        // set sat and sun closed by default
+        $isClosed = ($day === 'Saturday' || $day === 'Sunday') ? 1 : 0;
+        $stmtHours->execute([$realBranchId, $day, $isClosed]);
+      }
+      
+      // set to 0
+      $stmtFlag = $pdo->prepare("UPDATE clinic_branches_tb SET is_configured = 0 WHERE branch_id = ?");
+      $stmtFlag->execute([$realBranchId]);
+    }
+
     $pdo->commit();
     echo json_encode(["success" => true]);
   } else {
