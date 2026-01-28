@@ -65,11 +65,17 @@ export const routes = createBrowserRouter([
           },
           {
             path: ":branchId",
-            children: [
-              { path: "select-plan", element: <SelectPlans /> },
-              {
+  
                 element: <BranchVerificationLayout />, 
                 children: [
+                  { 
+                    path: "select-plan", 
+                    element: (
+                      <ProtectedRoute allowedRoles={['clinic_admin']}>
+                        <SelectPlans />
+                      </ProtectedRoute>
+                    ) 
+                  },
                   {
                     path: "portal",
                     element: (
@@ -80,16 +86,36 @@ export const routes = createBrowserRouter([
                     children: [
                       { index: true, element: <Navigate to="dashboard" replace /> },
                       { path: "dashboard", element: <DashboardSwitch /> },
-                      { path: "appointment-management", element: <ProtectedRoute requiredPermission="appointment_management"><AppointmentManagement /></ProtectedRoute> },
-                      { path: "staff-management", element: <ProtectedRoute requiredPermission="staff_management"><StaffManagement /></ProtectedRoute> },
-                      { path: "service-management", element: <ProtectedRoute requiredPermission="service_management"><ServiceManagement /></ProtectedRoute> },
+                      { 
+                        path: "appointment-management", 
+                        element: (
+                          <ProtectedRoute requiredPermission="appointment_management">
+                            <AppointmentManagement />
+                          </ProtectedRoute>
+                        )
+                      },
+                      { 
+                        path: "staff-management", 
+                        element: (
+                        <ProtectedRoute requiredPermission="staff_management">
+                          <StaffManagement />
+                        </ProtectedRoute>
+                        )
+                      },
+                      { 
+                        path: "service-management", 
+                        element: (
+                        <ProtectedRoute requiredPermission="service_management">
+                          <ServiceManagement />
+                        </ProtectedRoute>
+                        ) 
+                      },
                       { path: "*", element: <NotFoundDashboard />},
                     ]
                   }
                 ]
               }
-            ]
-          }
+        
         ]
       }
     ],
