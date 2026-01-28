@@ -14,7 +14,7 @@ import Button from './Button';
 // icons
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2, HiXCircle } from "react-icons/hi2";
 import { CiCreditCard1 } from "react-icons/ci";
-import { LiaBusinessTimeSolid } from "react-icons/lia";
+import { LiaToolsSolid } from "react-icons/lia";
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -32,12 +32,8 @@ const initialFormState = {
   email: '',
   firstName: '',
   lastName: '',
-  password: '',
-  confirmPassword: '',
   tinNumber: '',
   businessPermitNumber: '',
-  vetLicenseNumber: '',
-  clinicStartTime: '',
   clinicEndTime: '',
   services: [],
   agreeTerms: false,
@@ -81,8 +77,6 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     tinNumber: "Tin Number",
     businessPermitNumber: "Business Permit Number",
     vetLicenseNumber: "Veterinarian License Number",
-    clinicStartTime: "Clinic Start Time",
-    clinicEndTime: "Clinic End Time",
     services: "Services",
     agreeTerms: "Terms & Conditions",
     tinNumberPic: "Tin Picture",
@@ -121,31 +115,6 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
       setErrors(prev => ({
         ...prev,
         services: selected.length === 0 ? "Select at least one service." : "valid"
-      }));
-      return;
-    }
-
-    // check time
-    if(name === "clinicStartTime") {
-      setErrors(prev => ({
-        ...prev,
-        clinicStartTime: value ? "valid" : "",
-        clinicEndTime:
-          form.clinicEndTime || !value
-            ? "valid"
-            : "End time is required if start time is set."
-      }));
-      return;
-    }
-
-    if(name === "clinicEndTime") {
-      setErrors(prev => ({
-        ...prev,
-        clinicEndTime: value ? "valid" : "",
-        clinicStartTime:
-          form.clinicStartTime || !value
-            ? "valid"
-            : "Start time is required if end time is set."
       }));
       return;
     }
@@ -208,15 +177,6 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
       newErrors.services = "Select at least one service.";
     }
 
-    // check time
-    if(form.clinicStartTime && !form.clinicEndTime) {
-      newErrors.clinicEndTime = "End time is required if start time is set.";
-    }
-
-    if(form.clinicEndTime && !form.clinicStartTime) {
-      newErrors.clinicStartTime = "Start time is required if end time is set.";
-    }
-
     return newErrors;
   };
 
@@ -273,16 +233,16 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
         initial={{ opacity: 0, y: "100%" }} 
         animate={{ opacity: 1, y: 0 }} 
         exit={{ opacity: 0, y: 0 }}
-        className='fixed inset-0 z-100 bg-white overflow-y-scroll'
+        className='fixed inset-0 overflow-y-scroll bg-white z-100'
       >
         {/* nav */}
-        <div className='container-xl flex items-center justify-between gap-4 my-5'>
-          <div className="flex gap-2 items-center">
+        <div className='flex items-center justify-between gap-4 my-5 container-xl'>
+          <div className="flex items-center gap-2">
             {platformData?.platform_logo && (
               <img 
                 src={`${API_URL}/${platformData.platform_logo}`} 
                 alt="Logo" 
-                className="h-6 w-auto object-contain rounded-sm"
+                className="object-contain w-auto h-6 rounded-sm"
                 onError={(e) => (e.target.style.display = 'none')} 
               />
             )}
@@ -297,7 +257,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
           </button>
         </div>
         {/* main content */}
-        <div className='container-xl pb-10'>   
+        <div className='pb-10 container-xl'>   
           <h1 className='mb-4 text-3xl sm:text-4xl font-bold text-(--clr-text-header)'>Register New Branch</h1>
           <p className='mb-12 text-base'> 
             Fill out the details to add a new location to your clinic network.
@@ -519,40 +479,13 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                 </div>
               </div>
                 
-              {/* services and operations */}
+              {/* services  */}
               <div className='pb-8 mb-5 border-b border-gray-300'>
                 <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                  <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
-                  <span>Services and Operations</span>
+                  <LiaToolsSolid className='text-(--clr-text-header)' />
+                  <span>Services</span>
                 </h1>
-                <div className='grid grid-cols-1 gap-4'>
-                  <div className='flex gap-4'>
-                    <Input
-                      value={form.clinicStartTime} 
-                      type='time'
-                      label="Operating hours start time"
-                      labelStyle="mb-1 ml-1"
-                      id="clinicStartTime"
-                      isOptional={true}
-                      name="clinicStartTime"
-                      placeholder="6:00 AM"
-                      onChange={handleChange}
-                      error={errors.clinicStartTime}
-                    />
-                    <Input
-                      value={form.clinicEndTime} 
-                      type='time'
-                      label="Operating hours end time"
-                      labelStyle="mb-1 ml-1"
-                      id="clinicEndTime"
-                      isOptional={true}
-                      name="clinicEndTime"
-                      placeholder="10:00 PM"
-                      onChange={handleChange}
-                      error={errors.clinicEndTime}
-                    />
-                  </div>
-
+                <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
                   {/* services */}
                   <div className="relative">
                     <h1 className='mb-2 ml-1 text-sm font-medium text-gray-700'>

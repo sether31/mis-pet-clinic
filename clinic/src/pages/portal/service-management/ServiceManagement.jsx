@@ -12,6 +12,8 @@ import ServiceCard from './ServiceCard';
 import ServiceTable from './ServiceTable';
 import AddServiceModal from './AddServiceModal';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function ServiceManagement() {
   const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
@@ -25,7 +27,7 @@ export default function ServiceManagement() {
     
     showLoader('Fetching services...');
     try {
-      const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/clinic/general/services/get-branch-services.php?branch_id=${branchId}`);
+      const res = await authFetch(`${API_URL}/api/clinic/general/services/get-branch-services.php?branch_id=${branchId}`);
       if(res.success) {
         setServices(res.data);
         setCardData(res.cardData);
@@ -39,7 +41,7 @@ export default function ServiceManagement() {
   const handleToggleStatus = async (service) => {
     const nextStatus = Number(service.status) === 1 ? 0 : 1;
     showLoader('Updating...');
-    const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/clinic/general/services/update-service-status.php`, {
+    const res = await authFetch(`${API_URL}/api/clinic/general/services/update-service-status.php`, {
       method: 'POST',
       body: JSON.stringify({ branch_service_id: service.branch_service_id, status: nextStatus })
     });
@@ -51,6 +53,13 @@ export default function ServiceManagement() {
     <div className="bg-(--clr-bg-page) min-h-screen">
       <Header />
       <section className='px-6 my-6 container-xl'>
+        <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Service Management</h1>
+            <p className="text-gray-500">Manage clinic services and service pricing</p>
+          </div>
+        </div>
+        
         <ServiceCard data={cardData} />
         <div className="mt-8">
           <ServiceTable 

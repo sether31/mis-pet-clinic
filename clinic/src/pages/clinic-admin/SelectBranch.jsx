@@ -87,8 +87,16 @@ export default function SelectBranch() {
         });
 
         if(res && res.hasSubHistory === true) {
-          toast.info("Welcome");
-          navigate(`/clinic/${branch.branch_id}/portal/dashboard`, { replace: true });
+          // check if first time
+          const isNew = Number(res.is_configured) === 0;
+
+          if(isNew) {
+            toast.info("Welcome! Let's get your branch set up.");
+          } else {
+            toast.info("Welcome back!");
+          }
+
+          navigate(`/clinic/${branch.branch_id}/portal/dashboard`, {  replace: true });
         } else {
           toast.info("Please select a subscription plan to get started.");
           navigate(`/clinic/${branch.branch_id}/select-plan`, { replace: true });
@@ -125,14 +133,14 @@ export default function SelectBranch() {
     <>
       <div className="min-h-screen bg-(--clr-bg-page) flex flex-col">
         {/* nav */}
-        <nav className="fixed top-0 left-0 z-50 w-full border-b border-gray-300">
+        <nav className="fixed top-0 left-0 z-50 w-full bg-white border-b border-gray-300">
           <div className="flex items-center justify-between px-6 py-4 mx-auto container-xl">
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2">
               {platformData?.platform_logo && (
                 <img 
                   src={`${API_URL}/${platformData.platform_logo}`} 
                   alt="Logo" 
-                  className="h-6 w-auto object-contain rounded-sm"
+                  className="object-contain w-auto h-6 rounded-sm"
                   onError={(e) => (e.target.style.display = 'none')} 
                 />
               )}

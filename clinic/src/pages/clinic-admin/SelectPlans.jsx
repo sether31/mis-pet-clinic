@@ -39,20 +39,6 @@ export default function SelectPlans() {
     const guardNewUserOnly = async () => {
       showLoader();
       try {
-        // check if branch is already activated
-        const statusRes = await authFetch(
-          `${API_URL}/api/clinic/clinic-admin/branches/verify-branch.php`, 
-          { 
-            method: 'POST', 
-            body: JSON.stringify({ branch_id: branchId }) 
-          }
-        );
-
-        // if already active
-        if(statusRes.success && statusRes.hasSubscription === true) {
-          navigate(`/clinic/${branchId}/portal/dashboard`);
-          return;
-        }
         // if not fetch the subscription plans
         const plansRes = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/get-active-subscription.php`, {});
         
@@ -65,7 +51,6 @@ export default function SelectPlans() {
         hideLoader();
       }
     }
-
     if (branchId) guardNewUserOnly();
   }, [branchId]);
 

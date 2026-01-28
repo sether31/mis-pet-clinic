@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -17,9 +17,7 @@ import OTPInput from '../../components/OtpInput';
 import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { IoPersonOutline } from "react-icons/io5";
 import { CiCreditCard1 } from "react-icons/ci";
-import { LiaBusinessTimeSolid } from "react-icons/lia";
-import { useEffect } from 'react';
-
+import { LiaToolsSolid } from "react-icons/lia";
 
 const API_URL = import.meta.env.VITE_API_URL;
 const initialFormState = {
@@ -40,8 +38,6 @@ const initialFormState = {
   tinNumber: '',
   businessPermitNumber: '',
   vetLicenseNumber: '',
-  clinicStartTime: '',
-  clinicEndTime: '',
   services: [],
   agreeTerms: false,
   tinNumberPic: null,
@@ -91,8 +87,6 @@ export default function Register() {
     tinNumber: "Tin Number",
     businessPermitNumber: "Business Permit Number",
     vetLicenseNumber: "Veterinarian License Number",
-    clinicStartTime: "Clinic Start Time",
-    clinicEndTime: "Clinic End Time",
     services: "Services",
     agreeTerms: "Terms & Conditions",
     tinNumberPic: "Tin Picture",
@@ -146,38 +140,25 @@ export default function Register() {
       }
       return;
     }
-
+    
     // check password
+    if(name === "password") {
+      if(!value.trim()) {
+        setErrors(prev => ({ ...prev, password: "Password is required." }));
+      } else if(value.length < 6) {
+        setErrors(prev => ({ ...prev, password: "Password must be at least 6 characters." }));
+      } else {
+        setErrors(prev => ({ ...prev, password: "valid" }));
+      }
+      return;
+    }
+
+
     if(name === "confirmPassword") {
       setErrors(prev => ({
         ...prev,
         confirmPassword:
           value === form.password ? "valid" : "Passwords do not match."
-      }));
-      return;
-    }
-
-    // check time
-    if(name === "clinicStartTime") {
-      setErrors(prev => ({
-        ...prev,
-        clinicStartTime: value ? "valid" : "",
-        clinicEndTime:
-          form.clinicEndTime || !value
-            ? "valid"
-            : "End time is required if start time is set."
-      }));
-      return;
-    }
-
-    if(name === "clinicEndTime") {
-      setErrors(prev => ({
-        ...prev,
-        clinicEndTime: value ? "valid" : "",
-        clinicStartTime:
-          form.clinicStartTime || !value
-            ? "valid"
-            : "Start time is required if end time is set."
       }));
       return;
     }
@@ -251,17 +232,12 @@ export default function Register() {
     }
 
     // check password
+    if (!form.password || form.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters.";
+    }
+
     if(form.password !== form.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match.";
-    }
-
-    // check time
-    if(form.clinicStartTime && !form.clinicEndTime) {
-      newErrors.clinicEndTime = "End time is required if start time is set.";
-    }
-
-    if(form.clinicEndTime && !form.clinicStartTime) {
-      newErrors.clinicStartTime = "Start time is required if end time is set.";
     }
 
     return newErrors;
@@ -598,7 +574,7 @@ export default function Register() {
                 <CiCreditCard1 className='text-(--clr-text-header)' />
                 <span>Business & licensing Information</span>
               </h1>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6'>
                 {/* tin id */}
                 <div className="flex flex-col">
                   <InputImage
@@ -670,40 +646,13 @@ export default function Register() {
               </div>
             </div>
               
-            {/* services and operations */}
+            {/* services */}
             <div className='pb-8 mb-5 border-b border-gray-300'>
               <h1 className='flex items-center gap-1 mb-2 text-xl font-medium'>
-                <LiaBusinessTimeSolid className='text-(--clr-text-header)' />
-                <span>Services and Operations</span>
+                <LiaToolsSolid className='text-(--clr-text-header)' />
+                <span>Services</span>
               </h1>
-              <div className='grid grid-cols-1 gap-4'>
-                <div className='flex gap-4'>
-                  <Input
-                    value={form.clinicStartTime} 
-                    type='time'
-                    label="Operating hours start time"
-                    labelStyle="mb-1 ml-1"
-                    id="clinicStartTime"
-                    isOptional={true}
-                    name="clinicStartTime"
-                    placeholder="6:00 AM"
-                    onChange={handleChange}
-                    error={errors.clinicStartTime}
-                  />
-                  <Input
-                    value={form.clinicEndTime} 
-                    type='time'
-                    label="Operating hours end time"
-                    labelStyle="mb-1 ml-1"
-                    id="clinicEndTime"
-                    isOptional={true}
-                    name="clinicEndTime"
-                    placeholder="10:00 PM"
-                    onChange={handleChange}
-                    error={errors.clinicEndTime}
-                  />
-                </div>
-    
+              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
                 {/* services */}
                 <div className="relative">
                   <h1 className='mb-2 ml-1 text-sm font-medium text-gray-700'>
