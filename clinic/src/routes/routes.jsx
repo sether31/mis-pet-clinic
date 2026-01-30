@@ -26,6 +26,9 @@ import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
 import AppointmentManagement from "../pages/portal/appointment-management/AppointmentManagement";
 import ServiceManagement from "../pages/portal/service-management/ServiceManagement";
+import BranchSettings from "../pages/portal/branch-settings/BranchSettings";
+import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranchSettings";
+
 
 export const routes = createBrowserRouter([
   { path: "*", element: <NotFound /> },
@@ -65,57 +68,68 @@ export const routes = createBrowserRouter([
           },
           {
             path: ":branchId",
-  
-                element: <BranchVerificationLayout />, 
+            element: <BranchVerificationLayout />, 
+            children: [
+              { 
+                path: "select-plan", 
+                element: (
+                  <ProtectedRoute allowedRoles={['clinic_admin']}>
+                    <SelectPlans />
+                  </ProtectedRoute>
+                ) 
+              },
+              {
+                path: "portal",
+                element: (
+                  <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']}>
+                    <SidebarLayout />
+                  </ProtectedRoute>
+                ),
                 children: [
+                  { index: true, element: <Navigate to="dashboard" replace /> },
+                  { path: "dashboard", element: <DashboardSwitch /> },
                   { 
-                    path: "select-plan", 
+                    path: "appointment-management", 
                     element: (
-                      <ProtectedRoute allowedRoles={['clinic_admin']}>
-                        <SelectPlans />
+                      <ProtectedRoute requiredPermission="appointment_management">
+                        <AppointmentManagement />
                       </ProtectedRoute>
+                    )
+                  },
+                  { 
+                    path: "staff-management", 
+                    element: (
+                    <ProtectedRoute requiredPermission="staff_management">
+                      <StaffManagement />
+                    </ProtectedRoute>
+                    )
+                  },
+                  { 
+                    path: "service-management", 
+                    element: (
+                    <ProtectedRoute requiredPermission="service_management">
+                      <ServiceManagement />
+                    </ProtectedRoute>
                     ) 
                   },
-                  {
-                    path: "portal",
+                  { 
+                    path: "branch-settings", 
                     element: (
-                      <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']}>
-                        <SidebarLayout />
-                      </ProtectedRoute>
+                    <ProtectedRoute requiredPermission="branch_settings">
+                      <BranchSettings />
+                    </ProtectedRoute>
                     ),
                     children: [
-                      { index: true, element: <Navigate to="dashboard" replace /> },
-                      { path: "dashboard", element: <DashboardSwitch /> },
-                      { 
-                        path: "appointment-management", 
-                        element: (
-                          <ProtectedRoute requiredPermission="appointment_management">
-                            <AppointmentManagement />
-                          </ProtectedRoute>
-                        )
-                      },
-                      { 
-                        path: "staff-management", 
-                        element: (
-                        <ProtectedRoute requiredPermission="staff_management">
-                          <StaffManagement />
-                        </ProtectedRoute>
-                        )
-                      },
-                      { 
-                        path: "service-management", 
-                        element: (
-                        <ProtectedRoute requiredPermission="service_management">
-                          <ServiceManagement />
-                        </ProtectedRoute>
-                        ) 
-                      },
-                      { path: "*", element: <NotFoundDashboard />},
+                      { index: true, element: <GeneralBranchSettings /> },
+                      { path: "schedule", element: <div>Schedule</div> },
+                      { path: "subscription", element: <div>Subscription</div> },
                     ]
-                  }
+                  },
+                  { path: "*", element: <NotFoundDashboard />},
                 ]
               }
-        
+            ]
+          }
         ]
       }
     ],

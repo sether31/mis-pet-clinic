@@ -12,6 +12,7 @@ import { MdOutlineClose, MdOutlineHomeRepairService } from "react-icons/md"
 import { RiDashboardLine } from "react-icons/ri"
 import { LuUsers } from 'react-icons/lu';
 import { FaRegCalendarAlt } from "react-icons/fa";
+import { HiOutlineWrenchScrewdriver } from 'react-icons/hi2';
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
@@ -32,6 +33,12 @@ const sidebarItems = [
     path: 'service-management', 
     icon: MdOutlineHomeRepairService, 
     requiredPermission: 'service_management' 
+  },
+  { 
+    label: 'Branch Settings', 
+    path: 'branch-settings', 
+    icon: HiOutlineWrenchScrewdriver, 
+    requiredPermission: 'branch_settings' 
   },
 ];
 
