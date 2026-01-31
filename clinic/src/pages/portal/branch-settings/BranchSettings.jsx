@@ -15,7 +15,7 @@ export default function BranchSettings() {
   return (
     <div className="bg-(--clr-bg-page) min-h-screen">
       <Header />
-      <section className='px-6 mt-6 container-xl'>
+      <section className='px-4 text-sm md:text-base lg:px-6 mt-6 container-xl'>
         <nav className="flex gap-4 overflow-x-auto">
           <NavLink to="" end className={navClass}>
             <HiOutlineBuildingOffice2 size={20} />
@@ -30,11 +30,12 @@ export default function BranchSettings() {
             Subscription
           </NavLink>
         </nav>
-      </section>
 
-      <main className="p-6 my-6 border border-gray-300 container-xl rounded-xl">
-        <Outlet /> 
-      </main>
+        
+        <main className="p-4 lg:p-6 my-6 border border-gray-300 rounded-xl">
+          <Outlet /> 
+        </main>
+      </section>
     </div>
   );
 }

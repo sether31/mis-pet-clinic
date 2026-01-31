@@ -6,8 +6,9 @@ import { authFetch } from '../../../utils/authFetch'
 import Input from '../../../components/Input';
 import InputImage from '../../../components/InputImage';
 import Button from '../../../components/Button';
-import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
+import { HiMiniExclamationCircle, HiOutlineBuildingOffice2, HiOutlineClock } from "react-icons/hi2";
 import { CiCreditCard1, CiImageOn } from "react-icons/ci";
+import { HiSave } from 'react-icons/hi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -31,7 +32,7 @@ const initialFormState = {
 }
 
 export default function GeneralBranchSettings() {
-  const { branchId } = useParams(); // branchId comes from the URL /branch/:branchId/settings
+  const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
   const [form, setForm] = useState(initialFormState);
   const [existingPaths, setExistingPaths] = useState({
@@ -102,7 +103,7 @@ export default function GeneralBranchSettings() {
 
   useEffect(() => {
     fetchClinicData();
-  }, [branchId]); // Refresh if branchId changes
+  }, [branchId]); 
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -137,10 +138,8 @@ export default function GeneralBranchSettings() {
       }
     });
 
-    // Valid if there is a NEW file OR an EXISTING path
     ["logoPic", "tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
       if(!form[field] && !existingPaths[field]) {
-        // Logo is usually optional, remove this if you want it optional:
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
     });
@@ -189,6 +188,17 @@ export default function GeneralBranchSettings() {
 
   return (
     <div className='w-full'>
+      {/* header */}
+      <div className="mb-8 border-b border-gray-100 pb-5">
+        <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-800">
+          <HiOutlineBuildingOffice2 className="text-(--clr-primary)" />
+          Branch Profile
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Update your clinic's public information, contact details, and legal documentation.
+        </p>
+      </div>
+
       <form onSubmit={handleSubmit}>
         <section className='grid gap-4'>
           {/* logo */}
@@ -352,10 +362,14 @@ export default function GeneralBranchSettings() {
           </div>
         </section>
 
-        <div className="flex justify-start mt-8">
-          <Button type="submit" variant="primary" className="w-full lg:w-[250px]">
+        <div className="mt-8 flex justify-end">
+          <button 
+            type="submit"
+            className="w-full md:w-auto px-10 py-3 bg-(--clr-primary) text-white rounded-xl font-bold active:scale-95 disabled:opacity-50 transition-all text-sm cursor-pointer flex items-center justify-center gap-2"
+          >
+            <HiSave size={18} />
             Save Changes
-          </Button>
+          </button>
         </div>
       </form> 
     </div>   

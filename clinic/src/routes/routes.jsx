@@ -28,6 +28,7 @@ import AppointmentManagement from "../pages/portal/appointment-management/Appoin
 import ServiceManagement from "../pages/portal/service-management/ServiceManagement";
 import BranchSettings from "../pages/portal/branch-settings/BranchSettings";
 import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranchSettings";
+import BranchScheduleSettings from "../pages/portal/branch-settings/BranchScheduleSettings";
 
 
 export const routes = createBrowserRouter([
@@ -121,7 +122,7 @@ export const routes = createBrowserRouter([
                     ),
                     children: [
                       { index: true, element: <GeneralBranchSettings /> },
-                      { path: "schedule", element: <div>Schedule</div> },
+                      { path: "schedule", element: <BranchScheduleSettings /> },
                       { path: "subscription", element: <div>Subscription</div> },
                     ]
                   },

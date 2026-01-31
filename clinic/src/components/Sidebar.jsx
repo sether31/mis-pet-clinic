@@ -3,7 +3,6 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 // hooks
 import { useUser } from '../hooks/useUser';
-import { usePlatform } from '../hooks/usePlatform'
 // utils
 import { authFetch } from '../utils/authFetch';
 // icons
@@ -48,7 +47,6 @@ export default function Sidebar({className, open, setOpen}) {
   const location = useLocation();
   const { branchId } = useParams();
   const { user } = useUser(); 
-  const { platformData } = usePlatform();
   const [selectedBranch, setSelectedBranch] = useState("");
 
   const visibleItems = sidebarItems.filter(item => {
@@ -75,7 +73,7 @@ export default function Sidebar({className, open, setOpen}) {
         // get branch name
         const fetchBranchName = async () => {
           try {
-            const response = await authFetch(`${API_URL}/api/clinic/clinic-admin/branches/get-branch-name.php?branch_id=${branchId}`);
+            const response = await authFetch(`${API_URL}/api/clinic/general/get-branch-brand.php?branch_id=${branchId}`);
             if(response.success) {
               setSelectedBranch(response);
             }
@@ -109,9 +107,9 @@ export default function Sidebar({className, open, setOpen}) {
           transition={{ duration: 0.3 }}
         >
           <div className="flex items-center gap-2">
-            {platformData?.platform_logo && (
+            {selectedBranch?.logo_picture && (
               <img 
-                src={`${API_URL}/${platformData.platform_logo}`} 
+                src={`${API_URL}/${selectedBranch?.logo_picture}`} 
                 alt="Logo" 
                 className="object-contain w-auto h-6 rounded-sm"
                 onError={(e) => (e.target.style.display = 'none')} 

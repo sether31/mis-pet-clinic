@@ -20,7 +20,7 @@ try {
       b.est, b.description, b.website, b.facebook, 
       b.tin_id_picture, b.business_permit_picture, b.vet_license_picture,
       b.tin_id_number, b.business_permit_number, b.vet_license_number, 
-      b.status, b.is_configured, b.feedback
+      b.status, b.is_maintenance, b.feedback
     FROM clinic_branches_tb b
     INNER JOIN clinics_tb c ON b.clinic_id = c.clinic_id
     WHERE b.branch_id = :branch_id AND c.created_by = :user_id
