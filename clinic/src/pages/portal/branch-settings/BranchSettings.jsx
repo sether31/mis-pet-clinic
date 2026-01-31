@@ -1,38 +1,39 @@
 import { NavLink, Outlet, useParams } from 'react-router-dom';
-import { HiOutlineBuildingOffice2, HiOutlineCreditCard, HiOutlineCalendarDays } from "react-icons/hi2";
+// components
 import Header from '../../../components/Header';
+// icons
+import { HiBuildingOffice2, HiCreditCard, HiCalendarDays } from "react-icons/hi2"; 
 
 export default function BranchSettings() {
   const { branchId } = useParams();
 
   const navClass = ({ isActive }) => 
-    `flex items-center gap-2 px-6 py-4 font-medium transition-all duration-200 border-b-2 ${
+    `flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
       isActive 
         ? 'text-(--clr-primary) border-(--clr-primary)' 
-        : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+        : 'text-gray-400 border-transparent hover:text-gray-600'
     }`;
 
   return (
     <div className="bg-(--clr-bg-page) min-h-screen">
       <Header />
-      <section className='px-4 text-sm md:text-base lg:px-6 mt-6 container-xl'>
-        <nav className="flex gap-4 overflow-x-auto">
+      <section className='px-4 mt-6 lg:px-6 container-xl'>
+        <nav className="relative flex items-center w-full overflow-x-auto border-b border-gray-200 scrollbar-hide pb-[1px]">
           <NavLink to="" end className={navClass}>
-            <HiOutlineBuildingOffice2 size={20} />
+            <HiBuildingOffice2 size={18} />
             General
           </NavLink>
           <NavLink to={`/clinic/${branchId}/portal/branch-settings/schedule`} className={navClass}>
-            <HiOutlineCalendarDays size={20} />
+            <HiCalendarDays size={18} />
             Schedule
           </NavLink>
           <NavLink to={`/clinic/${branchId}/portal/branch-settings/subscription`} className={navClass}>
-            <HiOutlineCreditCard size={20} />
+            <HiCreditCard size={18} />
             Subscription
           </NavLink>
         </nav>
 
-        
-        <main className="p-4 lg:p-6 my-6 border border-gray-300 rounded-xl">
+        <main className="p-4 my-6 bg-white border border-gray-300 shadow-sm lg:p-6 rounded-xl">
           <Outlet /> 
         </main>
       </section>
