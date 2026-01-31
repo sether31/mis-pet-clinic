@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
-require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../../config/Database.php';
 
 validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
@@ -15,13 +15,14 @@ if(!$branch_id) {
 
 try {
   $pdo = (new Database)->pdo;
-  $stmt = $pdo->prepare("SELECT name FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmt = $pdo->prepare("SELECT logo_picture, name FROM clinic_branches_tb WHERE branch_id = ?");
   $stmt->execute([$branch_id]);
   $branch = $stmt->fetch();
 
   echo json_encode([
     "success" => true,
-    "branch_name" => $branch['name']
+    "branch_name" => $branch['name'],
+    "logo_picture" => $branch['logo_picture']
   ]);
 } catch(Exception $e) {
   echo json_encode([

@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { useEffect, useState } from 'react';
+import { HiOutlineInformationCircle } from "react-icons/hi2"; 
 import Header from "../../../components/Header";
 import { authFetch } from '../../../utils/authFetch';
 import { useUI } from '../../../hooks/useUI';
@@ -23,53 +23,58 @@ export default function AdminDashboard() {
           body: JSON.stringify({ branch_id: branchId })
         });
 
-        if (res.success) {
+        if(res.success) {
           setBranchData(res.data);
-
-          if(Number(res.data.is_configured) === 0) {
-            toast.warning("Initial Setup: Please review your operating hours.", {
-              toastId: 'setup-alert', 
-              autoClose: 5000
-            });
-          }
         }
       } catch(err) {
         console.error("Failed to load branch details", err);
       } finally {
-        hideLoader()
+        hideLoader();
       }
     };
 
     fetchBranchDetails();
   }, [branchId]);
 
-  const showSetupBanner = branchData && parseInt(branchData.is_configured) === 0;
+  const isMaintenance = branchData && Number(branchData.is_maintenance) === 1;
 
-  if (loading) return null;
+  if (!branchData && loading) return null;
 
   return (
     <div className='bg-(--clr-bg-page) min-h-screen'>
       <Header />
       <section className='my-6 container-xl'>
-        {showSetupBanner && (
-          <div className="flex items-center justify-between p-4 mb-6 border-l-4 border-blue-500 bg-blue-50 rounded-r-xl animate-in fade-in slide-in-from-top-4">
-            <div>
-              <h4 className="text-sm font-bold text-blue-800">Initial Setup Required</h4>
-              <p className="text-xs text-blue-600">Your branch is currently using default operating hours.</p>
+
+      {isMaintenance && (
+        <div className="flex items-center justify-between p-3 mb-6 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
+              <HiOutlineInformationCircle size={20} />
             </div>
-            <button 
-              onClick={() => navigate('../settings')} 
-              className="px-4 py-2 text-xs font-black tracking-wider text-white uppercase transition-colors bg-blue-600 rounded-lg cursor-pointer hover:bg-blue-700"
-            >
-              Configure Now
-            </button>
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-amber-900 uppercase tracking-tight">
+                Branch Offline
+              </span>
+              <span className="text-[11px] text-amber-700 font-medium">
+                Maintenance mode is active. Your branch is hidden from the public booking page.
+              </span>
+            </div>
           </div>
-        )}
+          <button 
+            onClick={() => navigate(`/clinic/${branchId}/portal/branch-settings/schedule`)}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all active:scale-95 cursor-pointer"
+          >
+            Configure Now
+          </button>
+        </div>
+      )}
         
         <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Dashboard Overview</h1>
-            <p className="text-sm text-gray-500">Welcome back! Here is what's happening at {branchData?.name}.</p>
+            <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight">Dashboard Overview</h1>
+            </div>
+            <p className="text-sm text-gray-500 font-medium">Welcome back! Managing {branchData?.name}.</p>
           </div>
         </div>
       </section>
