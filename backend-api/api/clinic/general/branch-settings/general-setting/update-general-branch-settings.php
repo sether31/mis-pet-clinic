@@ -79,7 +79,8 @@ try {
   $sql = "UPDATE clinic_branches_tb SET 
     name = ?, description = ?, address = ?, municipality = ?, 
     province = ?, zip_code = ?, est = ?, website = ?, facebook = ?, 
-    tin_id_number = ?, business_permit_number = ?, vet_license_number = ?";
+    tin_id_number = ?, business_permit_number = ?, vet_license_number = ?,
+    is_configured = 1";
 
   $mainParams = [
     $_POST['clinicName'], 

@@ -51,10 +51,8 @@ try {
   $invoice = $apiInstance->getInvoiceById($xendit_id);
 
   if($invoice['status'] === 'PAID' || $invoice['status'] === 'SETTLED') { 
-    // check if gcash or paymaya or ewallet if empty
-    $methodUsed = $invoice['payment_channel'] ?? $invoice['payment_method'] ?? 'UNKNOWN';
-    $stmt = $pdo->prepare("UPDATE payments_tb SET payment_status = 'paid', payment_method = ? WHERE xendit_invoice_id = ?");
-    $stmt->execute([$methodUsed, $xendit_id]);
+    $stmt = $pdo->prepare("UPDATE payments_tb SET payment_status = 'paid' WHERE xendit_invoice_id = ?");
+    $stmt->execute([$xendit_id]);
 
     // fetch payment details
     $stmtPayInfo = $pdo->prepare("SELECT payment_id, branch_id, subscription_id FROM payments_tb WHERE xendit_invoice_id = ?");
@@ -109,8 +107,7 @@ try {
       $stmtHours = $pdo->prepare("INSERT INTO branch_operating_hours_tb (branch_id, day_of_week, start_time, end_time, is_closed) VALUES (?, ?, '06:00:00', '20:00:00', ?)");
       
       foreach($days as $day) {
-        // set sat and sun closed by default
-        $isClosed = ($day === 'Saturday' || $day === 'Sunday') ? 1 : 0;
+        $isClosed = 1; 
         $stmtHours->execute([$realBranchId, $day, $isClosed]);
       }
       
