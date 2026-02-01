@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { CiSearch } from 'react-icons/ci';
 // icons
 import { HiSearch, HiPencilAlt, HiPlus, HiArchive, HiRefresh } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi2';
@@ -73,7 +74,7 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
 
       {/* table */}
       <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left table-fixed">
+        <table className="w-full text-left border-collapse min-w-[1100px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600">
               <th className="w-[30%] px-6 py-4 border-r border-gray-300">Service Name</th>
@@ -95,7 +96,7 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
                   </div>
                 </td>
                 
-                <td className="px-6 py-4 border-r border-gray-300 text-center">
+                <td className="px-6 py-4 text-center border-r border-gray-300">
                  <span className={`px-2 py-1 text-[9px] font-black rounded uppercase border ${                    
                       service.assigned_role?.toLowerCase() === 'veterinarian'
                       ? 'bg-blue-50 text-blue-600 border-blue-100'
@@ -113,11 +114,11 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
                   </span>
                 </td>
 
-                <td className="px-6 py-4 border-r border-gray-300 text-center font-black text-gray-700">
+                <td className="px-6 py-4 font-black text-center text-gray-700 border-r border-gray-300">
                   ₱{Number(service.price).toLocaleString(undefined, {minimumFractionDigits: 2})}
                 </td>
 
-                <td className="px-6 py-4 border-r border-gray-300 text-center text-xs font-bold text-gray-500 uppercase">
+                <td className="px-6 py-4 text-xs font-bold text-center text-gray-500 uppercase border-r border-gray-300">
                   {service.duration} Mins
                 </td>
 
@@ -129,15 +130,37 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
 
                 <td className="px-6 py-4 text-center">
                   <div className="flex justify-center gap-2">
-                    <button onClick={() => onEdit(service)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-black transition-all"><HiPencilAlt size={16}/></button>
-                    <button onClick={() => onToggleStatus(service)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-red-600 transition-all">
+                    <button onClick={() => onEdit(service)} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-black"><HiPencilAlt size={16}/></button>
+                    <button onClick={() => onToggleStatus(service)} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-red-600">
                       {Number(service.status) === 1 ? <HiArchive size={16}/> : <HiRefresh size={16}/>}
                     </button>
                   </div>
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan="6" className="py-24 text-xs font-bold text-center text-gray-400 uppercase">No services found for this branch.</td></tr>
+              <tr>
+                <td colSpan="6" className="py-24 text-center bg-white border-gray-200 border-dashed rounded-b-3xl">
+                  <div className="flex flex-col items-center max-w-xs mx-auto">
+                    <div className="p-4 rounded-full bg-gray-50">
+                      <CiSearch className="text-gray-300" size={40} />
+                    </div>
+                    <h3 className="font-bold text-gray-800">No {activeTab === 'all' ? '' : activeTab} services found</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {search
+                        ? `We couldn't find any results for "${search}" in the ${activeTab} list.`
+                        : `There are currently no services marked as ${activeTab === 'all' ? 'available' : activeTab}.`}
+                    </p>
+                    {search && (
+                      <button
+                        onClick={() => setSearch('')}
+                        className="mt-4 text-sm font-bold text-(--clr-primary) hover:underline cursor-pointer"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -147,9 +170,9 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
         <span className="text-[11px] text-gray-500 font-black uppercase">Total Services: {filtered.length}</span>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg disabled:opacity-20 cursor-pointer"><HiChevronLeft/></button>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20"><HiChevronLeft/></button>
           <span className="px-4 text-xs font-black">{currentPage} / {totalPages || 1}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border rounded-lg disabled:opacity-20 cursor-pointer"><HiChevronRight/></button>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20"><HiChevronRight/></button>
         </div>
       </div>
     </div>

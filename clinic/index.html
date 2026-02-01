@@ -5,6 +5,33 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>clinic</title>
+    <style>
+      html, body {
+        -ms-overflow-style: none;  
+        scrollbar-width: none;    
+      }
+
+      html::-webkit-scrollbar, 
+      body::-webkit-scrollbar {
+        display: none;           
+      }
+
+      .show-scrollbar {
+        -ms-overflow-style: auto !important;
+        scrollbar-width: auto !important;
+      }
+
+      .show-scrollbar::-webkit-scrollbar {
+        display: block !important;
+        width: 6px;
+        height: 6px;
+      }
+
+      .show-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 10px;
+      } 
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -57,6 +57,8 @@ try {
     ];
   }
 
+  $currentDay = date('l');
+
   // initialize card data
   $cardData = [
     "total" => count($staff),
@@ -69,12 +71,25 @@ try {
   ];
 
   foreach($staff as &$member) {
-    $member['schedule'] = $schedulesByStaff[$member['staff_id']] ?? (object)[];
-    // decode permissions 
+    $staffID = $member['staff_id'];
+    $member['schedule'] = $schedulesByStaff[$staffID] ?? (object)[];
     $member['permissions'] = json_decode($member['permissions'] ?? '[]') ?: [];
+    
+    $isActive = (int)$member['status'] === 1;
+
     // count active
-    if((int)$member['status'] === 1) $cardData['active']++; 
-    // count roles 
+    if($isActive) {
+      $cardData['active']++; 
+      // count on duty today
+      if(isset($schedulesByStaff[$staffID][$currentDay])) {
+        $todaySched = $schedulesByStaff[$staffID][$currentDay];
+        if($todaySched['is_workday'] === true) {
+          $cardData['onDuty']++;
+        }
+      }
+    }
+
+    // count roles
     $role = strtolower($member['role_name']);
     if(str_contains($role, 'manager') || str_contains($role, 'admin')) {
       $cardData['branch_admin']++;
@@ -88,9 +103,9 @@ try {
   }
 
   echo json_encode([
-      "success" => true,
-      "data" => $staff,
-      "cardData" => $cardData 
+    "success" => true,
+    "data" => $staff,
+    "cardData" => $cardData 
   ]);
 } catch(Exception $e) {
   echo json_encode([

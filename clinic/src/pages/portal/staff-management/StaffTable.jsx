@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { CiSearch } from 'react-icons/ci';
 import {  HiSearch, HiPencilAlt, HiPlus, HiArchive,  HiRefresh } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi2';
 
@@ -33,7 +34,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
   }, [activeTab, search, entriesPerPage]);
 
   return (
-    <div className="flex flex-col w-full overflow-hidden text-left bg-white border border-gray-300 shadow-sm rounded-xl">
+    <div className="flex flex-col w-full overflow-hidden text-left bg-white border border-gray-300 rounded-xl">
       <div className="flex flex-col justify-between gap-4 p-4 bg-white border-b border-gray-300 lg:flex-row">
         
         {/* tabs */}
@@ -73,7 +74,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
 
       {/* table */}
       <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left border-collapse min-w-[1000px]">
+        <table className="w-full text-left border-collapse min-w-[1100px]">
           {/* table head */}
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600">
@@ -152,7 +153,29 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan="6" className="py-24 text-xs font-bold text-center text-gray-400 uppercase">No staff members found.</td></tr>
+              <tr>
+                <td colSpan="6" className="py-24 text-center bg-white border-gray-200 border-dashed rounded-b-3xl">
+                  <div className="flex flex-col items-center max-w-xs mx-auto">
+                    <div className="p-4 rounded-full bg-gray-50">
+                      <CiSearch className="text-gray-300" size={40} />
+                    </div>
+                    <h3 className="font-bold text-gray-800">No {activeTab === 'all' ? '' : activeTab}  staff found</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {search
+                        ? `We couldn't find any results for "${search}" in the ${activeTab} list.`
+                        : `There are currently no staff members marked as ${activeTab}.`}
+                    </p>
+                    {search && (
+                      <button
+                        onClick={() => setSearch('')}
+                        className="mt-4 text-sm font-bold text-(--clr-primary) hover:underline cursor-pointer"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
