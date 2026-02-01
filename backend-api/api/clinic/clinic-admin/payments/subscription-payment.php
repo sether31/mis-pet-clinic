@@ -16,58 +16,47 @@ try {
   $pdo = (new Database())->pdo;
   $data = json_decode(file_get_contents('php://input'));
 
+  $selectedMethod = strtoupper($data->payment_method ?? 'GCASH');
   Configuration::setXenditKey($_ENV['XENDIT_SECRET_KEY']);
   $apiInstance = new InvoiceApi();
 
-  // create unique id
   $external_id = 'sub_' . time() . '_' . $data->branch_id;
-
-  // create xendit invoice
   $base_url = rtrim($_ENV['MAIN_URL'], '/'); 
 
-  // make the success and failed url for redirection
+  // redirect url
   $success_url = $base_url . "/payment-success?branch_id={$data->branch_id}&sub_id={$data->subscription_id}&amount={$data->amount}";
-  $failure_url = $base_url . "/{$data->branch_id}/admin/select-plan";
+  $failure_url = $base_url . "/clinic/{$data->branch_id}/select-plan?status=cancelled";
 
   $create_invoice_request = new CreateInvoiceRequest([
     'external_id' => $external_id,
     'amount' => (float)$data->amount,
     'currency' => 'PHP',
     'description' => "Subscription: " . $data->plan_name,
-    'payment_methods' => ['GCASH', 'PAYMAYA'],
+    'payment_methods' => [$selectedMethod],
     'success_redirect_url' => $success_url,
     'failure_redirect_url' => $failure_url,
+    'invoice_duration' => 900 
   ]);
 
   $result = $apiInstance->createInvoice($create_invoice_request);
 
-  // save initial pending status record to payments_tb
   $stmt = $pdo->prepare(
     "INSERT INTO payments_tb (
-        branch_id, 
-        subscription_id,
-        payment_type, 
-        xendit_invoice_id, 
-        external_id, 
-        amount, 
-        payment_status
-    ) 
-    VALUES (:branch_id, :subscription_id, :payment_type, :xendit_invoice_id, :external_id, :amount, 'pending')"
+      branch_id, subscription_id, payment_type, payment_method, 
+      xendit_invoice_id, external_id, amount, payment_status
+    ) VALUES (:branch_id, :sub_id, 'subscription', :method, :x_id, :ext_id, :amt, 'pending')"
   );
+
   $stmt->execute([
-    ":branch_id" => $data->branch_id,  
-    ":subscription_id" => $data->subscription_id,            
-    ":payment_type" => 'subscription',            
-    ":xendit_invoice_id" => $result['id'],             
-    ":external_id" => $external_id,              
-    ":amount" => $data->amount             
+    ":branch_id" => $data->branch_id,
+    ":sub_id" => $data->subscription_id,
+    ":method" => $selectedMethod,
+    ":x_id" => $result['id'],
+    ":ext_id" => $external_id,
+    ":amt" => $data->amount
   ]);
 
-  echo json_encode([
-    "success" => true, 
-    "checkout_url" => $result['invoice_url']
-  ]);
-
+  echo json_encode(["success" => true, "checkout_url" => $result['invoice_url']]);
 } catch(Exception $e) {
   http_response_code(500);
   echo json_encode(["success" => false, "message" => $e->getMessage()]);
