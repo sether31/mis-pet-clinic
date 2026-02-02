@@ -7,11 +7,13 @@ import { useUI } from '../../../hooks/useUI';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
-// sections
+// sub components
 import AddStaffModal from './AddStaffModal';
 import StaffCard from './StaffCard';
 import StaffTable from './StaffTable';
 import StaffSchedule from './StaffSchedule';
+// icons
+import { HiCalendar, HiUserGroup } from 'react-icons/hi2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -21,9 +23,26 @@ export default function StaffManagement() {
   const [activeTab, setActiveTab] = useState('staffList'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [staffData, setStaffData] = useState([]);
+  const [branchSchedule, setBranchSchedule] = useState([]);
   const [cardData, setCardData] = useState(null)
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchBranchSettings = useCallback(async () => {
+    if (!branchId) return;
+    try {
+      // Use your existing endpoint for branch settings
+      const response = await authFetch(
+        `${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${branchId}`,
+        { method: 'GET' }
+      );
+      if(response.success) {
+        setBranchSchedule(response.data.schedules || []);
+      }
+    } catch(error) {
+      console.error("error:", error);
+    }
+  }, [branchId]);
 
   const fetchStaffData = useCallback(async () => {
     if (!branchId) return; 
@@ -48,7 +67,8 @@ export default function StaffManagement() {
 
   useEffect(() => {
     fetchStaffData();
-  }, [fetchStaffData]);
+    fetchBranchSettings();
+  }, [fetchStaffData, fetchBranchSettings]);
 
   const handleToggleStatus = async (staff) => {
     const newStatus = Number(staff.status) === 1 ? 0 : 1;
@@ -108,17 +128,27 @@ export default function StaffManagement() {
 
         <div className="mt-8">
           {/* tabs */}
-          <div className="flex w-full max-w-md p-1 mx-auto mb-6 bg-gray-100 rounded-2xl lg:mx-0">
+         <div className="flex items-center w-full mb-6 border-b border-gray-200">
             <button 
               onClick={() => setActiveTab('staffList')} 
-              className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${activeTab === 'staffList' ? 'bg-(--clr-primary) text-(--clr-text-secondary)' : 'text-gray-500'}`}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all cursor-pointer border-b-2 -mb-[2px] ${
+                activeTab === 'staffList' 
+                ? 'border-(--clr-primary) text-(--clr-primary)' 
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
             >
-              Staff list
+              <HiUserGroup size={20} />
+              Staff List
             </button>
             <button 
               onClick={() => setActiveTab('schedule')} 
-              className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all cursor-pointer ${activeTab === 'schedule' ? 'bg-(--clr-primary) text-(--clr-text-secondary)' : 'text-gray-500'}`}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all cursor-pointer border-b-2 -mb-[2px] ${
+                activeTab === 'schedule' 
+                ? 'border-(--clr-primary) text-(--clr-primary)' 
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+              }`}
             >
+              <HiCalendar size={20} />
               Schedule
             </button>
           </div>
@@ -140,9 +170,10 @@ export default function StaffManagement() {
             </div>
           ) : (
             <StaffSchedule
-              staffData={filteredStaff} // Pass the filtered list
+              staffData={filteredStaff} 
+              branchSchedule={branchSchedule}
               searchTerm={searchTerm}
-              onSearch={setSearchTerm} // Just updates state, no API call
+              onSearch={setSearchTerm} 
             />
           )}
         </div>
@@ -151,6 +182,7 @@ export default function StaffManagement() {
       {isModalOpen && (
         <AddStaffModal 
           initialData={selectedStaff}
+          branchSchedule={branchSchedule}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedStaff(null); 

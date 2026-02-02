@@ -11,6 +11,7 @@ const links = [
   { label: 'Appointment Management', path: '/appointment-management' },
   { label: 'Staff Management', path: '/staff-management' },
   { label: 'Service Management', path: '/service-management' },
+  { label: 'Branch Settings', path: '/branch-settings' },
   // other links
   { label: 'Settings', path: '/settings'},
 ];
