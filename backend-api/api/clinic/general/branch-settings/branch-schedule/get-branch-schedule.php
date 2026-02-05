@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../../config/Database.php';
 
-$decodedToken = validate_auth(['clinic_admin', 'branch_admin']);
+$decodedToken = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 $branchId = $_GET['branch_id'] ?? null; 
 
 if(!$branchId) {

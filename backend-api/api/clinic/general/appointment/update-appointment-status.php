@@ -7,6 +7,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 
 $appointment_id = $data['appointment_id'] ?? null;
 $status = $data['status'] ?? null;
+$feedback = $data['feedback'] ?? null;
 
 if(!$appointment_id || !$status) {
   http_response_code(400);
@@ -19,12 +20,13 @@ try {
 
   $stmt = $pdo->prepare(
     "UPDATE appointments_tb 
-    SET status = :status 
+    SET status = :status, feedback = :feedback
     WHERE appointment_id = :id"
   );
 
   $stmt->execute([
     ':status' => $status,
+    ':feedback' => $feedback,
     ':id' => $appointment_id
   ]);
 
