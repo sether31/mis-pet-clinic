@@ -36,7 +36,7 @@ export default function Header() {
   const role = `${rawRole} portal`;
 
   return (
-    <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-(--clr-primary) border-b border-white/10">
+    <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-gray-100 border-b">
       <div className="flex items-center justify-between flex-1 container-xl">
         <div className="flex flex-col">
           <motion.h1 
@@ -56,11 +56,8 @@ export default function Header() {
         </div>
 
         <div className='flex items-center gap-3'>
-          <button className='p-2.5 rounded-xl bg-(--clr-black) text-(--clr-text-secondary) cursor-pointer hover:opacity-85 transition-all duration-300 relative group'>
-            <MdOutlineNotifications size={20} />
-            <span className="absolute w-2 py-[2px] px-1 text-xs bg-red-500 border-2 border-none rounded-full -top-1 -right-1 w-max h-max">
-              31
-            </span>
+          <button className='p-2.5 rounded-xl cursor-pointer transition-all duration-300 hover:bg-(--clr-black) relative group hover:text-white'>
+            <MdOutlineNotifications size={24} />
           </button>
 
           <Link to="/settings" className='p-2.5 rounded-xl bg-(--clr-black) text-(--clr-text-secondary) cursor-pointer hover:opacity-85 transition-all duration-300'>
