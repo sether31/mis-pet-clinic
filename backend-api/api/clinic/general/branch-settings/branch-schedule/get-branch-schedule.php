@@ -26,15 +26,15 @@ try {
     "SELECT 
       boh_id, 
       day_of_week, 
-      start_time, 
-      end_time, 
+      TIME_FORMAT(start_time, '%H:%i') AS start_time,
+      TIME_FORMAT(end_time, '%H:%i') AS end_time, 
       is_closed 
     FROM branch_operating_hours_tb 
     WHERE branch_id = ? 
     ORDER BY FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')"
   );
   $stmt->execute([$branchId]);
-  $schedule = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $schedule = $stmt->fetchAll();
 
   echo json_encode([
     "success" => true, 
