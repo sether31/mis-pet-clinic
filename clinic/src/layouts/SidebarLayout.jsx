@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
-import Maintenance from '../pages/portal/Maintenance';
+// hooks
 import { useUser } from '../hooks/useUser';
 import { useUI } from '../hooks/useUI';
+// utils
 import { authFetch } from '../utils/authFetch';
+// components
 import Sidebar from '../components/Sidebar';
+// pages
+import Maintenance from '../pages/portal/Maintenance';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -20,26 +23,26 @@ export default function SidebarLayout() {
   const effectiveBranchId = branchId || user?.branch_id || user?.branch;
   const isAdmin = ['clinic_admin', 'branch_admin'].includes(user?.role);
 
-  useEffect(() => {
-    const fetchScheduleOnly = async () => {
-      if (!effectiveBranchId) return;
-      
-      showLoader();
-      try {
-        const res = await authFetch(`${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${effectiveBranchId}`);
+  const fetchBranchData = useCallback(async (silent = false) => {
+    if (!effectiveBranchId) return;
+    
+    if (!silent) showLoader();
+    try {
+      const res = await authFetch(`${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${effectiveBranchId}`);
 
-        if(res?.success) {
-          setBranchData(res.data); 
-        }
-      } catch (err) {
-        console.error("Schedule Fetch Error:", err);
-      } finally {
-        hideLoader();
+      if(res?.success) {
+        setBranchData(res.data); 
       }
-    };
-
-    fetchScheduleOnly();
+    } catch (err) {
+      console.error("Schedule Fetch Error:", err);
+    } finally {
+      if (!silent) hideLoader();
+    }
   }, [effectiveBranchId]);
+
+  useEffect(() => {
+    fetchBranchData();
+  }, [fetchBranchData]);
 
 
   if (loading || !branchData) {
@@ -64,7 +67,7 @@ export default function SidebarLayout() {
         transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
         className="flex flex-col min-h-screen"
       >
-        <Outlet context={{ branchData }} />
+        <Outlet context={{ branchData, fetchBranchData }} />
       </motion.main>
     </div>
   );

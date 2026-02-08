@@ -1,16 +1,39 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { HiRefresh } from 'react-icons/hi';
 import { IoLockClosedOutline } from "react-icons/io5";
 import PendingAppointments from '../components/PendingAppointments';
 import CalendarComponent from '../components/CalendarComponent';
 import AppointmentPaymentModal from '../components/AppointmentPaymentModal';
+import { authFetch } from '../../../../utils/authFetch';
 
 export default function StaffView({ appointments, loading, onSelect, user, onRefresh, branchId }) {
   const { branchData } = useOutletContext();
   const [activeTask, setActiveTask] = useState(null);
-
+  const [staffSchedule, setStaffSchedule] = useState(null);
   const branchSchedules = branchData?.schedules || [];
+
+  useEffect(() => {
+    const fetchMySchedule = async () => {
+      try {
+        const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`);
+        if(res.success) {
+          // get staff match the fetch and the current active user
+          const myData = res.data.find(s => String(s.user_id) === String(user?.id));
+          
+          if(myData?.schedule) {
+            setStaffSchedule(myData.schedule);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching staff schedule:", err);
+      }
+    };
+
+    if(branchId && user?.id) {
+      fetchMySchedule();
+    }
+  }, [branchId, user?.id]);
 
   const masterRange = useMemo(() => {
     if (branchSchedules.length === 0) return { min: "08:00:00", max: "20:00:00" };
@@ -75,7 +98,7 @@ export default function StaffView({ appointments, loading, onSelect, user, onRef
             </div>
 
             <button 
-              onClick={onRefresh}
+              onClick={() => onRefresh(true)}
               className="flex items-center gap-2 px-6 py-2 bg-white border border-gray-300 rounded-full text-[10px] font-black uppercase hover:bg-gray-100 transition-all active:scale-95 cursor-pointer"
             >
               <HiRefresh /> 
@@ -89,6 +112,7 @@ export default function StaffView({ appointments, loading, onSelect, user, onRef
             viewMode="staff" 
             onEventClick={(task) => setActiveTask(task)} 
             fullSchedules={branchSchedules}
+            staffSchedule={staffSchedule}
             openingTime={masterRange.min}
             closingTime={masterRange.max}
           />

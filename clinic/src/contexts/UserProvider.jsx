@@ -22,7 +22,10 @@ export default function UserProvider({ children }) {
       try {
         const response = await authFetch(`${API_URL}/api/clinic/general/get-updated-user-data.php`);
         if(response.success) {
-          setUser(response.user); 
+          setUser(response.user);
+          if (response.new_token) {
+           localStorage.setItem('access_token', response.new_token);
+        } 
         } else {
           setUser(null);
         }

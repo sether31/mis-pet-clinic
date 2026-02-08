@@ -14,15 +14,14 @@ try {
     a.appointment_id as id,
     a.start_time as start,
     a.end_time as end,
+    a.staff_id,   
     a.status,   
     p.pet_picture,       
     p.name as pet_name,
     s.custom_name as service_name,  
-    s.custom_description as service_description,     
-    s.branch_service_id,    
-    s.price as service_fee,          
     u_staff.first_name as staff_fname, 
     u_staff.last_name as staff_lname,
+    REPLACE(r.role_name, '_', ' ') as role_name,
     CONCAT(u_staff.first_name, ' ', u_staff.last_name) as staff_name,
     u_owner.first_name as owner_fname, 
     u_owner.last_name as owner_lname,
@@ -30,18 +29,22 @@ try {
     b.name as branch_name            
   FROM appointments_tb a
   JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
-  JOIN branch_staff_tb bs ON a.staff_id = bs.staff_id
-  JOIN user_tb u_staff ON bs.user_id = u_staff.user_id
+  LEFT JOIN branch_staff_tb bs ON a.staff_id = bs.staff_id
+  LEFT JOIN user_tb u_staff ON bs.user_id = u_staff.user_id
+  LEFT JOIN roles_tb r ON u_staff.role_id = r.role_id
   LEFT JOIN pet_tb p ON a.pet_id = p.pet_id
   LEFT JOIN user_tb u_owner ON p.owner_id = u_owner.user_id
   LEFT JOIN branch_service_tb s ON a.service_id = s.branch_service_id
   WHERE a.branch_id = :branch_id
     AND a.status NOT IN ('cancelled')";
 
-  // filter if user is not admin
   $params = [':branch_id' => $branch_id];
   
-  if($role !== 'clinic_admin' && $role !== 'branch_admin') {
+
+  $adminRoles = ['clinic_admin', 'branch_admin'];
+
+  if(!in_array($role, $adminRoles)) {
+    // staff can only see their appointments
     $sql .= " AND bs.user_id = :user_id";
     $params[':user_id'] = $user_id;
   }

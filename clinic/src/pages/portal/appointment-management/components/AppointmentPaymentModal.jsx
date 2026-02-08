@@ -146,16 +146,33 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   const pricing = getPricingBreakdown();
 
   const handleCancel = async () => {
-    if (!window.confirm("Are you sure you want to cancel this appointment? This will free up the time slot.")) return;
+    const reason = window.prompt(
+      "Are you sure you want to cancel? This will free up the slot.\n\nPlease enter a reason:"
+    );
+
+    if (reason === null) return;
+    if (reason.trim() === "") {
+      toast.warn("A reason is required to cancel an appointment.");
+      return;
+    }
+
+    const appointmentId = activeTask?.id || activeTask?.appointment_id;
+    
+    // admin uses .name, Vet uses .fname + .lname
+    const actorName = user?.name || `${user?.fname || ''} ${user?.lname || ''}`.trim() || 'Staff';
+    
+    const actorRole = (user?.role || 'Admin').replace(/_/g, ' ');
+    
+    const finalFeedback = `Cancelled by ${actorName} (${actorRole}). Reason: ${reason}`;
 
     showLoader('Cancelling...');
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/appointment/update-appointment-status.php`, {
         method: 'POST',
         body: JSON.stringify({
-          appointment_id: activeTask.id,
+          appointment_id: appointmentId,
           status: 'cancelled',
-          feedback: `Cancelled by ${user.role}`
+          feedback: finalFeedback
         })
       });
 
@@ -167,6 +184,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
         toast.error("Failed to cancel.");
       }
     } catch(err) {
+      console.error("FULL ERROR OBJECT:", err);
       toast.error("An error occurred during cancellation.");
     } finally {
       hideLoader();
