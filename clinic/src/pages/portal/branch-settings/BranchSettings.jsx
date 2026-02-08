@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useParams } from 'react-router-dom';
+import { NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom';
 // components
 import Header from '../../../components/Header';
 // icons
@@ -6,6 +6,7 @@ import { HiBuildingOffice2, HiCreditCard, HiCalendarDays } from "react-icons/hi2
 
 export default function BranchSettings() {
   const { branchId } = useParams();
+  const context = useOutletContext();
 
   const navClass = ({ isActive }) => 
     `flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
@@ -34,7 +35,7 @@ export default function BranchSettings() {
         </nav>
 
         <main className="p-4 my-6 bg-white border border-gray-300 shadow-sm lg:p-6 rounded-xl">
-          <Outlet /> 
+          <Outlet context={context} />
         </main>
       </section>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useOutletContext, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../../hooks/useUI';
@@ -17,30 +17,28 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ScheduleSettings() {
   const { branchId } = useParams();
+  const { branchData } = useOutletContext() || {};
   const { showLoader, hideLoader, loading } = useUI();
   const [schedule, setSchedule] = useState([]);
   const [isMaintenance, setIsMaintenance] = useState(false);
 
   // get branch sched data
   useEffect(() => {
-    const fetchSchedule = async () => {
-      showLoader("Fetching settings...");
-      try {
-        const res = await authFetch(`${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${branchId}`);
-        if(res.success) {
-          setSchedule(res.data.schedules || res.data);
-          setIsMaintenance(parseInt(res.data.is_maintenance) === 1);
-        } else {
-          toast.error("Failed to load schedule.");
+      if (branchData) {
+        setIsMaintenance(Number(branchData.is_maintenance) === 1);
+        if (branchData.schedules) {
+          const clean = branchData.schedules.map(s => ({
+            ...s,
+            start_time: s.start_time?.slice(0, 5),
+            end_time: s.end_time?.slice(0, 5)
+          }));
+          setSchedule(clean);
         }
-      } catch(error) {
-        toast.error("Something went wrong.");
-      } finally {
-        hideLoader();
       }
-    };
-    fetchSchedule();
-  }, [branchId]);
+    }, [branchData]);
+
+  // Handle errors if data isn't there yet
+  if (!schedule || schedule.length === 0) return <div>Loading...</div>;
 
   const handleTimeChange = (index, field, value) => {
     const updatedSchedule = [...schedule];

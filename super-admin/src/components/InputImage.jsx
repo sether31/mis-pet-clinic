@@ -67,7 +67,7 @@ export default function InputImage({
         </div>
       )}
 
-      <label className="ml-1 text-base font-medium text-gray-700">
+      <label className="ml-1 text-sm font-medium text-gray-700">
         {label} {required ? (
           <span className="text-red-500">*</span>
         ) : (
@@ -80,7 +80,7 @@ export default function InputImage({
         accept="image/*"
         name={name}
         onChange={handleChange}
-        className={`block w-full p-2 mt-2 border border-gray-300 rounded-lg ${borderColor} cursor-pointer`}
+        className={`block w-full p-2 mt-2 border border-gray-300 rounded-lg ${borderColor} cursor-pointer text-sm`}
       />
 
       {error && error !== "valid" && (

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../../config/Database.php';
 
-$decodedToken = validate_auth(['clinic_admin', 'branch_admin']);
+$decodedToken = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 $branchId = $_GET['branch_id'] ?? null; 
 
 if(!$branchId) {
@@ -26,15 +26,15 @@ try {
     "SELECT 
       boh_id, 
       day_of_week, 
-      start_time, 
-      end_time, 
+      TIME_FORMAT(start_time, '%H:%i') AS start_time,
+      TIME_FORMAT(end_time, '%H:%i') AS end_time, 
       is_closed 
     FROM branch_operating_hours_tb 
     WHERE branch_id = ? 
     ORDER BY FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')"
   );
   $stmt->execute([$branchId]);
-  $schedule = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $schedule = $stmt->fetchAll();
 
   echo json_encode([
     "success" => true, 

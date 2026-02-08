@@ -7,6 +7,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 
 $appointment_id = $data['appointment_id'] ?? null;
 $status = $data['status'] ?? null;
+$feedback = $data['feedback'] ?? null;
 
 if(!$appointment_id || !$status) {
   http_response_code(400);
@@ -17,29 +18,33 @@ if(!$appointment_id || !$status) {
 try {
   $pdo = (new Database())->pdo;
 
-  $stmt = $pdo->prepare(
-    "UPDATE appointments_tb 
-    SET status = :status 
-    WHERE appointment_id = :id"
-  );
+  // check if the appointment exist
+  $checkStmt = $pdo->prepare("SELECT status FROM appointments_tb WHERE appointment_id = :id");
+  $checkStmt->execute([':id' => $appointment_id]);
+  $currentStatus = $checkStmt->fetchColumn();
 
-  $stmt->execute([
-    ':status' => $status,
-    ':id' => $appointment_id
-  ]);
-
-  // check if appointment exist
-  if($stmt->rowCount() === 0) {
-    echo json_encode([
-      "success" => false, 
-      "message" => "No changes made. Appointment not found or status already set to " . $status
-    ]);
+  if($currentStatus === false) {
+    echo json_encode(["success" => false, "message" => "Appointment not found."]);
     exit;
   }
 
+  // update appointment status
+  $stmt = $pdo->prepare(
+    "UPDATE appointments_tb 
+     SET status = :status, feedback = :feedback
+     WHERE appointment_id = :id"
+  );
+
+  $result = $stmt->execute([
+    ':status' => $status,
+    ':feedback' => $feedback,
+    ':id' => $appointment_id
+  ]);
+
   $readable_status = [
     'confirmed' => 'approved',
-    'rejected'  => 'declined'
+    'rejected'  => 'declined',
+    'cancelled' => 'cancelled'
   ];
 
   $action = $readable_status[$status] ?? $status;
@@ -48,6 +53,7 @@ try {
     "success" => true, 
     "message" => "The appointment has been successfully " . $action . "."
   ]);
+
 } catch(Exception $e) {
   http_response_code(500);
   echo json_encode(["success" => false, "message" => $e->getMessage()]);

@@ -95,11 +95,11 @@ export default function Sidebar({className, open, setOpen}) {
 
   return (
     <aside 
-      className={`fixed top-0 left-0 z-100 border-r h-screen bg-(--clr-primary) transition-all duration-500 ease-in-out
+      className={`fixed top-0 left-0 z-100 border-r h-screen bg-gray-100 transition-all duration-500 ease-in-out
       ${open ? 'w-64' : 'w-18'} ${className}}`}
     >
       {/* header */}
-       <div className={`p-4 flex items-center justify-between  ${open ? 'bg-(--clr-black)' : 'bg-(--clr-primary) border-b border-b-black'}`}>
+       <div className={`p-4 flex items-center justify-between  ${open ? 'bg-(--clr-black)' : 'bg-gray-100 border-b border-b-black'}`}>
         <motion.div
           className="overflow-hidden whitespace-nowrap text-(--clr-text-secondary) w-full"
           initial={{ opacity: 0, x: -20 }}
@@ -126,7 +126,7 @@ export default function Sidebar({className, open, setOpen}) {
         
         {/* hamburger */}
         <div onClick={toggleMenu} className='cursor-pointer'>
-          <RxHamburgerMenu className={`hover:text-(--clr-text-secondary) duration-300 ease-in-out ${open ? 'hidden' : 'block'}`} size={32} />
+          <RxHamburgerMenu className={`hover:text-(--clr-black) duration-300 ease-in-out ${open ? 'hidden' : 'block'}`} size={32} />
           <MdOutlineClose className={`transition-transform hover:rotate-90 duration-300 ease-in-out text-(--clr-text-secondary) ${open ? 'block' : 'hidden'}`} size={32} />
         </div>
       </div>
@@ -159,8 +159,8 @@ function SidebarItem({ item, open, active, branchId }) {
     <Link
       to={fullPath}
       className={`
-        flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) text-gray-300 overflow-hidden
-        ${active ? 'bg-(--clr-black)' : ''}
+        flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) text-(--clr-black) overflow-hidden hover:text-white text-sm
+        ${active ? 'bg-(--clr-black) text-white' : ''}
       `}
     >
       <div className="shrink-0">
