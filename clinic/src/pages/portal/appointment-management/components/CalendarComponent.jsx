@@ -9,46 +9,96 @@ export default function CalendarComponent({
   viewMode = 'staff', 
   onEventClick, 
   fullSchedules = [],
+  staffSchedule = null,
+  selectedStaffId = 'all',
   openingTime = "08:00:00", 
   closingTime = "20:00:00" 
 }) {
 
-  const businessHours = useMemo(() => {
-    const daysMap = { 
-      'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 
-      'Thursday': 4, 'Friday': 5, 'Saturday': 6 
-    };
+  const backgroundEvents = useMemo(() => {
+    const daysMap = { 'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6 };
+    const bg = [];
+    const fullyClosedDayIndices = new Set(); 
 
-    // only include non close days
-    return fullSchedules
-      .filter(s => Number(s.is_closed) === 0) 
-      .map(s => ({
-        daysOfWeek: [daysMap[s.day_of_week]],
-        startTime: s.start_time,
-        endTime: s.end_time,
-      }));
-  }, [fullSchedules]);
+    // priority block on branch closed
+    fullSchedules.forEach(s => {
+      if(Number(s.is_closed) === 1) {
+        const dayIdx = daysMap[s.day_of_week];
+        // mark day as done
+        fullyClosedDayIndices.add(dayIdx); 
+        
+        bg.push({
+          daysOfWeek: [dayIdx],
+          display: 'background',
+          classNames: ['unavailable-shading'],
+          allDay: true
+        });
+      }
+    });
 
-  const calendarEvents = useMemo(() => events.map(app => {
-    const isPast = new Date(app.start) < new Date();
-    
-    const isPaid = String(app.payment_status).toLowerCase() === 'paid';
-    const isUnpaid = app.status === 'billed' && !isPaid;
-    const isUnbilled = isPast && app.status === 'confirmed';
+    // check staff availability
+    if(staffSchedule) {
+      Object.entries(staffSchedule).forEach(([day, sched]) => {
+        const dayIdx = daysMap[day];
 
-    return {
-      id: app.id,
-      title: app.pet_name, 
-      start: app.start.replace(' ', 'T'), 
-      end: app.end.replace(' ', 'T'), 
-      extendedProps: { ...app, isUnbilled, isUnpaid }
-    };
-  }), [events]);
+        // add the staff schedule shading when the branch isnt close
+        if(!fullyClosedDayIndices.has(dayIdx)) {
+          // add shade when staff is day off
+          if(sched.is_workday === false) {
+            bg.push({ 
+              daysOfWeek: [dayIdx], 
+              display: 'background', 
+              classNames: ['unavailable-shading'], 
+              allDay: true 
+            });
+          } else {
+            // add shade based on staff start and end working hours
+            bg.push({ 
+              daysOfWeek: [dayIdx], 
+              startTime: "00:00:00", 
+              endTime: sched.start, 
+              display: 'background', 
+              classNames: ['unavailable-shading'] 
+            });
+            bg.push({ 
+              daysOfWeek: [dayIdx], 
+              startTime: sched.end, 
+              endTime: "23:59:59", 
+              display: 'background', 
+              classNames: ['unavailable-shading'] 
+            });
+          }
+        }
+      });
+    }
+    return bg;
+  }, [fullSchedules, staffSchedule]);
+
+  const finalEvents = useMemo(() => {
+    const formattedApps = events.map(app => {
+      const isPast = new Date(app.start) < new Date();
+      const isPaid = String(app.payment_status).toLowerCase() === 'paid';
+      const isUnpaid = app.status === 'billed' && !isPaid;
+      const isUnbilled = isPast && app.status === 'confirmed';
+
+      return {
+        id: app.id,
+        title: app.pet_name, 
+        start: app.start.replace(' ', 'T'), 
+        end: app.end.replace(' ', 'T'), 
+        extendedProps: { ...app, isUnbilled, isUnpaid }
+      };
+    });
+
+    // combine them into one array for FullCalendar
+    return [...formattedApps, ...backgroundEvents];
+  }, [events, backgroundEvents]);
+
 
   return (
     <div className="h-[550px] calendar-modern-wrapper">
       <FullCalendar
-        key={viewMode} 
+        key={`${viewMode}-${selectedStaffId}`} 
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView={viewMode === 'admin' ? 'dayGridMonth' : 'timeGridDay'} 
         headerToolbar={{
@@ -56,10 +106,11 @@ export default function CalendarComponent({
           center: 'title',
           right: 'dayGridMonth,timeGridWeek,timeGridDay'
         }}
-        events={calendarEvents}
+        eventDisplay="block"
+        events={finalEvents}
         height="100%"
         nowIndicator={true}
-        businessHours={businessHours}
+        businessHours={false}
         slotMinTime={openingTime}
         slotMaxTime={closingTime}
         allDaySlot={false}
@@ -71,10 +122,13 @@ export default function CalendarComponent({
         }}
         // custom event design
        eventContent={(eventInfo) => {
+          if(eventInfo.event.display === 'background') {
+            return null; 
+          }
           const { isUnbilled, isUnpaid, status } = eventInfo.event.extendedProps;
 
           let bgColor = "bg-(--clr-primary)"; 
-          let statusText = "";
+          let statusText = "CONFIRMED";
 
           if(status === 'completed') {
             bgColor = "bg-blue-800"; 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useOutletContext, useParams } from 'react-router-dom';
 // hooks
 import { useUI } from '../../../hooks/useUI'; 
 import { useUser } from '../../../hooks/useUser';
@@ -16,18 +16,23 @@ import StaffView from './views/StaffView';
 export default function AppointmentManagement() {
   const { branchId } = useParams();
   const { showLoader, hideLoader, loading } = useUI(); 
-  const { user } = useUser();
+  const { fetchBranchData } = useOutletContext();
+  const { user, loading: userLoading } = useUser();
   
   const [appointments, setAppointments] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  const fetchAll = useCallback(async () => {
+  const fetchAll = useCallback(async (refreshBranch = false) => {
     showLoader('Syncing Schedule...'); 
     
     try {
       const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/clinic/general/appointment/get-appointments.php?branch_id=${branchId}`);
       if(res.success) {
         setAppointments(res.data);
+      }
+
+      if(refreshBranch && fetchBranchData) {
+        await fetchBranchData(true);
       }
     } catch(err) { 
       console.error("Fetch Error:", err); 
@@ -37,8 +42,8 @@ export default function AppointmentManagement() {
   }, [branchId]); 
 
   useEffect(() => { 
-    if(branchId) {
-      fetchAll(); 
+    if(branchId && !userLoading) {
+      fetchAll(false); 
     }
   }, [branchId, fetchAll]);
   
@@ -55,7 +60,14 @@ export default function AppointmentManagement() {
       <section className="w-full px-6 my-6 container-xl">
         {/* admin */}
         {isAdmin ? (
-          <AdminView appointments={appointments} />
+          <AdminView 
+            appointments={appointments} 
+            loading={loading}
+            onSelect={setSelectedAppointment} 
+            user={user}
+            onRefresh={fetchAll}
+            branchId={branchId} 
+          />
         ) : (
           // staff
           <StaffView 
