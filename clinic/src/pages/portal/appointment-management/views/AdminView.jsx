@@ -21,8 +21,6 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
 
   const branchSchedules = branchData?.schedules || [];
 
-  console.log(appointments)
-
   useEffect(() => {
     const fetchStaff = async () => {
       try {
@@ -86,14 +84,6 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
       return String(a.staff_id) === String(selectedStaffId);
     });
   }, [appointments, selectedStaffId]);
-
-  const getTodayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
-
-  const isTodayClosed = useMemo(() => {
-    const todaySchedule = branchSchedules.find(s => s.day_of_week === getTodayName);
-    return todaySchedule ? Number(todaySchedule.is_closed) === 1 : true;
-  }, [branchSchedules, getTodayName]);
-
 
   return (
     <div className="space-y-4">

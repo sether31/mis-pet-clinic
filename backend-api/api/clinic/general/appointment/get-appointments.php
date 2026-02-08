@@ -19,6 +19,7 @@ try {
     p.pet_picture,       
     p.name as pet_name,
     s.custom_name as service_name,  
+    s.price as service_fee,
     u_staff.first_name as staff_fname, 
     u_staff.last_name as staff_lname,
     REPLACE(r.role_name, '_', ' ') as role_name,
