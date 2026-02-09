@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Added useRef
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../../../hooks/useUI';
@@ -8,13 +8,12 @@ import { authFetch } from '../../../../utils/authFetch';
 import { 
   HiXCircle, HiTrash, HiPlus, HiMinus, 
   HiCash, HiCreditCard, HiInformationCircle, 
-  HiChevronRight, HiExclamation 
+  HiChevronRight, HiSearch, HiChevronDown // Added search/chevron icons
 } from 'react-icons/hi';
 import { FaRectangleList } from "react-icons/fa6";
 // images
 import noImage from '../../../../assets/images/no-image.jpg'
 import { IoLockClosedOutline } from 'react-icons/io5';
-
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -27,15 +26,47 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   const [paymentStatus, setPaymentStatus] = useState('unpaid');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // search and dropdown state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
   const serviceFee = parseFloat(activeTask?.service_fee || 0);
   const isLocked = ['billed', 'completed'].includes(activeTask?.status);
 
+  // close dropdown when click outside
   useEffect(() => {
-    if (!branchId) return;
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const formatExpiry = (dateString) => {
+    if (!dateString) return "No Expiry";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'long', day: '2-digit', year: 'numeric'
+    });
+  };
+
+  const isExpired = (dateString) => {
+    if (!dateString) return false;
+    const expiry = new Date(dateString);
+    expiry.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return expiry < today;
+  };
+
+  useEffect(() => {
+    if(!branchId) return;
     const fetchProducts = async () => {
       try {
-        const res = await authFetch(`${API_URL}/api/clinic/inventory/get-products.php?branch_id=${branchId}`);
-        if (res?.success) setAvailableProducts(res.data || []);
+        const res = await authFetch(`${API_URL}/api/clinic/general/inventory/get-inventory.php?branchId=${branchId}`);
+        if(res?.success) setAvailableProducts(res.data || []);
       } catch(err) { 
         toast.error("Failed to load inventory."); 
       }
@@ -44,36 +75,28 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   }, [branchId]);
 
   useEffect(() => {
-    // only fetch if billed or completed
     if(isLocked && activeTask?.id) {
       const fetchBilledDetails = async () => {
         try {
           const res = await authFetch(`${API_URL}/api/clinic/general/appointment/get-billing-details.php?appointment_id=${activeTask.id}`);
-          
           if(res?.success) {
-            // map billed items
             const productsOnly = res.data
-              .filter(item => item.product_id !== null)
+              .filter(item => item.inventory_id !== null)
               .map(item => ({
+                inventory_id: item.inventory_id,
                 product_id: item.product_id,
                 name: item.name,
                 price: parseFloat(item.price), 
                 qty: parseInt(item.qty),
+                supplier_name: item.supplier_name,
+                expiry_date: item.expiry_date,
                 type: 'product'
               }));
-
             setBilledItems(productsOnly);
-            
-            // sync payment and status
-            if(res.payment_method) {
-              setPaymentMethod(res.payment_method.toLowerCase());
-            }
-            if(res.payment_status) {
-              setPaymentStatus(res.payment_status.toLowerCase());
-            }
+            if(res.payment_method) setPaymentMethod(res.payment_method.toLowerCase());
+            if(res.payment_status) setPaymentStatus(res.payment_status.toLowerCase());
           }
         } catch(err) {
-          console.error("Failed to load billing details", err);
           toast.error("Could not retrieve billing history.");
         }
       };
@@ -81,119 +104,87 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
     }
   }, [activeTask?.id, isLocked]);
 
-  // handle quantity
-  const handleQtyChange = (productId, value) => {
+  const handleQtyChange = (inventoryId, value) => {
     if(isLocked) return; 
-
     if(value === "") {
       setBilledItems(prev => prev.map(item => 
-        item.product_id === productId ? { ...item, qty: "" } : item
+        String(item.inventory_id) === String(inventoryId) ? { ...item, qty: "" } : item
       ));
       return;
     }
-
-    const prodRef = availableProducts.find(p => String(p.product_id) === String(productId));
-    const maxStock = parseInt(prodRef?.stock_level || 0);
+    let newQty = Math.abs(parseInt(value));
     
-    let newQty = parseInt(value);
-
+    if(newQty < 1) {
+      return; 
+    }
+    
+    if (isNaN(newQty)) newQty = 1;
+    const prodRef = availableProducts.find(p => String(p.inventory_id) === String(inventoryId));
+    const maxStock = parseInt(prodRef?.stock_level || 0);
     if(newQty > maxStock) {
       toast.warn(`Only ${maxStock} in stock.`);
       newQty = maxStock;
     }
-
     setBilledItems(prev => prev.map(item => 
-      item.product_id === productId ? { ...item, qty: isNaN(newQty) ? "" : newQty } : item
+      String(item.inventory_id) === String(inventoryId) ? { ...item, qty: newQty } : item
     ));
   };
 
-  const handleQtyBlur = (productId, value) => {
-    let finalQty = parseInt(value);
-    if(isNaN(finalQty) || finalQty < 1) {
-      finalQty = 1;
-    }
+  const handleQtyBlur = (inventoryId, value) => {
+    let finalQty = Math.abs(parseInt(value));
+    if(isNaN(finalQty) || finalQty < 1) finalQty = 1;
     setBilledItems(prev => prev.map(item => 
-      item.product_id === productId ? { ...item, qty: finalQty } : item
+      String(item.inventory_id) === String(inventoryId) ? { ...item, qty: finalQty } : item
     ));
   };
 
-  // handle add item
-  const handleAddItem = (productId) => {
-    const prod = availableProducts.find(p => String(p.product_id) === String(productId));
-    if (!prod || parseInt(prod.stock_level) <= 0) return toast.error("No stocks available!");
+  const handleAddItem = (prod) => {
+    if (parseInt(prod.stock_level) <= 0) return toast.error("No stocks available!");
+    if (isExpired(prod.expiry_date)) return toast.error("This item is expired!");
 
-    const existing = billedItems.find(i => i.product_id === prod.product_id);
+    const existing = billedItems.find(i => String(i.inventory_id) === String(prod.inventory_id));
     if (existing) {
-      handleQtyChange(prod.product_id, (parseInt(existing.qty) || 0) + 1);
+      handleQtyChange(prod.inventory_id, (parseInt(existing.qty) || 0) + 1);
     } else {
       setBilledItems([...billedItems, { ...prod, qty: 1 }]);
     }
+    setIsDropdownOpen(false);
+    setSearchTerm("");
   };
 
   const getPricingBreakdown = () => {
-    const itemsSubtotal = billedItems.reduce((sum, i) => {
-      const q = parseInt(i.qty) || 0;
-      return sum + (parseFloat(i.price) * q);
-    }, 0);
-    
-    return {
-      service: serviceFee,
-      items: itemsSubtotal,
-      total: serviceFee + itemsSubtotal
-    };
+    const itemsSubtotal = billedItems.reduce((sum, i) => sum + (parseFloat(i.price) * (parseInt(i.qty) || 0)), 0);
+    return { service: serviceFee, items: itemsSubtotal, total: serviceFee + itemsSubtotal };
   };
 
   const pricing = getPricingBreakdown();
 
   const handleCancel = async () => {
-    const reason = window.prompt(
-      "Are you sure you want to cancel? This will free up the slot.\n\nPlease enter a reason:"
-    );
-
-    if (reason === null) return;
-    if (reason.trim() === "") {
-      toast.warn("A reason is required to cancel an appointment.");
-      return;
-    }
-
+    const reason = window.prompt("Are you sure you want to cancel? Please enter a reason:");
+    if (!reason) return;
     const appointmentId = activeTask?.id || activeTask?.appointment_id;
-    
-    // admin uses .name, Vet uses .fname + .lname
-    const actorName = user?.name || `${user?.fname || ''} ${user?.lname || ''}`.trim() || 'Staff';
-    
-    const actorRole = (user?.role || 'Admin').replace(/_/g, ' ');
-    
-    const finalFeedback = `Cancelled by ${actorName} (${actorRole}). Reason: ${reason}`;
-
+    const actorName = user?.name || 'Staff';
+    const finalFeedback = `Cancelled by ${actorName}. Reason: ${reason}`;
     showLoader('Cancelling...');
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/appointment/update-appointment-status.php`, {
         method: 'POST',
-        body: JSON.stringify({
-          appointment_id: appointmentId,
-          status: 'cancelled',
-          feedback: finalFeedback
-        })
+        body: JSON.stringify({ appointment_id: appointmentId, status: 'cancelled', feedback: finalFeedback })
       });
-
       if(res?.success) {
-        toast.info("Appointment cancelled successfully.");
+        toast.info("Appointment cancelled.");
         if (onRefresh) onRefresh();
         onClose();
-      } else {
-        toast.error("Failed to cancel.");
       }
     } catch(err) {
-      console.error("FULL ERROR OBJECT:", err);
-      toast.error("An error occurred during cancellation.");
+      toast.error("Error during cancellation.");
     } finally {
       hideLoader();
     }
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting || (billedItems.length === 0 && serviceFee === 0)) return;
-
+    if (isSubmitting) return;
     setIsSubmitting(true);
     showLoader('Processing...');
     try {
@@ -203,20 +194,8 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
         total: parseFloat(pricing.total.toFixed(2)),
         payment_method: paymentMethod,
         items: [
-          { 
-            service_id: activeTask.branch_service_id,
-            name: activeTask?.service_name || 'Service', 
-            price: parseFloat(serviceFee.toFixed(2)), 
-            qty: 1, 
-            type: 'service' 
-          },
-          ...billedItems.map(i => ({ 
-            product_id: i.product_id, 
-            name: i.name, 
-            price: parseFloat(parseFloat(i.price).toFixed(2)), 
-            qty: parseInt(i.qty) || 1, 
-            type: 'product' 
-          }))
+          { service_id: activeTask.branch_service_id, name: activeTask?.service_name || 'Service', price: serviceFee, qty: 1, type: 'service' },
+          ...billedItems.map(i => ({ inventory_id: i.inventory_id, product_id: i.product_id, name: i.name, price: i.price, qty: i.qty, type: 'product' }))
         ]
       };
       const res = await authFetch(`${API_URL}/api/clinic/general/appointment/pay-appointment.php`, {
@@ -224,11 +203,9 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
         body: JSON.stringify(payload)
       });
       if(res?.success) {
-        toast.success(res.message || "Payment successful");
+        toast.success("Payment successful");
         if (onRefresh) onRefresh();
         onClose(); 
-      } else {
-        toast.error("Transaction failed");
       }
     } catch(err) {
       toast.error("Transaction failed");
@@ -237,6 +214,14 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
       setIsSubmitting(false);
     }
   };
+
+  // search filter
+  const filteredProducts = availableProducts.filter(p => {
+    const isActive = parseInt(p.is_active) === 1;
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          p.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    return isActive && matchesSearch;
+  });
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-[9999] bg-black/70 backdrop-blur-sm">
@@ -253,37 +238,19 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
           <button onClick={onClose} className="px-6 text-gray-300 transition-colors cursor-pointer hover:text-red-500"><HiXCircle size={28}/></button>
         </div>
 
-        {/* main content*/}
+        {/* content */}
         <div className="p-8 h-[550px] flex flex-col">
           <div className="flex-1 pr-2 overflow-y-auto custom-scrollbar">
             {activeTab === 'overview' ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-center gap-6">
                   <div className="flex-none w-20 h-20 overflow-hidden bg-gray-100 border-4 border-white rounded-3xl">
-                    {activeTask?.pet_image ? (
-                      <img 
-                        src={`${API_URL}/uploads/pets/${activeTask.pet_image}`} 
-                        className="object-cover w-full h-full" 
-                        alt="pet" 
-                      />
-                    ) : (
-                      <img 
-                        src={noImage} 
-                        className="object-cover w-full h-full opacity-60" 
-                        alt="no-pet" 
-                      />
-                    )}
+                    <img src={activeTask?.pet_image ? `${API_URL}/uploads/pets/${activeTask.pet_image}` : noImage} className="object-cover w-full h-full" alt="pet" />
                   </div>
                   <div>
-                    <span className="block mb-1 text-[10px] font-black text-gray-400 uppercase">
-                      Patient Name
-                    </span>
-                    <h3 className="text-3xl font-black leading-none tracking-tighter uppercase">
-                      {activeTask?.pet_name}
-                    </h3>
-                    <p className="mt-2 text-[10px] font-black tracking-widest text-gray-400 uppercase">
-                      Owner: <span className="text-(--clr-primary)">{activeTask?.owner_name}</span>
-                    </p>
+                    <span className="block mb-1 text-[10px] font-black text-gray-400 uppercase">Patient Name</span>
+                    <h3 className="text-3xl font-black leading-none tracking-tighter uppercase">{activeTask?.pet_name}</h3>
+                    <p className="mt-2 text-[10px] font-black tracking-widest text-gray-400 uppercase">Owner: <span className="text-(--clr-primary)">{activeTask?.owner_name}</span></p>
                   </div>
                 </div>
 
@@ -291,9 +258,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                   <div className="flex items-start justify-between">
                     <div>
                       <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Selected Service</span>
-                      <h4 className="mt-1 text-xl font-black text-(--clr-primary) uppercase">
-                        {activeTask?.service_name || 'Medical Checkup'}
-                      </h4>
+                      <h4 className="mt-1 text-xl font-black text-(--clr-primary) uppercase">{activeTask?.service_name || 'Medical Checkup'}</h4>
                     </div>
                     <div className="text-right">
                       <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Service Fee</span>
@@ -306,26 +271,20 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                 </div>
               </div>
             ) : (
-
-              // payment tab
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                 {isLocked && (
                   <div className="flex items-center justify-between p-4 bg-gray-100 border border-gray-200 rounded-2xl">
                     <div className="flex items-center gap-3">
                       <IoLockClosedOutline className="text-gray-400" size={20} />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                        Transaction Locked
-                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Transaction Locked</span>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                      paymentStatus === 'paid' ? 'bg-(--clr-primary) text-white' : 'bg-amber-500 text-white'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${paymentStatus === 'paid' ? 'bg-(--clr-primary) text-white' : 'bg-amber-500 text-white'}`}>
                       {paymentStatus}
                     </span>
                   </div>
                 )}
 
-                {/* service price */}
+                 {/* service price */}
                 <div className="flex items-center justify-between p-4 border border-blue-100 bg-blue-50/50 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <div className="p-2 text-white bg-blue-500 rounded-lg">
@@ -339,98 +298,124 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                   <p className="font-black tracking-tighter text-blue-600">₱{serviceFee.toLocaleString()}</p>
                 </div>
 
-                {/* payment selection */}
+                {/* payment */}
                 <div className="grid grid-cols-2 gap-3">
                   {['cash', 'card'].map(m => (
-                    <button 
-                      key={m} 
-                      type="button"
-                      onClick={() => !isLocked && setPaymentMethod(m)} 
+                    <button key={m} type="button" onClick={() => !isLocked && setPaymentMethod(m)} 
                       className={`py-4 rounded-2xl border-2 font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2
                       ${paymentMethod === m ? 'border-(--clr-primary) bg-(--clr-primary) text-white' : 'border-gray-100 text-gray-400 bg-white hover:border-gray-300'}
-                      ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    `}>
+                      ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                       {m === 'cash' ? <HiCash size={18}/> : <HiCreditCard size={18}/>} {m}
                     </button>
-                    ))}
+                  ))}
                 </div>
 
-                {/* add products */}
                 <div className="space-y-4">
+                  {/* search */}
                   {!isLocked && (
-                    <select className="w-full p-4 text-[10px] font-black uppercase tracking-widest bg-gray-100 border-2 border-transparent outline-none rounded-2xl focus:border-(--clr-primary)" onChange={(e) => { handleAddItem(e.target.value); e.target.value=""; }}>
-                      <option value="">+ Add Items from Inventory</option>
-                      {availableProducts.map(p => (
-                        <option key={p.product_id} value={p.product_id} disabled={parseInt(p.stock_level) <= 0}>
-                          {p.name.toUpperCase()} (STOCKS: {p.stock_level})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative" ref={dropdownRef}>
+                      <div 
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="w-full p-4 text-[10px] font-black uppercase tracking-widest bg-gray-100 border-2 border-transparent rounded-2xl cursor-pointer flex justify-between items-center focus:border-(--clr-primary)"
+                      >
+                        <span className="text-gray-500">+ Add Items from Inventory</span>
+                        <HiChevronDown className={`text-xl transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                      </div>
+
+                      {isDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl z-[50] shadow-xl overflow-hidden flex flex-col max-h-[300px]">
+                          {/* search input */}
+                          <div className="flex items-center gap-2 p-3 border-b bg-gray-50">
+                            <HiSearch className="text-gray-400" />
+                            <input 
+                              autoFocus
+                              type="text" 
+                              placeholder="Search products or distributor..." 
+                              className="w-full bg-transparent border-none outline-none text-[10px] font-black tracking-widest"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                          </div>
+
+                          {/* list */}
+                          <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                            {filteredProducts.length > 0 ? (
+                              filteredProducts.map(p => {
+                                const expired = isExpired(p.expiry_date);
+                                const noStock = parseInt(p.stock_level) <= 0;
+                                const isDisabled = expired || noStock;
+
+                                return (
+                                  <div 
+                                    key={p.inventory_id} 
+                                    onClick={() => !isDisabled && handleAddItem(p)}
+                                    className={`p-4 border-b last:border-none flex flex-col gap-1 transition-colors ${isDisabled ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'hover:bg-green-50 cursor-pointer'}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className={`text-[10px] font-black uppercase ${expired ? 'text-red-500' : 'text-gray-700'}`}>
+                                        {p.name} {expired && "(EXPIRED)"} {noStock && "(OUT OF STOCK)"}
+                                      </span>
+                                      <span className="text-[10px] font-black text-(--clr-primary)">₱{parseFloat(p.price).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex gap-3 text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
+                                      <span>Dist: {p.supplier_name || 'N/A'}</span>
+                                      <span>Exp: {formatExpiry(p.expiry_date)}</span>
+                                      <span>Stocks: {p.stock_level}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">No active items found</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
 
-                  {/* all added products */}
+                  {/* billed items */}
                   <div className="space-y-3">
                     {billedItems.map(item => {
-                      const isLowStock = parseInt(item.stock_level) <= 5;
+                      const originalProd = availableProducts.find(p => String(p.inventory_id) === String(item.inventory_id));
+
                       return (
-                        <div key={item.product_id} className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl">
+                        <div key={item.inventory_id} className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl">
                           <div className="flex-1">
-                            <p className="text-[11px] font-black text-gray-800 uppercase">{item.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              {!isLocked && (
-                                <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${isLowStock ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>
-                                  {isLowStock && <HiExclamation className="inline mr-1" />}
-                                  Stock: {item.stock_level}
-                                </span>
-                              )}
-                              <span className="text-[9px] font-bold text-(--clr-primary)">₱{parseFloat(item.price).toLocaleString()}</span>
+                            <p className="text-[11px] font-black text-gray-800 uppercase flex gap-2 items-center">
+                              {item.name} 
+                              <span className="text-(--clr-primary)">₱{parseFloat(item.price).toLocaleString()}</span>
+                            </p>
+                            <div className="flex flex-wrap gap-3 mt-1">
+                              <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">
+                                Exp: {formatExpiry(item.expiry_date)}
+                              </span>
+                              <span className="text-[9px] font-black text-gray-700 uppercase tracking-tighter">
+                                Stock: {originalProd?.stock_level || item.stock_level}
+                              </span>
+                              <span className="text-[9px] font-black text-gray-700 uppercase tracking-tighter">
+                                Dist: {item.supplier_name}
+                              </span>
                             </div>
                           </div>
-                          
                           <div className="flex items-center gap-3">
-                           {isLocked ? (
+                          {isLocked ? (
                               <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-xl">
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                  Qty: {item.qty}
-                                </span>
+                                <span className="text-[10px] font-black text-gray-500 uppercase">Qty: {item.qty}</span>
                               </div>
                             ) : (
                               <>
-                                <div className="flex items-center px-2 transition-all bg-gray-100 border border-transparent rounded-xl focus-within:border-(--clr-primary) focus-within:bg-white">
-                                  <button 
-                                    onClick={() => handleQtyChange(item.product_id, (parseInt(item.qty) || 0) - 1)} 
-                                    className="p-2 cursor-pointer hover:text-(--clr-primary)"
-                                  >
-                                    <HiMinus size={14}/>
-                                  </button>
-                                  
-                                  <input 
-                                    type="number" 
-                                    value={item.qty} 
-                                    onChange={(e) => handleQtyChange(item.product_id, e.target.value)}
-                                    onBlur={(e) => handleQtyBlur(item.product_id, e.target.value)}
-                                    className="w-12 text-xs font-black text-center bg-transparent border-none outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                  />
-
-                                  <button 
-                                    onClick={() => handleQtyChange(item.product_id, (parseInt(item.qty) || 0) + 1)} 
-                                    className="p-2 cursor-pointer hover:text-(--clr-primary)"
-                                  >
-                                    <HiPlus size={14}/>
-                                  </button>
+                                <div className="flex items-center px-2 bg-gray-100 border border-transparent rounded-xl focus-within:border-(--clr-primary) focus-within:bg-white">
+                                  <button onClick={() => handleQtyChange(item.inventory_id, (parseInt(item.qty) || 0) - 1)} className="p-2 cursor-pointer hover:text-(--clr-primary)"><HiMinus size={14}/></button>
+                                  <input type="number" value={item.qty} onChange={(e) => handleQtyChange(item.inventory_id, e.target.value)} onBlur={(e) => handleQtyBlur(item.inventory_id, e.target.value)} className="w-10 text-xs font-black text-center bg-transparent border-none outline-none" />
+                                  <button onClick={() => handleQtyChange(item.inventory_id, (parseInt(item.qty) || 0) + 1)} className="p-2 cursor-pointer hover:text-(--clr-primary)"><HiPlus size={14}/></button>
                                 </div>
-
-                                <button 
-                                  onClick={() => setBilledItems(billedItems.filter(i => i.product_id !== item.product_id))} 
-                                  className="text-gray-300 transition-colors cursor-pointer hover:text-red-500"
-                                >
-                                  <HiTrash size={18}/>
-                                </button>
+                                <button onClick={() => setBilledItems(billedItems.filter(i => i.inventory_id !== item.inventory_id))} className="text-gray-300 cursor-pointer hover:text-red-500"><HiTrash size={18}/></button>
                               </>
                             )}
                           </div>
                         </div>
-                      );
+                      )
                     })}
                   </div>
                 </div>
