@@ -40,7 +40,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
             <input 
               id={id || undefined}
               type={type} 
-              className="flex-1 bg-transparent outline-none" 
+              className="flex-1 bg-transparent outline-none text-sm" 
               {...props} 
              />
           </div>
@@ -52,7 +52,7 @@ export default function Input({ label, labelStyle, id, icon, type="text", isImpo
               <input 
                 id={id || undefined}
                 type={showPass ? "text" : "password"} 
-                className="flex-1 w-full bg-transparent outline-none" 
+                className="flex-1 w-full bg-transparent outline-none text-sm" 
                 {...props} 
               />
             </div>

@@ -29,6 +29,7 @@ import ServiceManagement from "../pages/portal/service-management/ServiceManagem
 import BranchSettings from "../pages/portal/branch-settings/BranchSettings";
 import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranchSettings";
 import BranchScheduleSettings from "../pages/portal/branch-settings/BranchScheduleSettings";
+import InventoryManagement from "../pages/portal/inventory-management/InventoryMangement";
 
 
 export const routes = createBrowserRouter([
@@ -104,6 +105,14 @@ export const routes = createBrowserRouter([
                       <StaffManagement />
                     </ProtectedRoute>
                     )
+                  },
+                  { 
+                    path: "inventory-management", 
+                    element: (
+                    <ProtectedRoute requiredPermission="inventory_management">
+                      <InventoryManagement />
+                    </ProtectedRoute>
+                    ) 
                   },
                   { 
                     path: "service-management", 
