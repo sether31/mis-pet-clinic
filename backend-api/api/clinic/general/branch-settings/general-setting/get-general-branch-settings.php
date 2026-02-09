@@ -24,13 +24,12 @@ try {
       b.status, b.is_configured, b.feedback
     FROM clinic_branches_tb b
     INNER JOIN clinics_tb c ON b.clinic_id = c.clinic_id
-    WHERE b.branch_id = :branch_id AND c.created_by = :user_id
+    WHERE b.branch_id = :branch_id
     LIMIT 1"
   );
 
   $stmt->execute([
-    ':branch_id' => $branch_id,
-    ':user_id' => $admin->user_id
+    ':branch_id' => $branch_id
   ]);
 
   $data = $stmt->fetch();
