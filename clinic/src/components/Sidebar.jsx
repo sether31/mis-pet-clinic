@@ -12,6 +12,7 @@ import { RiDashboardLine } from "react-icons/ri"
 import { LuUsers } from 'react-icons/lu';
 import { FaRegCalendarAlt } from "react-icons/fa";
 import { HiOutlineWrenchScrewdriver } from 'react-icons/hi2';
+import { BsBoxSeam } from "react-icons/bs";
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
@@ -26,6 +27,12 @@ const sidebarItems = [
     path: 'staff-management', 
     icon: LuUsers, 
     requiredPermission: 'staff_management' 
+  },
+  { 
+    label: 'Inventory Management', 
+    path: 'inventory-management', 
+    icon:  BsBoxSeam,
+    requiredPermission: 'inventory_management' 
   },
   { 
     label: 'Service Management', 
