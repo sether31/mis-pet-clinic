@@ -50,7 +50,7 @@ export default function ServiceManagement() {
   };
 
   return (
-    <div className="bg-(--clr-bg-page) min-h-screen">
+    <div className="bg-gray-100 min-h-screen">
       <Header />
       <section className='px-6 my-6 container-xl'>
         <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">

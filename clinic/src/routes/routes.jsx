@@ -101,7 +101,10 @@ export const routes = createBrowserRouter([
                   { 
                     path: "staff-management", 
                     element: (
-                    <ProtectedRoute requiredPermission="staff_management">
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="staff_management"
+                    >
                       <StaffManagement />
                     </ProtectedRoute>
                     )
@@ -109,7 +112,10 @@ export const routes = createBrowserRouter([
                   { 
                     path: "inventory-management", 
                     element: (
-                    <ProtectedRoute requiredPermission="inventory_management">
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="inventory_management"
+                    >
                       <InventoryManagement />
                     </ProtectedRoute>
                     ) 
@@ -117,7 +123,10 @@ export const routes = createBrowserRouter([
                   { 
                     path: "service-management", 
                     element: (
-                    <ProtectedRoute requiredPermission="service_management">
+                    <ProtectedRoute
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="service_management"
+                    >
                       <ServiceManagement />
                     </ProtectedRoute>
                     ) 
@@ -125,7 +134,10 @@ export const routes = createBrowserRouter([
                   { 
                     path: "branch-settings", 
                     element: (
-                    <ProtectedRoute requiredPermission="branch_settings">
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="branch_settings"
+                    >
                       <BranchSettings />
                     </ProtectedRoute>
                     ),

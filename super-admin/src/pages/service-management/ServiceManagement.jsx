@@ -55,7 +55,7 @@ export default function ServiceManagement() {
   };
 
   return (
-    <div className="bg-(--clr-bg-page) min-h-screen">
+    <div className="min-h-screen bg-gray-100">
       <Header />
       <section className='px-6 my-6 container-xl'>
         <ServiceCard data={cardData} /> 

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-// image
 import notFoundPic from '../assets/images/notFound.gif';
 
 export default function NotFound() {  

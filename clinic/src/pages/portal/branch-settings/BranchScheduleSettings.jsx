@@ -17,7 +17,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ScheduleSettings() {
   const { branchId } = useParams();
-  const { branchData } = useOutletContext() || {};
+  const { branchData, fetchBranchData } = useOutletContext() || {};
   const { showLoader, hideLoader, loading } = useUI();
   const [schedule, setSchedule] = useState([]);
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -67,6 +67,7 @@ export default function ScheduleSettings() {
 
       if(res.success) {
         toast.success("Branch settings updated successfully!");
+        fetchBranchData();
       } else {
         toast.error("Failed to update settings.");
       }
