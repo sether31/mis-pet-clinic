@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+// icons
 import { 
   HiSearch,HiPencilAlt, HiPlus, HiArchive, 
   HiRefresh, HiChevronUp, HiChevronDown
@@ -17,7 +18,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
 
   // filtering and sorting with memo
   const filtered = useMemo(() => {
-    let result = data
+    let result = [...data]
       .filter(p => {
         if(activeTab === "all") return true;
         const status = Number(p.is_active);
@@ -101,7 +102,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
 
       {/* table */}
       <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left table-fixed">
+        <table className="w-full text-left border-collapse min-w-[1100px]">
           {/* table head */}
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600">
@@ -152,17 +153,25 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
                 {/* features */}
                 <td className="px-6 py-4 border-r border-gray-300">
                   <div className="flex flex-wrap justify-start gap-2">
-                    <span className="px-2 py-1 bg-gray-100 border border-gray-200 text-[9px] font-black text-gray-600 rounded uppercase">
-                      {Number(plan.appointment_limit) > 1000 ? 'Unlimited' : plan.appointment_limit} Appointments
-                    </span>
-                    {Number(plan.has_marketplace) === 1 && (
-                      <span className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-black rounded uppercase">
-                        Marketplace
+                    {Number(plan.has_email) === 1 && (
+                      <span className="px-2 py-1 bg-gray-100 border border-gray-200 text-[9px] font-black text-gray-500 rounded uppercase tracking-tighter">
+                        Email Support
                       </span>
                     )}
-                    {Number(plan.has_unlimited_email) === 1 && (
-                      <span className="px-2 py-1 bg-green-50 text-(--clr-text-header) border-green-100 text-[9px] font-black rounded uppercase">
-                        Email
+
+                    {Number(plan.has_medical) === 1 && (
+                      <span className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-black rounded uppercase">
+                        Medical Record Access
+                      </span>
+                    )}
+
+                    <span className="px-2 py-1 bg-green-50 border border-green-100 text-[9px] font-black text-(--clr-primary) rounded uppercase">
+                      {Number(plan.appointment_limit) > 1000 ? 'Unlimited' : plan.appointment_limit} Appointments
+                    </span>
+
+                    {Number(plan.has_shop) === 1 && (
+                      <span className="px-2 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 text-[9px] font-black rounded uppercase tracking-tighter">
+                        Shop Reservation & Inventory
                       </span>
                     )}
                   </div>

@@ -6,8 +6,8 @@ import { authFetch } from '../../utils/authFetch';
 // component
 import Header from '../../components/Header'
 import DashboardCard from '../../components/DashboardCard'
-import SubscriptionTable from '../../components/SubscriptionTable'
-import SubscriptionModal from '../../components/SubscriptionModal'
+import SubscriptionTable from './SubscriptionTable'
+import SubscriptionModal from './SubscriptionModal'
 import FullScreenLoader from '../../components/FullScreenLoader'
 // icons
 import { HiOutlineBadgeCheck } from 'react-icons/hi';
