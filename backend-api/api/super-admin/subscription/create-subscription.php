@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/../../../config/Database.php';
 require_once __DIR__ . '/../../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../../config/Database.php';
+
 
 $admin = validate_auth(['super_admin']);
 
@@ -19,15 +20,17 @@ try {
     price, 
     duration_months, 
     appointment_limit, 
-    has_marketplace, 
-    has_unlimited_email
+    has_shop, 
+    has_email,
+    has_medical
   ) VALUES (
     :name, 
     :price, 
     :duration, 
     :appointment_limit, 
-    :market, 
-    :email
+    :has_shop, 
+    :email,
+    :medical
   )");
     
   $success = $stmt->execute([
@@ -35,8 +38,9 @@ try {
     ':price' => $data['price'],
     ':duration' => $data['duration_months'],
     ':appointment_limit' => $data['appointment_limit'],
-    ':market' => $data['has_marketplace'] ? 1 : 0,
-    ':email' => $data['has_unlimited_email'] ? 1 : 0
+    ':has_shop' => isset($data['has_shop']) ? (int)$data['has_shop'] : 0,
+    ':email' => 1,
+    ':medical' => 1
   ]);
 
   if($success) {
@@ -46,6 +50,6 @@ try {
   }
 
 } catch(PDOException $e) {
-    echo json_encode(["success" => false, "message" => "Database Error: " . $e->getMessage()]);
+  echo json_encode(["success" => false, "message" => "Database Error: " . $e->getMessage()]);
 }
 ?>

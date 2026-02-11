@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../../../config/Database.php';
 require_once __DIR__ . '/../../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../../config/Database.php';
 
 $admin = validate_auth(['super_admin']);
 
@@ -19,8 +19,9 @@ try {
     price = :price, 
     duration_months = :duration, 
     appointment_limit = :appointment, 
-    has_marketplace = :market, 
-    has_unlimited_email = :email,
+    has_shop = :has_shop, 
+    has_email = :email,
+    has_medical = :medical,
     is_active = :is_active
   WHERE subscription_id = :id");
   
@@ -29,8 +30,9 @@ try {
     ':price' => $data['price'],
     ':duration' => $data['duration_months'],
     ':appointment' => $data['appointment_limit'],
-    ':market' => $data['has_marketplace'] ? 1 : 0,
-    ':email' => $data['has_unlimited_email'] ? 1 : 0,
+    ':has_shop' => isset($data['has_shop']) ? (int)$data['has_shop'] : 0,
+    ':email' => 1,
+    ':medical' => 1,
     ':is_active' => isset($data['is_active']) ? (int)$data['is_active'] : 1,
     ':id' => $data['subscription_id']
   ]);

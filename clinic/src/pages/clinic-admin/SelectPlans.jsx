@@ -39,11 +39,10 @@ export default function SelectPlans() {
   const [selectedSub, setSelectedSub] = useState(null);
 
   useEffect(() => {
-    // Check if user just returned from a cancelled payment via the failure_redirect_url
     const status = searchParams.get('status');
     if (status === 'cancelled') {
       toast.info("Payment was cancelled. Feel free to try again.");
-      setSearchParams({}, { replace: true }); // Clean the URL
+      setSearchParams({}, { replace: true }); 
     }
 
     const fetchPlans = async () => {
@@ -141,13 +140,24 @@ export default function SelectPlans() {
 
                 <ul className="flex-1 space-y-5 text-left">
                   <li className="flex items-center gap-3 text-sm">
-                    {Number(sub.has_unlimited_email) === 1 ? (
+                    {Number(sub.has_email) === 1 ? (
                       <HiCheck className="text-(--clr-primary) shrink-0" size={20} />
                     ) : (
                       <HiXMark className="text-gray-300 shrink-0" size={20} />
                     )}
-                    <span className={Number(sub.has_unlimited_email) ? "text-gray-600 font-medium" : "text-gray-400"}>
-                      Unlimited Email Notifications
+                    <span className={Number(sub.has_email) ? "text-gray-600 font-medium" : "text-gray-400"}>
+                      Email Notifications
+                    </span>
+                  </li>
+
+                  <li className="flex items-center gap-3 text-sm">
+                    {Number(sub.has_medical) === 1 ? (
+                      <HiCheck className="text-(--clr-primary) shrink-0" size={20} />
+                    ) : (
+                      <HiXMark className="text-gray-300 shrink-0" size={20} />
+                    )}
+                    <span className={Number(sub.has_medical) ? "text-gray-600 font-medium" : "text-gray-400"}>
+                      Medical Record Access
                     </span>
                   </li>
 
@@ -161,13 +171,13 @@ export default function SelectPlans() {
                   </li>
                   
                   <li className="flex items-center gap-3 text-sm">
-                    {Number(sub.has_marketplace) === 1 ? (
+                    {Number(sub.has_shop) === 1 ? (
                       <HiCheck className="text-(--clr-primary) shrink-0" size={20} />
                     ) : (
                       <HiXMark className="text-gray-300 shrink-0" size={20} />
                     )}
-                    <span className={Number(sub.has_marketplace) ? "text-gray-600 font-medium" : "text-gray-400"}>
-                      Marketplace Access
+                    <span className={Number(sub.has_shop) ? "text-gray-600 font-medium" : "text-gray-400"}>
+                      Shop Reservation & Inventory
                     </span>
                   </li>
                 </ul>
