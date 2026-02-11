@@ -17,7 +17,7 @@ import ClinicApplications from "../pages/dashboard/ClinicApplications";
 import RegisteredClinics from "../pages/dashboard/RegisteredClinics";
 import PlatformAnalytics from "../pages/dashboard/PlatformAnalytics";
 import NotFoundDashboard from "../pages/dashboard/NotFoundDashboard";
-import SubscriptionPlans from "../pages/dashboard/SubscriptionPlans"
+import SubscriptionPlans from "../pages/subscription/SubscriptionPlans"
 import ServiceManagement from "../pages/service-management/ServiceManagement";
   // other links
 import Settings from "../pages/Navigation/Settings/Settings";

@@ -35,8 +35,18 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
   const availablePermissions = [
     { id: "role_dashboard", label: "Role Dashboard"},
     { id: "appointment_management", label: "Appointment Management"},
-    { id: "staff_management", label: "Staff Management"}
+    { id: "staff_management", label: "Staff Management"},
+    { id: "inventory_management", label: "Inventory Management"},
+    { id: "service_management", label: "Service Management"},
+    { id: "branch_settings", label: "Branch Settings"},
   ];
+
+  const defaultRolePermissions = {
+    3: ["role_dashboard", "appointment_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
+    4: ["role_dashboard", "appointment_management"], 
+    5: ["role_dashboard", "appointment_management"], 
+    6: ["role_dashboard", "appointment_management"] 
+  };
 
   const format12h = (timeStr) => {
     if (!timeStr) return "";
@@ -53,8 +63,8 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     lname: initialData?.lname || '',
     email: initialData?.email || '',
     password: '',
-    role_id: initialData?.role_id || 5,
-    permissions: initialData?.permissions || [],
+    role_id: initialData?.role_id || 4,
+    permissions: initialData?.permissions || defaultRolePermissions[initialData?.role_id || 4] || [],
     profile_pic: null, 
     is_active: initialData ? Number(initialData.status) : 1,
     schedule: initialData?.schedule && Object.keys(initialData.schedule).length > 0 
@@ -73,6 +83,16 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    // run if no initial data and permissions are empty
+    if (!initialData && form.permissions.length === 0) {
+      setForm(prev => ({
+        ...prev,
+        permissions: defaultRolePermissions[prev.role_id] || []
+      }));
+    }
+  }, [initialData]);
 
   // force is_workday to false if branch is closed
   useEffect(() => {
@@ -283,8 +303,31 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
             {showRoleDropdown && (
               <div className="absolute left-0 right-0 z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 shadow-2xl top-full max-h-60 rounded-xl">
                 {userRoles.map((role) => (
-                  <div key={role.id} onClick={() => { setForm(prev => ({ ...prev, role_id: role.id })); setShowRoleDropdown(false); }} className={`px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 flex justify-between items-center ${Number(form.role_id) === role.id ? "text-(--clr-primary) bg-gray-50" : "text-gray-600"}`}>
-                    <p>{role.label}</p> {Number(form.role_id) === role.id && <span className="text-(--clr-primary) font-bold">✓</span>}
+                  <div 
+                    key={role.id} 
+                    onClick={() => { 
+                      const defaultPermissions = {
+                        3: ["role_dashboard", "appointment_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
+                        4: ["role_dashboard", "appointment_management"], 
+                        5: ["role_dashboard", "appointment_management"], 
+                        6: ["role_dashboard", "appointment_management"] 
+                      };
+
+                      setForm(prev => ({ 
+                        ...prev, 
+                        role_id: role.id,
+                        // apply the default permissions for the selected role
+                        permissions: defaultPermissions[role.id] || [] 
+                      }));  
+
+                      // clear permission errors since we just filled them
+                      setErrors(prev => ({ ...prev, permissions: "valid" }));
+                      
+                      setShowRoleDropdown(false); 
+                    }}
+                    className={`px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 flex justify-between items-center ${Number(form.role_id) === role.id ? "text-(--clr-primary) bg-gray-50" : "text-gray-600"}`}
+                    >
+                      <p>{role.label}</p> {Number(form.role_id) === role.id && <span className="text-(--clr-primary) font-bold">✓</span>}
                   </div>
                 ))}
               </div>
@@ -312,12 +355,36 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
               </p>
             )}
             {showPermissions && (
-              <div className="absolute left-0 right-0 z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 top-full max-h-60 rounded-xl">
-                {availablePermissions.map(perm => (
-                  <div key={perm.id} onClick={() => handleChange({ target: { name: 'permissions', value: perm.id } })} className={`px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 flex justify-between items-center ${form.permissions.includes(perm.id) ? "text-(--clr-primary) bg-gray-50" : "text-gray-600"}`}>
-                    <p>{perm.label}</p> {form.permissions.includes(perm.id) && <span className="text-(--clr-primary) font-bold">✓</span>}
-                  </div>
-                ))}
+              <div className="absolute left-0 right-0 z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 top-full max-h-60 rounded-xl shadow-xl">
+                {availablePermissions
+                  .filter(perm => {
+                    // list of permissions only available for admins
+                    const isAdminPermission = [
+                      "staff_management", 
+                      "inventory_management",
+                      "service_management",
+                      "branch_settings"
+                    ].includes(perm.id);
+                    
+                    const isBranchAdmin = Number(form.role_id) === 3;
+
+                    // block admin only permissions
+                    if(isAdminPermission) {
+                      return isBranchAdmin;
+                    }
+                    
+                    return true; 
+                  })
+                  .map(perm => (
+                    <div 
+                      key={perm.id} 
+                      onClick={() => handleChange({ target: { name: 'permissions', value: perm.id } })} 
+                      className={`px-4 py-3 text-sm cursor-pointer hover:bg-gray-50 flex justify-between items-center ${form.permissions.includes(perm.id) ? "text-(--clr-primary) bg-gray-50" : "text-gray-600"}`}
+                    >
+                      <p>{perm.label}</p> 
+                      {form.permissions.includes(perm.id) && <span className="text-(--clr-primary) font-bold">✓</span>}
+                    </div>
+                  ))}
               </div>
             )}
           </div>
@@ -371,7 +438,7 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
             </div>
           </div>
 
-          <button type="submit" disabled={isSubmitting} className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-white uppercase bg-(--clr-primary) rounded-xl hover:bg-(--clr-primary)/95 disabled:opacity-50 mt-4">
+          <button type="submit" disabled={isSubmitting} className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-white uppercase bg-(--clr-primary) rounded-xl hover:bg-(--clr-primary)/95 cursor-pointer disabled:opacity-50 mt-4">
             <HiSave size={18}/> {isSubmitting ? "Saving..." : "Save Staff Account"}
           </button>
         </form>

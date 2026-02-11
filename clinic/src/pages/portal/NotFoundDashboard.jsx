@@ -35,7 +35,7 @@ export default function NotFoundDashboard() {
             <img 
               src={notFoundPic} 
               alt="Page not found" 
-              className='w-64 h-auto rounded-2xl' 
+              className='w-64 h-auto rounded-2xl grayscale-[50%]' 
             />
             <div className="absolute -bottom-4 -right-4 bg-(--clr-primary) text-(--clr-text-secondary) font-black px-4 py-2 rounded-lg transform rotate-12 shadow-lg">
               404

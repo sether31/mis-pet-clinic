@@ -41,18 +41,18 @@ export default function AdminDashboard() {
   if (!branchData && loading) return null;
 
   return (
-    <div className='bg-(--clr-bg-page) min-h-screen'>
+    <div className='min-h-screen bg-gray-100'>
       <Header />
       <section className='my-6 container-xl'>
 
       {isMaintenance && (
-        <div className="flex items-center justify-between p-3 mb-6 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="flex items-center justify-between p-3 mb-6 border bg-amber-50 border-amber-200 rounded-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
+            <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
               <HiOutlineInformationCircle size={20} />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-black text-amber-900 uppercase tracking-tight">
+              <span className="text-xs font-black tracking-tight uppercase text-amber-900">
                 Branch Offline
               </span>
               <span className="text-[11px] text-amber-700 font-medium">
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight">Dashboard Overview</h1>
             </div>
-            <p className="text-sm text-gray-500 font-medium">Welcome back! Managing {branchData?.name}.</p>
+            <p className="text-sm font-medium text-gray-500">Welcome back! Managing {branchData?.name}.</p>
           </div>
         </div>
       </section>

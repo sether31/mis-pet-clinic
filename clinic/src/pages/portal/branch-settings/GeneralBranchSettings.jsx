@@ -189,12 +189,12 @@ export default function GeneralBranchSettings() {
   return (
     <div className='w-full'>
       {/* header */}
-      <div className="mb-8 border-b border-gray-100 pb-5">
-        <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-800">
+      <div className="pb-5 mb-8 border-b border-gray-100">
+        <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-800">
           <HiOutlineBuildingOffice2 className="text-(--clr-primary)" />
           Branch Profile
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="mt-1 text-sm text-gray-500">
           Update your clinic's public information, contact details, and legal documentation.
         </p>
       </div>
@@ -232,6 +232,7 @@ export default function GeneralBranchSettings() {
                 value={form.clinicName} 
                 label="Clinic Name" 
                 name="clinicName" 
+                placeholder="Enter your clinic name"
                 isImportant={true} 
                 onChange={handleChange} 
                 error={errors.clinicName} 
@@ -240,6 +241,7 @@ export default function GeneralBranchSettings() {
                 value={form.completeAddress} 
                 label="Complete Address" 
                 name="completeAddress" 
+                placeholder="Street, Barangay, Building No., etc."
                 isImportant={true} 
                 onChange={handleChange} 
                 error={errors.completeAddress} 
@@ -248,6 +250,7 @@ export default function GeneralBranchSettings() {
                 value={form.municipality} 
                 label="City/Municipality" 
                 name="municipality" 
+                placeholder="Binangonan"
                 isImportant={true} 
                 onChange={handleChange} 
                 error={errors.municipality} 
@@ -256,6 +259,7 @@ export default function GeneralBranchSettings() {
                 value={form.province} 
                 label="Province" 
                 name="province" 
+                placeholder="Rizal"
                 isImportant={true} 
                 onChange={handleChange} 
                 error={errors.province} 
@@ -264,6 +268,7 @@ export default function GeneralBranchSettings() {
                 value={form.zipCode} 
                 label="Zip Code" 
                 name="zipCode" 
+                placeholder="1940"
                 isImportant={true} 
                 onChange={handleChange} 
                 error={errors.zipCode} 
@@ -272,6 +277,7 @@ export default function GeneralBranchSettings() {
                 value={form.est} 
                 label="Year Established" 
                 name="est" 
+                placeholder="2025"
                 isImportant={true} 
                 onChange={handleChange} error={errors.est} 
               />
@@ -283,6 +289,7 @@ export default function GeneralBranchSettings() {
                 <textarea
                   value={form.clinicDescription} 
                   name="clinicDescription"
+                  placeholder="Brief description of your clinic, specialization, and what makes you unique..."
                   className={`border outline-none rounded-lg p-2 w-full min-h-[115px] ${errors.clinicDescription && errors.clinicDescription !== "valid" ? "border-red-500" : "border-gray-300"}`}
                   onChange={handleChange} 
                 ></textarea>
@@ -292,8 +299,8 @@ export default function GeneralBranchSettings() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Input value={form.website} label="Website" name="website" isOptional onChange={handleChange} />
-                <Input value={form.facebook} label="Facebook" name="facebook" isOptional onChange={handleChange} />
+                <Input value={form.website} label="Website" name="website" placeholder="https://www.clinic.com" isOptional={true} onChange={handleChange} />
+                <Input value={form.facebook} label="Facebook" name="facebook" placeholder="https://facebook.com/" isOptional={true} onChange={handleChange} />
               </div>
             </div>
           </div>
@@ -318,6 +325,7 @@ export default function GeneralBranchSettings() {
                   value={form.tinNumber} 
                   label="Tin Number" 
                   name="tinNumber" 
+                  placeholder="123-456-789-000"
                   isImportant={true} 
                   onChange={handleChange} 
                   error={errors.tinNumber} 
@@ -336,6 +344,7 @@ export default function GeneralBranchSettings() {
                   value={form.businessPermitNumber} 
                   label="Permit Number" 
                   name="businessPermitNumber" 
+                  placeholder="BP-2025-12345"
                   isImportant={true} onChange={handleChange} 
                   error={errors.businessPermitNumber} 
                 />
@@ -352,7 +361,8 @@ export default function GeneralBranchSettings() {
                 <Input 
                   value={form.vetLicenseNumber} 
                   label="License Number" 
-                  name="vetLicenseNumber" 
+                  name="vetLicenseNumber"
+                  placeholder="12345" 
                   isImportant={true} 
                   onChange={handleChange} 
                   error={errors.vetLicenseNumber} 
@@ -362,7 +372,7 @@ export default function GeneralBranchSettings() {
           </div>
         </section>
 
-        <div className="mt-8 flex justify-end">
+        <div className="flex justify-end mt-8">
           <button 
             type="submit"
             className="w-full md:w-auto px-10 py-3 bg-(--clr-primary) text-white rounded-xl font-bold active:scale-95 disabled:opacity-50 transition-all text-sm cursor-pointer flex items-center justify-center gap-2"

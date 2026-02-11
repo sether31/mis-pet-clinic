@@ -6,8 +6,8 @@ import { authFetch } from '../../utils/authFetch';
 // component
 import Header from '../../components/Header'
 import DashboardCard from '../../components/DashboardCard'
-import SubscriptionTable from '../../components/SubscriptionTable'
-import SubscriptionModal from '../../components/SubscriptionModal'
+import SubscriptionTable from './SubscriptionTable'
+import SubscriptionModal from './SubscriptionModal'
 import FullScreenLoader from '../../components/FullScreenLoader'
 // icons
 import { HiOutlineBadgeCheck } from 'react-icons/hi';
@@ -84,7 +84,7 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className='bg-(--clr-bg-page) min-h-screen container-xl'>
+    <div className='min-h-screen bg-gray-100'>
       <Header />
       <section className='my-6 container-xl'>
         {/* dashboard card */}

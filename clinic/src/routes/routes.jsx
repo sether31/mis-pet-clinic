@@ -29,6 +29,7 @@ import ServiceManagement from "../pages/portal/service-management/ServiceManagem
 import BranchSettings from "../pages/portal/branch-settings/BranchSettings";
 import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranchSettings";
 import BranchScheduleSettings from "../pages/portal/branch-settings/BranchScheduleSettings";
+import InventoryManagement from "../pages/portal/inventory-management/InventoryMangement";
 
 
 export const routes = createBrowserRouter([
@@ -100,15 +101,32 @@ export const routes = createBrowserRouter([
                   { 
                     path: "staff-management", 
                     element: (
-                    <ProtectedRoute requiredPermission="staff_management">
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="staff_management"
+                    >
                       <StaffManagement />
                     </ProtectedRoute>
                     )
                   },
                   { 
+                    path: "inventory-management", 
+                    element: (
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="inventory_management"
+                    >
+                      <InventoryManagement />
+                    </ProtectedRoute>
+                    ) 
+                  },
+                  { 
                     path: "service-management", 
                     element: (
-                    <ProtectedRoute requiredPermission="service_management">
+                    <ProtectedRoute
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="service_management"
+                    >
                       <ServiceManagement />
                     </ProtectedRoute>
                     ) 
@@ -116,7 +134,10 @@ export const routes = createBrowserRouter([
                   { 
                     path: "branch-settings", 
                     element: (
-                    <ProtectedRoute requiredPermission="branch_settings">
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="branch_settings"
+                    >
                       <BranchSettings />
                     </ProtectedRoute>
                     ),

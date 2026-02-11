@@ -20,12 +20,20 @@ try {
       oi.price, 
       oi.quantity AS qty,
       pay.payment_method,
-      pay.payment_status
+      pay.payment_status,
+      -- Fetching these from the inventory table
+      inv.expiry_date,
+      inv.supplier_name,
+      inv.stock_level,
+      -- Use product_id as the fallback for inventory_id if missing
+      COALESCE(inv.inventory_id, oi.product_id) as inventory_id
     FROM appointments_tb a
     INNER JOIN order_tb o ON a.order_id = o.order_id
     INNER JOIN order_items_tb oi ON o.order_id = oi.order_id
     LEFT JOIN payments_tb pay ON o.order_id = pay.order_id
     LEFT JOIN products_tb p ON oi.product_id = p.product_id
+    -- Join inventory based on product_id
+    LEFT JOIN inventory_tb inv ON oi.product_id = inv.product_id
     WHERE a.appointment_id = ?"
   );
   $stmt->execute([$appointment_id]);

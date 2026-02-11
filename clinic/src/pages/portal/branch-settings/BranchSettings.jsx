@@ -16,7 +16,7 @@ export default function BranchSettings() {
     }`;
 
   return (
-    <div className="bg-(--clr-bg-page) min-h-screen">
+    <div className="min-h-screen bg-gray-100">
       <Header />
       <section className='px-4 mt-6 lg:px-6 container-xl'>
         <nav className="relative flex items-center w-full overflow-x-auto border-b border-gray-200 scrollbar-hide pb-[1px]">
@@ -34,7 +34,7 @@ export default function BranchSettings() {
           </NavLink>
         </nav>
 
-        <main className="p-4 my-6 bg-white border border-gray-300 shadow-sm lg:p-6 rounded-xl">
+        <main className="p-4 my-6 bg-white border border-gray-300 lg:p-6 rounded-xl">
           <Outlet context={context} />
         </main>
       </section>
