@@ -30,6 +30,7 @@ import BranchSettings from "../pages/portal/branch-settings/BranchSettings";
 import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranchSettings";
 import BranchScheduleSettings from "../pages/portal/branch-settings/BranchScheduleSettings";
 import InventoryManagement from "../pages/portal/inventory-management/InventoryMangement";
+import MedicalRecordManagement from "../pages/portal/medical-records/MedicalRecordManagement";
 
 
 export const routes = createBrowserRouter([
@@ -95,6 +96,14 @@ export const routes = createBrowserRouter([
                     element: (
                       <ProtectedRoute requiredPermission="appointment_management">
                         <AppointmentManagement />
+                      </ProtectedRoute>
+                    )
+                  },
+                  { 
+                    path: "medical-record-management", 
+                    element: (
+                      <ProtectedRoute requiredPermission="medical_record_management">
+                        <MedicalRecordManagement />
                       </ProtectedRoute>
                     )
                   },

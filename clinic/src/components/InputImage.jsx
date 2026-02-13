@@ -9,6 +9,7 @@ export default function InputImage({
   className = "",
   size = '150px',
   isPreview = false,
+  disabled= false,
   error,
   onChange,
   existingImage = null
@@ -25,6 +26,8 @@ export default function InputImage({
     : "border-gray-300";
 
   const handleChange = (e) => {
+    if (disabled) return;
+    
     const file = e.target.files[0];
     if(!file) return;
 
@@ -44,20 +47,19 @@ export default function InputImage({
 
   return (
     <div className={`flex flex-col ${className}`}>
-      {/* Preview */}
+      {/* preview */}
       {isPreview && (
         <div
-          className='mb-2 overflow-hidden bg-gray-300 rounded-lg'
+          className="mb-2 overflow-hidden bg-gray-300 rounded-lg self-center"
           style={{ width: size, height: size }}
         >
-            <a rel="noopener noreferrer">
-              <img
-                src={displayImage}
-                alt="preview"
-                className="object-cover w-full h-full rounded-lg"
-              />
-            </a>
-       
+          <a rel="noopener noreferrer">
+            <img
+              src={displayImage}
+              alt="preview"
+              className="object-cover w-full h-full rounded-lg"
+            />
+          </a>
         </div>
       )}
 
@@ -69,8 +71,9 @@ export default function InputImage({
         type="file"
         accept="image/*"
         name={name}
+        disabled={disabled}
         onChange={handleChange}
-        className={`block w-full p-2 mt-2 border border-gray-300 rounded-lg ${borderColor}`}
+        className={`block w-full p-2 mt-1 border border-gray-300 rounded-lg disabled:cursor-not-allowed ${borderColor}`}
       />
 
       {error && error !== "valid" && (
