@@ -45,7 +45,7 @@ export default function Sidebar({className, open, setOpen}) {
   return (
     <>
       <div 
-        className={`fixed top-0 left-0 z-[110] flex items-center transition-all duration-500 ease-in-out
+        className={`fixed top-0 left-0 z-80 flex items-center transition-all duration-500 ease-in-out
         ${open 
           ? 'w-64 bg-(--clr-black) px-4 justify-between border-b-0' 
           : 'w-18 bg-gray-100 border-b border-r border-black justify-center'}`}
@@ -83,7 +83,7 @@ export default function Sidebar({className, open, setOpen}) {
 
       {/* links */}
       <aside 
-        className={`fixed top-0 left-0 z-[100] border-r h-screen bg-gray-100 transition-all duration-500 ease-in-out
+        className={`fixed top-0 left-0 z-70 border-r h-screen bg-gray-100 transition-all duration-500 ease-in-out
         ${open ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 md:w-18'} ${className}`}
       >
         <nav className='flex flex-col justify-between h-full px-4 mt-28'>
@@ -99,10 +99,10 @@ export default function Sidebar({className, open, setOpen}) {
             ))}
           </div>
 
-          <div className='mt-auto mb-10'>
+          <div className='mt-auto mb-30'>
             <button 
               onClick={logout}
-              className="flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) text-gray-500 hover:text-white overflow-hidden cursor-pointer text-sm"
+              className="flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) hover:text-white text-(--clr-black) overflow-hidden text-sm"
             >
               <div className="shrink-0"><TbLogout size={22} /></div>
               {open && (
