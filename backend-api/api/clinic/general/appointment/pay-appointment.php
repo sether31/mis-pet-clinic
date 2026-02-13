@@ -15,16 +15,18 @@ try {
   $pdo->beginTransaction();
 
   // get owner details
-  $stmtUser = $pdo->prepare(
-    "SELECT u.user_id 
+  $stmtInfo = $pdo->prepare(
+    "SELECT 
+        a.user_id, a.pet_id, a.start_time, a.staff_id as assigned_staff_id,
+        bs.custom_name, bs.price as service_price
     FROM appointments_tb a
-    JOIN user_tb u ON a.user_id = u.user_id
+    INNER JOIN branch_service_tb bs ON a.service_id = bs.branch_service_id
     WHERE a.appointment_id = ?"
   );
-  $stmtUser->execute([$data->appointment_id]);
-  $owner = $stmtUser->fetch();
+  $stmtInfo->execute([$data->appointment_id]);
+  $appt = $stmtInfo->fetch();
 
-  if (!$owner) throw new Exception("Appointment owner not found.");
+  if (!$appt) throw new Exception("Appointment details not found.");
 
   // if cash then appointment and order will be completed 
   // if not cash then appointment billed and order pending
@@ -38,7 +40,7 @@ try {
 
   // create order
   $orderStmt = $pdo->prepare("INSERT INTO order_tb (user_id, branch_id, order_status, total_amount) VALUES (?, ?, ?, ?)");
-  $orderStmt->execute([$owner['user_id'], $data->branch_id, $orderStatus, $data->total]);
+  $orderStmt->execute([$appt['user_id'], $data->branch_id, $orderStatus, $data->total]);
   $order_id = $pdo->lastInsertId();
 
   // create payment
@@ -77,6 +79,29 @@ try {
       $invUpdate->execute([$item->qty, $p_id, $data->branch_id]);
     }
   }
+
+  // initialize medical record
+  $medStmt = $pdo->prepare(
+    "INSERT INTO medrecord_tb (
+      pet_id, 
+      appointment_id, 
+      branch_id, 
+      vet_id, 
+      record_date, 
+      service_name_at_time, 
+      service_price_at_time
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  );
+  
+  $medStmt->execute([
+    $appt['pet_id'],
+    $data->appointment_id,
+    $data->branch_id,
+    $appt['assigned_staff_id'],        
+    $appt['start_time'],   
+    $appt['custom_name'],  
+    $appt['service_price']  
+  ]);
 
   // update appointment status
   $pdo->prepare("UPDATE appointments_tb SET status = ?, order_id = ? WHERE appointment_id = ?")
