@@ -11,7 +11,7 @@ export default function UserProvider({ children }) {
 
   useEffect(() => {
     const syncUser = async () => {
-      const token = localStorage.getItem('access_token');
+      const token = sessionStorage.getItem('access_token');
       if(!token) {
         setUser(null);
         setLoading(false);
@@ -23,7 +23,7 @@ export default function UserProvider({ children }) {
         if(response.success) {
           setUser(response.user); 
         } else {
-          localStorage.removeItem('access_token');
+          sessionStorage.removeItem('access_token');
           setUser(null);
         }
       } catch(err) {

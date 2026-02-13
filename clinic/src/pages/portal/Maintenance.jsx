@@ -12,7 +12,7 @@ export default function Maintenance({ onRefresh }) {
   
   const logout = async () => {
     showLoader("Logging out...");
-    localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
     await wait(1000);
     hideLoader();
     navigate("/clinic/login");

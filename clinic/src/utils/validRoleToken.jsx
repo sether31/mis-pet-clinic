@@ -3,14 +3,14 @@ import { jwtDecode } from 'jwt-decode';
 export function validRoleToken(allowedRoles = [
   'clinic_admin', 'branch_admin', 'staff', 'veterinarian', 'groomer'
 ]) {
-  const token = localStorage.getItem('access_token');
+  const token = sessionStorage.getItem('access_token');
   if(!token) return null;
 
   try {
     const { exp, role, status, branch_id, permissions, fname, lname, email, user_id } = jwtDecode(token);
 
     if(!exp || exp * 1000 < Date.now()) {
-      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
       return null;
     }
 
@@ -30,7 +30,7 @@ export function validRoleToken(allowedRoles = [
       email
     };
   } catch {
-    localStorage.removeItem('access_token');
+    sessionStorage.removeItem('access_token');
     return null;
   }
 }

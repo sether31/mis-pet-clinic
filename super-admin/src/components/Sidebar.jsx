@@ -36,7 +36,7 @@ export default function Sidebar({className, open, setOpen}) {
   const logout = async () => {
     showLoader('Logging out...');
     await wait(1000);
-    localStorage.clear();
+    sessionStorage.clear();
     setUser(null);
     navigate('/login', { replace: true });
     hideLoader();
