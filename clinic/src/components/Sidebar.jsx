@@ -13,6 +13,7 @@ import { LuUsers } from 'react-icons/lu';
 import { FaRegCalendarAlt } from "react-icons/fa";
 import { HiOutlineWrenchScrewdriver } from 'react-icons/hi2';
 import { BsBoxSeam } from "react-icons/bs";
+import { HiShieldCheck } from 'react-icons/hi';
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
@@ -21,6 +22,12 @@ const sidebarItems = [
     path: 'appointment-management', 
     icon: FaRegCalendarAlt, 
     requiredPermission: 'appointment_management' 
+  },
+  { 
+    label: 'Medical Management', 
+    path: 'medical-record-management', 
+    icon: HiShieldCheck, 
+    requiredPermission: 'medical_record_management' 
   },
   { 
     label: 'Staff Management', 
