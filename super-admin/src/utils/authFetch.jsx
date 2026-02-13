@@ -9,7 +9,7 @@ export const authFetch = async (url, options = {}, allowedRoles = ['super_admin'
     return { error: 'Unauthorized', status: 401 };
   }
 
-  const token = localStorage.getItem("access_token");
+  const token = sessionStorage.getItem("access_token");
   const headers = {
     ...options.headers,
     Authorization: `Bearer ${token}`,
@@ -24,7 +24,7 @@ export const authFetch = async (url, options = {}, allowedRoles = ['super_admin'
 
     // check if token is invalid or missing
     if(response.status === 401) {
-      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
       window.location.href = 'login?session=expired';
       return { error: 401 };
     }

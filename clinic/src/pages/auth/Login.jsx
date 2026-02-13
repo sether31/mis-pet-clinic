@@ -21,8 +21,6 @@ import loginPic from '../../assets/images/login-pic.png';
 import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
 
-
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login() {
@@ -66,7 +64,7 @@ export default function Login() {
           if(branch_id) {
             navigate(`/clinic/${branch_id}/portal/dashboard`, { replace: true });
           } else {
-            localStorage.clear();
+            sessionStorage.clear();
             toast.error("Access denied: No branch assigned to this account.");
           }
         }
@@ -174,7 +172,7 @@ export default function Login() {
         return;
       }
 
-      localStorage.setItem("access_token", data.access_token);
+      sessionStorage.setItem("access_token", data.access_token);
       const decoded = jwtDecode(data.access_token);
       setUser(decoded);
       toast.success(data.message);

@@ -1,7 +1,7 @@
 import { jwtDecode } from 'jwt-decode';
 
 export function validRoleToken(allowedRoles = []) {
-  const token = localStorage.getItem('access_token');
+  const token = sessionStorage.getItem('access_token');
   if(!token) return null;
 
   try {
@@ -9,13 +9,13 @@ export function validRoleToken(allowedRoles = []) {
     const { exp, role } = decoded;
     // check token
     if(!exp || exp * 1000 < Date.now()) {
-      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
       return null;
     }
 
     return allowedRoles.includes(role) ? decoded : null;
   } catch {
-    localStorage.removeItem('access_token');
+    sessionStorage.removeItem('access_token');
     return null;
   }
 }
