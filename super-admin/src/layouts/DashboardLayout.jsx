@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 // components
@@ -7,16 +7,27 @@ import SideBar from '../components/Sidebar';
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div>
-      {/* <Header /> */}
+    <div className="min-h-screen bg-gray-50 flex overflow-x-hidden">
       <SideBar open={sidebarOpen} setOpen={setSidebarOpen} />
+      
       <motion.main
         initial={false}
-        animate={{ marginLeft: sidebarOpen ? 256 : 64 }} 
-        transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
+        animate={{ 
+          marginLeft: isMobile ? 0 : (sidebarOpen ? 256 : 72),
+          width: isMobile ? '100%' : `calc(100% - ${sidebarOpen ? 256 : 72}px)`
+        }} 
+        transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
+        className="flex-1 flex flex-col min-h-screen"
       >
-        <div className='fixed top-0 left-0 w-full border-b h-[81px] bg-gray-100 z-49'></div>
         <Outlet />
       </motion.main>
     </div>
