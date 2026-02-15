@@ -11,12 +11,14 @@ use Xendit\Invoice\CreateInvoiceRequest;
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../../');
 $dotenv->load();
 
-$user = validate_auth(['clinic_admin']); 
+$user = validate_auth(['clinic_admin', 'branch_admin']); 
 try {
   $pdo = (new Database())->pdo;
   $data = json_decode(file_get_contents('php://input'));
+  $is_from_settings = (isset($data->is_resubscribe) && $data->is_resubscribe) ? 'true' : 'false';
 
-  $selectedMethod = strtoupper($data->payment_method ?? 'GCASH');
+  $method_input = $data->payment_method ?? 'GCASH';
+  $selectedMethod = strtoupper((string)$method_input);
   Configuration::setXenditKey($_ENV['XENDIT_SECRET_KEY']);
   $apiInstance = new InvoiceApi();
 
@@ -24,7 +26,7 @@ try {
   $base_url = rtrim($_ENV['MAIN_URL'], '/'); 
 
   // redirect url
-  $success_url = $base_url . "/payment-success?branch_id={$data->branch_id}&sub_id={$data->subscription_id}&amount={$data->amount}";
+  $success_url = $base_url . "/payment-success?branch_id={$data->branch_id}&sub_id={$data->subscription_id}&amount={$data->amount}&from_settings={$is_from_settings}";
   $failure_url = $base_url . "/clinic/{$data->branch_id}/select-plan?status=cancelled";
 
   $create_invoice_request = new CreateInvoiceRequest([

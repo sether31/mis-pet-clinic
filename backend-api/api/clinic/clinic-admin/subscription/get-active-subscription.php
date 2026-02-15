@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../../../config/Database.php';
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 
-validate_auth(['clinic_admin']);
+validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
 
 try {
   $pdo = (new Database())->pdo;
