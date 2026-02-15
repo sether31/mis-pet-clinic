@@ -31,6 +31,7 @@ import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranch
 import BranchScheduleSettings from "../pages/portal/branch-settings/BranchScheduleSettings";
 import InventoryManagement from "../pages/portal/inventory-management/InventoryMangement";
 import MedicalRecordManagement from "../pages/portal/medical-records/MedicalRecordManagement";
+import BranchSubscriptionSettings from "../pages/portal/branch-settings/BranchSubscriptionSettings";
 
 
 export const routes = createBrowserRouter([
@@ -153,7 +154,7 @@ export const routes = createBrowserRouter([
                     children: [
                       { index: true, element: <GeneralBranchSettings /> },
                       { path: "schedule", element: <BranchScheduleSettings /> },
-                      { path: "subscription", element: <div>Subscription</div> },
+                      { path: "subscription", element: <BranchSubscriptionSettings /> },
                     ]
                   },
                   { path: "*", element: <NotFoundDashboard />},
