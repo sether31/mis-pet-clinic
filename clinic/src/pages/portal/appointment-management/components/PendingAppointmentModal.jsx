@@ -9,6 +9,7 @@ import { HiMiniExclamationCircle } from 'react-icons/hi2';
 import { useUI } from '../../../../hooks/useUI'
 // images
 import noImage from '../../../../assets/images/no-image.jpg'
+import SubscriptionGate from '../../../../components/SubscriptionGate';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -81,7 +82,7 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
             <div className="flex-none overflow-hidden border border-gray-300 w-28 h-28 rounded-3xl">
               <img 
                 src={selectedAppointment?.pet_picture 
-                  ? `${API_URL}/uploads/pets/${selectedAppointment.pet_picture}` 
+                  ? `${API_URL}/${selectedAppointment.pet_picture}` 
                   : noImage
                 } 
                 className="object-cover w-full h-full" 
@@ -142,7 +143,7 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder="This slot has passed. Please book a new schedule via the app..."
-                className="w-full p-2 text-sm bg-white border border-amber-300 rounded-xl focus:ring focus:ring-amber-500 focus:border-transparent outline-none transition-all resize-none h-24"
+                className="w-full h-24 p-2 text-sm transition-all bg-white border outline-none resize-none border-amber-300 rounded-xl focus:ring focus:ring-amber-500 focus:border-transparent"
               />
               <p className="mt-2 text-[9px] font-bold text-amber-600 uppercase italic">
                 * This message will be sent to the pet owner.
@@ -161,14 +162,17 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
           )}
           {/* action btn */}
           <div className="grid grid-cols-2 gap-3 pt-4">
-            <button 
-              onClick={() => handleAction('confirmed')}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 py-4 text-xs font-black tracking-widest text-white uppercase bg-(--clr-primary) rounded-xl hover:bg-(--clr-primary)/90 disabled:opacity-50 ease-in-out duration-300 cursor-pointer"
-            >
-              <HiCheck size={18}/>
-              {loading ? "Approving..." : "Approve Booking"}
-            </button>
+            <SubscriptionGate>
+              <button 
+                onClick={() => handleAction('confirmed')}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 py-4 text-xs font-black tracking-widest text-white uppercase bg-(--clr-primary) rounded-xl hover:bg-(--clr-primary)/90 disabled:opacity-50 ease-in-out duration-300 cursor-pointer"
+              >
+                <HiCheck size={18}/>
+                {loading ? "Approving..." : "Approve Booking"}
+              </button>
+            </SubscriptionGate>
+            
             <button 
               onClick={() => handleAction('rejected')}
               disabled={loading}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'; // Added useRef
+import { useState, useEffect, useRef } from 'react'; 
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../../../hooks/useUI';
@@ -8,7 +8,7 @@ import { authFetch } from '../../../../utils/authFetch';
 import { 
   HiXCircle, HiTrash, HiPlus, HiMinus, 
   HiCash, HiCreditCard, HiInformationCircle, 
-  HiChevronRight, HiSearch, HiChevronDown // Added search/chevron icons
+  HiChevronRight, HiSearch, HiChevronDown 
 } from 'react-icons/hi';
 import { FaRectangleList } from "react-icons/fa6";
 // images
@@ -224,8 +224,8 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   });
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-[9999] bg-black/70 backdrop-blur-sm">
-      <div className="flex flex-col w-full max-w-2xl overflow-hidden bg-white rounded-[2.5rem]">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-9999 bg-black/70 backdrop-blur-sm">
+      <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white rounded-2xl">
         
         {/* tabs */}
         <div className="flex border-b bg-gray-50/50">
@@ -271,7 +271,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                 </div>
               </div>
             ) : (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+              <div className="space-y-6">
                 {isLocked && (
                   <div className="flex items-center justify-between p-4 bg-gray-100 border border-gray-200 rounded-2xl">
                     <div className="flex items-center gap-3">

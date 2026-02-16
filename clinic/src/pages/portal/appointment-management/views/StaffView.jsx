@@ -1,51 +1,50 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { HiRefresh } from 'react-icons/hi';
-import { IoLockClosedOutline } from "react-icons/io5";
+// utils
+import { authFetch } from '../../../../utils/authFetch';
+// components
+import SubscriptionGate from '../../../../components/SubscriptionGate';
+// sub components
 import PendingAppointments from '../components/PendingAppointments';
 import CalendarComponent from '../components/CalendarComponent';
 import AppointmentPaymentModal from '../components/AppointmentPaymentModal';
-import { authFetch } from '../../../../utils/authFetch';
+import CreateAppointmentModalStaff from '../components/CreateAppointmentModalStaff'; 
+// icons
+import { HiRefresh, HiPlus } from 'react-icons/hi';
+import { IoLockClosedOutline } from "react-icons/io5";
 
 export default function StaffView({ appointments, loading, onSelect, user, onRefresh, branchId }) {
   const { branchData } = useOutletContext();
   const [activeTask, setActiveTask] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [staffSchedule, setStaffSchedule] = useState(null);
+  const [fullStaffList, setFullStaffList] = useState([]); 
   const branchSchedules = branchData?.schedules || [];
 
   useEffect(() => {
-    const fetchMySchedule = async () => {
+    const fetchStaffData = async () => {
       try {
         const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`);
         if(res.success) {
-          // get staff match the fetch and the current active user
-          const myData = res.data.find(s => String(s.user_id) === String(user?.id));
-          
-          if(myData?.schedule) {
-            setStaffSchedule(myData.schedule);
-          }
+          setFullStaffList(res.data);
+          const myData = res.data.find(s => String(s.user_id) === String(user?.id || user?.user_id));
+          if(myData?.schedule) setStaffSchedule(myData.schedule);
         }
       } catch (err) {
-        console.error("Error fetching staff schedule:", err);
+        console.error("Error fetching staff data:", err);
       }
     };
 
-    if(branchId && user?.id) {
-      fetchMySchedule();
-    }
-  }, [branchId, user?.id]);
+    if(branchId && (user?.id || user?.user_id)) fetchStaffData();
+  }, [branchId, user?.id, user?.user_id]);
 
   const masterRange = useMemo(() => {
     if (branchSchedules.length === 0) return { min: "08:00:00", max: "20:00:00" };
-    
-    // extract all start and end and sort them
-    const allStarts = branchSchedules.map(s => s.start_time).sort();
-    const allEnds = branchSchedules.map(s => s.end_time).sort();
-    
-    // get the min and max of schedule
-    return {
-      min: allStarts[0],
-      max: allEnds[allEnds.length - 1] 
+    const allStarts = branchSchedules.filter(s => !Number(s.is_closed)).map(s => s.start_time).sort();
+    const allEnds = branchSchedules.filter(s => !Number(s.is_closed)).map(s => s.end_time).sort();
+    return { 
+      min: allStarts[0] || "08:00:00", 
+      max: allEnds[allEnds.length - 1] || "20:00:00" 
     };
   }, [branchSchedules]);
 
@@ -55,80 +54,106 @@ export default function StaffView({ appointments, loading, onSelect, user, onRef
     appointments.filter(a => a.status === 'pending'), 
   [appointments]);
 
-  // get appointments
   const mySchedule = useMemo(() => appointments.filter(a => 
-    ['confirmed', 'completed', 'billed'].includes(a.status) && (a.assigned_to ? String(a.assigned_to) === String(user?.id) : true)
-  ), [appointments, user?.id]);
+    ['confirmed', 'completed', 'billed'].includes(a.status) && (a.assigned_to ? String(a.assigned_to) === String(user?.id || user?.user_id) : true)
+  ), [appointments, user?.id, user?.user_id]);
 
   const getTodayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
 
-  // check if today is close
   const isTodayClosed = useMemo(() => {
-    const todayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
-    const todaySchedule = branchSchedules.find(s => s.day_of_week === todayName);
+    const todaySchedule = branchSchedules.find(s => s.day_of_week === getTodayName);
     return todaySchedule ? Number(todaySchedule.is_closed) === 1 : true;
-  }, [branchSchedules]);
+  }, [branchSchedules, getTodayName]);
 
   return (
-    <div className="flex flex-col lg:flex-row h-full min-h-[550px] gap-6">
-      <div className="flex-none w-full h-full lg:w-96">
-        <PendingAppointments 
-          pendingAppointment={pendingOnly} 
-          loading={loading} 
-          onSelect={onSelect} 
-        />
-      </div>
+    <div className="space-y-4">
+      {/* Header - Styled same as AdminView but without Filter */}
+      <div className="flex flex-col items-center justify-between gap-4 mb-6 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Appointment Overview</h1>
+          <p className="text-gray-500">Managing your scheduled appointments</p>
+        </div>
 
-      <main className="relative flex-1 p-6 overflow-hidden bg-white border border-gray-300 rounded-xl">
-        {/* branch close */}
-        {isTodayClosed ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-4 duration-500 border border-gray-300 bg-gray-50 rounded-xl">
-            <div className="p-6 text-blue-600 bg-blue-100 rounded-full">
-              <IoLockClosedOutline size={48} />
-            </div>
-
-            <div className="text-center">
-              <h2 className="text-2xl font-black tracking-tight text-gray-800 uppercase">
-                Branch is Closed
-              </h2>
-              <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1 max-w-[250px] mx-auto">
-                No operating hours scheduled for {getTodayName}.
-                You can still manage pending requests for other days.
-              </p>
-            </div>
-
-            <button 
-              onClick={() => onRefresh(true)}
-              className="flex items-center gap-2 px-6 py-2 bg-white border border-gray-300 rounded-full text-[10px] font-black uppercase hover:bg-gray-100 transition-all active:scale-95 cursor-pointer"
+        <div className="flex items-center gap-3">
+          {/* create appointment */}
+          <SubscriptionGate type="appointment">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-(--clr-primary) text-white px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 cursor-pointer hover:brightness-110 active:scale-95"
             >
-              <HiRefresh /> 
-              Check status
+              <HiPlus size={16}/> New Appointment
             </button>
-          </div>
-        ) : (
-          // branch open
-          <CalendarComponent 
-            events={mySchedule} 
-            viewMode="staff" 
-            onEventClick={(task) => setActiveTask(task)} 
-            fullSchedules={branchSchedules}
-            staffSchedule={staffSchedule}
-            openingTime={masterRange.min}
-            closingTime={masterRange.max}
-          />
-        )}
+          </SubscriptionGate>
 
-        {/* appointment modal */}
-        {activeTask && (
-          <AppointmentPaymentModal 
-            user={user}
-            activeTask={activeTask}
-            branchId={effectiveBranchId}
-            onClose={() => setActiveTask(null)}
-            onRefresh={onRefresh}
+          {/* refresh */}
+          <button 
+            onClick={() => onRefresh(true)}
+            className="flex items-center justify-center p-2 text-gray-600 transition-all bg-gray-100 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-200"
+            title="Refresh Calendar"
+          >
+            <HiRefresh size={20} className={loading ? 'animate-spin' : ''} /> 
+          </button>
+        </div>
+      </div>
+      
+      {/* main */}
+      <div className="flex flex-col lg:flex-row h-full min-h-[550px] gap-6">
+        {/* pending appointment*/}
+        <div className="flex-none w-full h-full lg:w-96">
+          <PendingAppointments 
+            pendingAppointment={pendingOnly} 
+            loading={loading} 
+            onSelect={onSelect} 
           />
-        )}
-      </main>
+        </div>
+
+        {/* calendar */}
+        <main className="relative flex-1 p-6 overflow-hidden bg-white border border-gray-300 rounded-xl">
+          {isTodayClosed ? (
+            <div className="flex flex-col items-center justify-center h-full space-y-4 border border-gray-300 border-dashed bg-gray-50 rounded-xl">
+              <div className="p-6 text-blue-600 bg-blue-100 rounded-full">
+                <IoLockClosedOutline size={48} />
+              </div>
+              <div className="text-center">
+                <h2 className="text-2xl font-black tracking-tight text-gray-800 uppercase">Branch is Closed</h2>
+                <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1 max-w-[250px] mx-auto">
+                  No operating hours scheduled for {getTodayName}.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <CalendarComponent 
+              events={mySchedule} 
+              viewMode="staff" 
+              onEventClick={(task) => setActiveTask(task)} 
+              fullSchedules={branchSchedules}
+              staffSchedule={staffSchedule}
+              openingTime={masterRange.min}
+              closingTime={masterRange.max}
+            />
+          )}
+
+          {/* Modals */}
+          {showCreateModal && (
+            <CreateAppointmentModalStaff 
+              branchId={effectiveBranchId}
+              staffUser={user} 
+              onClose={() => setShowCreateModal(false)}
+              onRefresh={onRefresh}
+            />
+          )}
+
+          {activeTask && (
+            <AppointmentPaymentModal 
+              user={user}
+              activeTask={activeTask}
+              branchId={effectiveBranchId}
+              onClose={() => setActiveTask(null)}
+              onRefresh={onRefresh}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
