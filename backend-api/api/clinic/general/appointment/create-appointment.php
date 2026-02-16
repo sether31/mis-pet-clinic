@@ -29,7 +29,7 @@ try {
   $limitStmt = $pdo->prepare(
     "SELECT s.appointment_limit 
     FROM branch_subscriptions_tb bs
-    JOIN subscriptions_tb s ON bs.subscription_id = s.subscription_id
+    JOIN subscription_tb s ON bs.subscription_id = s.subscription_id
     WHERE bs.branch_id = ? AND bs.status = 'active'
     LIMIT 1"
   );
@@ -46,7 +46,7 @@ try {
     
     $capParams = [$branch_id];
 
-    // Self-Exclusion: If updating (approving), ignore this specific ID in the count
+    // ignore this specific ID in the count
     if($appointment_id) {
       $capQuery .= " AND appointment_id != ?";
       $capParams[] = $appointment_id;

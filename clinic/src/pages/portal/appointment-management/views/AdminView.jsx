@@ -9,6 +9,8 @@ import PendingAppointments from '../components/PendingAppointments';
 import CalendarComponent from '../components/CalendarComponent';
 import AppointmentPaymentModal from '../components/AppointmentPaymentModal'; 
 import CreateAppointmentModalAdmin from '../components/CreateAppointmentModalAdmin';
+// icons
+import { HiRefresh } from 'react-icons/hi';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -113,11 +115,20 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
           <SubscriptionGate type="appointment">
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="bg-(--clr-primary) text-white px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+              className="bg-(--clr-primary) text-white justify-center px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 cursor-pointer"
             >
               + New Appointment
             </button>
           </SubscriptionGate>
+
+          {/* refresh */}
+          <button 
+            onClick={() => onRefresh(true)}
+            className="flex items-center justify-center p-2 text-gray-600 transition-all bg-gray-100 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-200"
+            title="Refresh Calendar"
+          >
+            <HiRefresh size={20} className={loading ? 'animate-spin' : ''} /> 
+          </button>
         </div>
       </div>
 

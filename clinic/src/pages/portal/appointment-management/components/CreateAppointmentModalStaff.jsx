@@ -1,21 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
-import { HiXCircle, HiClock, HiExclamationCircle, HiCheckCircle, HiBan } from 'react-icons/hi';
+// utils
 import { authFetch } from '../../../../utils/authFetch';
+// icons
+import { HiXCircle, HiClock, HiExclamationCircle, HiCheckCircle, HiBan } from 'react-icons/hi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function CreateAppointmentModalAdmin({ branchId, staffList, onClose, onRefresh }) {
+export default function CreateAppointmentModalStaff({ branchId, staffUser, onClose, onRefresh }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [services, setServices] = useState([]);
-  const [busySlots, setBusySlots] = useState([]); 
+  const [busySlots, setBusySlots] = useState([]);
+  const [myFullStaffData, setMyFullStaffData] = useState(null);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    user_id: '', 
-    pet_id: '', 
-    service_id: '', 
+    user_id: '',
+    pet_id: '',
+    service_id: '',
     staff_id: '', 
-    appointment_date: '', 
+    appointment_date: '',
     start_time: ''
   });
 
@@ -43,18 +46,46 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
     return 'border-gray-200 bg-gray-50';
   };
 
-  // fetch branch service
+
+  // get staff data
+  useEffect(() => {
+    const fetchMySchedule = async () => {
+      const res = await authFetch(`${API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`);
+      if (res.success) {
+        const me = res.data.find(s => 
+          String(s.user_id) === String(staffUser?.user_id) || 
+          String(s.user_id) === String(staffUser?.id)
+        );
+        if (me) {
+          setMyFullStaffData(me);
+          setFormData(prev => ({ ...prev, staff_id: me.staff_id }));
+        }
+      }
+    };
+    if (branchId && staffUser) fetchMySchedule();
+  }, [branchId, staffUser]);
+
+  // get branch services
   useEffect(() => {
     const fetchServices = async () => {
       const res = await authFetch(`${API_URL}/api/clinic/general/services/get-branch-services.php?branch_id=${branchId}`);
-      if(res.success) setServices(res.data.filter(s => Number(s.status) === 1));
+      if (res.success) {
+        const myRole = String(staffUser?.role_name || staffUser?.role || "").toLowerCase().trim();
+        const filtered = res.data.filter(s => {
+          const isActive = Number(s.status) === 1;
+          const serviceRole = String(s.assigned_role || "").toLowerCase().trim();
+          return isActive && (serviceRole === "" || serviceRole === "null" || serviceRole === myRole);
+        });
+        setServices(filtered);
+      }
     };
-    fetchServices();
-  }, [branchId]);
+    if (branchId) fetchServices();
+  }, [branchId, staffUser]);
 
+  // get staff appointments
   useEffect(() => {
     const fetchBusySlots = async () => {
-      if (!formData.staff_id || !formData.appointment_date) {
+      if(!formData.staff_id || !formData.appointment_date) {
         setBusySlots([]);
         return;
       }
@@ -66,29 +97,24 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
     fetchBusySlots();
   }, [formData.staff_id, formData.appointment_date]);
 
-  // memoized
+  // --- Memos ---
   const selectedService = useMemo(() => 
     services.find(s => String(s.branch_service_id) === String(formData.service_id)), 
   [formData.service_id, services]);
 
   const calculatedEndTime = useMemo(() => {
-    if (!formData.start_time || !selectedService?.duration) return '';
+    if(!formData.start_time || !selectedService?.duration) return '';
     return addMinutes(formData.start_time, selectedService.duration);
   }, [formData.start_time, selectedService]);
 
-  const filteredStaffList = useMemo(() => {
-    if (!selectedService || !selectedService.assigned_role) return staffList;
-    return staffList.filter(staff => 
-      String(staff.role_name || "").toLowerCase() === String(selectedService.assigned_role).toLowerCase()
-    );
-  }, [selectedService, staffList]);
-
   const workingHours = useMemo(() => {
-    const staff = staffList.find(s => String(s.staff_id) === String(formData.staff_id));
-    if (!staff || !formData.appointment_date) return null;
-    const day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(formData.appointment_date).getDay()];
-    return staff.schedule?.[day]?.is_workday ? staff.schedule[day] : null;
-  }, [formData.staff_id, formData.appointment_date, staffList]);
+    if(!myFullStaffData?.schedule || !formData.appointment_date) return null;
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const localDate = new Date(formData.appointment_date.replace(/-/g, '/'));
+    const dayName = days[localDate.getDay()];
+    const daySched = myFullStaffData.schedule[dayName];
+    return daySched?.is_workday ? daySched : null;
+  }, [myFullStaffData, formData.appointment_date]);
 
   // validation
   useEffect(() => {
@@ -98,7 +124,7 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
     if(appointment_date) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (new Date(appointment_date) < today) errs.date = "Cannot book in the past";
+      if(new Date(appointment_date.replace(/-/g, '/')) < today) errs.date = "Cannot book in the past";
     }
 
     if(workingHours && start_time && calculatedEndTime) {
@@ -107,9 +133,9 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
       }
     }
 
-    if (start_time && calculatedEndTime) {
+    if(start_time && calculatedEndTime) {
       const conflict = busySlots.find(slot => (start_time < slot.end && calculatedEndTime > slot.start));
-      if (conflict) errs.conflict = `Conflict: Staff busy ${format12Hour(conflict.start)} - ${format12Hour(conflict.end)}`;
+      if(conflict) errs.conflict = `Conflict: You are busy ${format12Hour(conflict.start)} - ${format12Hour(conflict.end)}`;
     }
     setErrors(errs);
   }, [formData, busySlots, workingHours, calculatedEndTime]);
@@ -134,16 +160,16 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
         })
       });
 
-      if(response && response.success) {
+      if (response?.success) {
         toast.success("Appointment Created!");
         if (onRefresh) onRefresh();
-        onClose(); 
+        onClose();
       } else {
         toast.error(response?.message || "Failed to create appointment.");
       }
-    } catch(err) { 
-      toast.error("Something went wrong"); 
-    } finally { 
+    } catch (err) {
+      toast.error("Something went wrong");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -151,13 +177,16 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-110 bg-black/60 backdrop-blur-sm">
       <div 
-        className="flex flex-col w-full max-w-lg overflow-hidden bg-white rounded-3xl"
+        className="flex flex-col w-full max-w-lg overflow-hidden bg-white rounded-3xl" 
         onClick={(e) => e.stopPropagation()}
       >
+        {/* header */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50/50">
           <div>
             <h2 className="text-xl font-black tracking-tight text-gray-800 uppercase">Create Appointment</h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Manual booking appointment and staff assignment</p>
+            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+              Assigning to: {staffUser?.fname} {staffUser?.lname} ({staffUser?.role})
+            </p>
           </div>
           <button onClick={onClose} className="text-gray-400 transition-all cursor-pointer hover:text-red-500">
             <HiXCircle size={32}/>
@@ -165,6 +194,7 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-4 overflow-y-auto max-h-[85vh]">
+          
           {/* service */}
           <div className="space-y-1">
             <label className="mb-1 ml-1 text-sm font-bold text-gray-700">
@@ -173,7 +203,7 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
             <select 
               className={`w-full p-3 border rounded-xl transition-all focus:ring outline-none text-sm ${getBorderClass('service_id', false)}`} 
               value={formData.service_id} 
-              onChange={e => setFormData({...formData, service_id: e.target.value, staff_id: ''})} 
+              onChange={e => setFormData({...formData, service_id: e.target.value})} 
               required
             >
               <option value="">Select Service...</option>
@@ -186,50 +216,33 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
           </div>
 
           <div className={`space-y-4 transition-opacity duration-300 ${!formData.service_id ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-            <div className="grid grid-cols-2 gap-4">
-              {/* staff*/}
-              <div className="space-y-1">
-                <label className="mb-1 ml-1 text-sm font-bold text-gray-700">
-                  2. Assign Staff <span className="text-red-500">*</span>
-                </label>
-                <select 
-                  className={`w-full p-3 border rounded-xl transition-all text-sm ${getBorderClass('staff_id', false)}`} 
-                  value={formData.staff_id} 
-                  onChange={e => setFormData({...formData, staff_id: e.target.value})} 
-                  required
-                >
-                  <option value="">Select Staff</option>
-                  {filteredStaffList.map(s => <option key={s.staff_id} value={s.staff_id}>{s.fname} {s.lname}</option>)}
-                </select>
-              </div>
-              {/* date */}
-              <div className="space-y-1">
-                <label className="mb-1 ml-1 text-sm font-bold text-gray-700">
-                  3. Select Date <span className="text-red-500">*</span>
-                </label>
-                <input 
-                  type="date" 
-                  className={`w-full p-3 border rounded-xl transition-all ${getBorderClass('appointment_date', !!errors.date)}`} 
-                  value={formData.appointment_date} 
-                  onChange={e => setFormData({...formData, appointment_date: e.target.value})} 
-                  required 
-                />
-              </div>
+            
+            {/* date */}
+            <div className="space-y-1">
+              <label className="mb-1 ml-1 text-sm font-bold text-gray-700">
+                2. Select Date <span className="text-red-500">*</span>
+              </label>
+              <input 
+                type="date" 
+                className={`w-full p-3 border rounded-xl transition-all ${getBorderClass('appointment_date', !!errors.date)}`} 
+                value={formData.appointment_date} 
+                onChange={e => setFormData({...formData, appointment_date: e.target.value})} 
+                required 
+              />
             </div>
 
-            {/* shift available */}
-            {formData.staff_id && formData.appointment_date && (
+            {/* shift availability */}
+            {formData.appointment_date && (
               <div className="space-y-3">
-                {/* working hours */}
                 <div className={`p-4 rounded-2xl border flex items-center justify-between ${workingHours ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                   <div>
                     <p className={`text-[10px] font-black uppercase ${workingHours ? 'text-green-700' : 'text-red-600'}`}>
-                      Shift Availability
+                      Your Shift Availability
                     </p>
                     <p className={`text-[14px] font-bold ${workingHours ? 'text-green-900' : 'text-red-900'}`}>
                       {workingHours 
                         ? `${format12Hour(workingHours.start)} - ${format12Hour(workingHours.end)}` 
-                        : 'OFF DUTY - Staff not working today'}
+                        : 'OFF DUTY - You are not scheduled to work today'}
                     </p>
                   </div>
                   {workingHours ? <HiCheckCircle size={24} className="text-green-500"/> : <HiBan size={24} className="text-red-500"/>}
@@ -239,7 +252,7 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
                 {busySlots.length > 0 && (
                   <div className="p-4 space-y-2 border bg-amber-50 border-amber-200 rounded-2xl">
                     <p className="text-[10px] font-black uppercase text-amber-700 flex items-center gap-1">
-                      <HiClock /> Staff Bookings for this Day:
+                      <HiClock /> Your Current Bookings for this Day:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {busySlots.map((slot, index) => (
@@ -303,7 +316,7 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
                   required 
                 />
               </div>
-              {/* pet id*/}
+              {/* pet id */}
               <div className="space-y-1">
                 <label className="mb-1 ml-1 text-sm font-bold text-gray-700">
                   Pet ID <span className="text-red-500">*</span>
