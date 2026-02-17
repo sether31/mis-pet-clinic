@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 $decodedToken = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 $adminId = $decodedToken->user_id;
@@ -27,16 +28,20 @@ try {
   $pdo->beginTransaction();
 
   $stmt = $pdo->prepare(
-    "SELECT b.branch_id FROM clinic_branches_tb b
+    "SELECT c.clinic_id, b.branch_id FROM clinic_branches_tb b
     JOIN clinics_tb c ON b.clinic_id = c.clinic_id
     LEFT JOIN branch_staff_tb s ON b.branch_id = s.branch_id AND s.user_id = ?
     WHERE b.branch_id = ? AND (c.created_by = ? OR s.user_id IS NOT NULL)"
   );
   $stmt->execute([$adminId, $branchId, $adminId]);
-  if(!$stmt->fetch()) {
-      echo json_encode(["success" => false, "message" => "Unauthorized access to this branch."]);
-      exit;
+  $branchData = $stmt->fetch();
+
+  if(!$branchData) {
+    echo json_encode(["success" => false, "message" => "Unauthorized access to this branch."]);
+    exit;
   }
+
+  $clinicId = $branchData['clinic_id'];
 
   // check for existing product
   $stmtProd = $pdo->prepare("SELECT product_id, prod_pic FROM products_tb WHERE name = ? AND branch_id = ? LIMIT 1");
@@ -76,6 +81,10 @@ try {
         "UPDATE inventory_tb SET stock_level = ?, unit_cost = ?, price = ?, supplier_name = ?, supplier_contact = ? WHERE inventory_id = ?"
       );
       $updateInv->execute([$newTotal, $unitCost, $price, $supplierName, $supplierContact, $existingBatch['inventory_id']]);
+
+      // audit merge stock
+      log_audit($pdo, $adminId, $clinicId, $branchId, 'UPDATE', 'INVENTORY_STOCK_MERGE', $productId);
+
       $pdo->commit();
       echo json_encode(["success" => true, "message" => "Stock merged into existing batch."]);
       exit;
@@ -106,9 +115,13 @@ try {
   );
   $stmtInvInsert->execute([$productId, $branchId, $stockLevel, $unitCost, $price, $minStock, $expiryDate, $supplierName, $supplierContact]);
 
+  // audit update and create audit
+  $auditTag = $existingProduct ? 'INVENTORY_NEW_BATCH' : 'INVENTORY_NEW_PRODUCT';
+  log_audit($pdo, $adminId, $clinicId, $branchId, 'CREATE', $auditTag, $productId);
+
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Inventory updated successfully."]);
-} catch (Exception $e) {
+} catch(Exception $e) {
   if (isset($pdo)) $pdo->rollBack();
   http_response_code(500);
   echo json_encode(["success" => false, "message" => "Database Error: " . $e->getMessage()]);

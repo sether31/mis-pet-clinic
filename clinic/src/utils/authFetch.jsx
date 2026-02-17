@@ -2,7 +2,7 @@
 
 export const authFetch = async (url, options = {}) => {
 
-  const token = localStorage.getItem("access_token");
+  const token = sessionStorage.getItem("access_token");
   const headers = {
     ...options.headers,
     Authorization: `Bearer ${token}`,
@@ -17,7 +17,7 @@ export const authFetch = async (url, options = {}) => {
 
     // check if expired
     if(response.status === 401) {
-      localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
       return { success: false, status: 401, message: "Session Expired" };
     }
 

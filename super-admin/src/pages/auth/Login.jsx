@@ -44,7 +44,7 @@ export default function Login() {
 
   useEffect(() => {
     const checkToken = async () => {
-      const token = localStorage.getItem("access_token");
+      const token = sessionStorage.getItem("access_token");
       const role = validRoleToken(['super_admin']);
     
       if(role && token) {
@@ -156,14 +156,14 @@ export default function Login() {
         return;
       }
 
-      localStorage.setItem("access_token", data.access_token);
+      sessionStorage.setItem("access_token", data.access_token);
       const decoded = jwtDecode(data.access_token);
       setUser(decoded);
 
       toast.success(data.message);
       await wait(1000);
       // save token
-      localStorage.setItem("access_token", data.access_token);
+      sessionStorage.setItem("access_token", data.access_token);
       setErrors({ email: "", password: ""});
       setForm({ email: "", password: "" });
       navigate("/dashboard");

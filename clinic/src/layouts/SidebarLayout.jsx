@@ -65,7 +65,7 @@ export default function SidebarLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       <motion.main

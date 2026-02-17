@@ -73,7 +73,8 @@ export default function SelectPlans() {
           branch_id: branchId,
           amount: sub.price,
           plan_name: sub.name,
-          payment_method: method 
+          payment_method: method,
+          is_resubscribe: false
         })
       });
 
@@ -139,47 +140,15 @@ export default function SelectPlans() {
                 </div>
 
                 <ul className="flex-1 space-y-5 text-left">
-                  <li className="flex items-center gap-3 text-sm">
-                    {Number(sub.has_email) === 1 ? (
-                      <HiCheck className="text-(--clr-primary) shrink-0" size={20} />
-                    ) : (
-                      <HiXMark className="text-gray-300 shrink-0" size={20} />
-                    )}
-                    <span className={Number(sub.has_email) ? "text-gray-600 font-medium" : "text-gray-400"}>
-                      Email Notifications
-                    </span>
-                  </li>
-
-                  <li className="flex items-center gap-3 text-sm">
-                    {Number(sub.has_medical) === 1 ? (
-                      <HiCheck className="text-(--clr-primary) shrink-0" size={20} />
-                    ) : (
-                      <HiXMark className="text-gray-300 shrink-0" size={20} />
-                    )}
-                    <span className={Number(sub.has_medical) ? "text-gray-600 font-medium" : "text-gray-400"}>
-                      Medical Record Access
-                    </span>
-                  </li>
-
-                  <li className="flex items-center gap-3 text-sm text-gray-600">
-                    <HiCheck className="text-(--clr-primary) shrink-0" size={20} />
-                    {parseInt(sub.appointment_limit) > 1000 ? (
-                      <span><strong>Unlimited</strong> Appointment Limit</span>
-                    ) : (
-                      <span><strong>{sub.appointment_limit}</strong> Appointment Limit</span>
-                    )}
-                  </li>
+                  <FeatureItem active={Number(sub.has_email) === 1} label="Email Notifications" />
+                  <FeatureItem active={Number(sub.has_medical) === 1} label="Medical Record Access" />
                   
-                  <li className="flex items-center gap-3 text-sm">
-                    {Number(sub.has_shop) === 1 ? (
-                      <HiCheck className="text-(--clr-primary) shrink-0" size={20} />
-                    ) : (
-                      <HiXMark className="text-gray-300 shrink-0" size={20} />
-                    )}
-                    <span className={Number(sub.has_shop) ? "text-gray-600 font-medium" : "text-gray-400"}>
-                      Shop Reservation & Inventory
-                    </span>
+                  <li className="flex items-center gap-3 text-sm text-gray-600">
+                    <HiCheck className="text-blue-500 shrink-0" size={20} />
+                    <span><strong>{parseInt(sub.appointment_limit) > 1000 ? 'Unlimited' : sub.appointment_limit}</strong> Appointment Limit</span>
                   </li>
+
+                  <FeatureItem active={Number(sub.has_shop) === 1} label="Shop Reservation & Inventory" />
                 </ul>
 
                 <button
@@ -205,7 +174,7 @@ export default function SelectPlans() {
               className="w-full max-w-sm overflow-hidden bg-white rounded-3xl"
             >
               <div className="p-8 text-center border-b border-gray-50 bg-gray-50/50">
-                <h3 className="text-xl font-black tracking-tight uppercase">Payment Method</h3>
+                <h3 className="text-xl font-black tracking-tight uppercase">Confirm Payment</h3>
                 <p className="mt-1 text-sm text-gray-700">Pay ₱{Number(selectedSub.price).toLocaleString()} for {selectedSub.name} plan.</p>
               </div>
 
@@ -226,7 +195,7 @@ export default function SelectPlans() {
                   className="flex items-center justify-between w-full p-4 transition-all border-2 border-gray-100 cursor-pointer group rounded-2xl hover:border-green-500 hover:bg-green-50"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 text-xl font-black text-white bg-green-500 rounded-xl">M</div>
+                    <div className="flex items-center justify-center w-12 h-12 text-xl font-black text-white bg-(--clr-primary) rounded-xl">M</div>
                     <span className="text-lg font-bold text-gray-800">Maya</span>
                   </div>
                   <HiCheck className="text-(--clr-primary) transition-opacity opacity-0 group-hover:opacity-100" size={24} />
@@ -244,5 +213,20 @@ export default function SelectPlans() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function FeatureItem({ active, label }) {
+  return (
+    <li className="flex items-center gap-3 text-sm">
+      {active ? (
+        <HiCheck className="text-blue-500 shrink-0" size={20} />
+      ) : (
+        <HiXMark className="text-gray-300 shrink-0" size={20} />
+      )}
+      <span className={active ? "text-gray-600 font-medium" : "text-gray-400"}>
+        {label}
+      </span>
+    </li>
   );
 }

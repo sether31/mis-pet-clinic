@@ -98,7 +98,7 @@ export default function PendingUser() {
       if(user.status === 'disabled') {
         toast.error("Your account has been disabled. Please contact support.");
         await wait(1000);
-        localStorage.clear();
+        sessionStorage.clear();
         navigate('/login', { replace: true });
         return;
       }
@@ -122,7 +122,7 @@ export default function PendingUser() {
           toast.success("Your account has been approved!");
 
           if(new_token) {
-            localStorage.setItem('access_token', new_token);
+            sessionStorage.setItem('access_token', new_token);
           }
           await wait(2000);
           hideLoader();
@@ -310,7 +310,7 @@ export default function PendingUser() {
   const handleLogout = async () => {
     showLoader("Logging out...")
     toast.info("Logging out...");
-    localStorage.clear(); 
+    sessionStorage.clear(); 
     await wait(1200);
     hideLoader();
     navigate('/clinic/login', { replace: true });

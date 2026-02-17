@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 $user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
 
@@ -42,6 +43,13 @@ try {
     throw new Exception("Appointment ID is required.");
   }
 
+  $pdo->beginTransaction();
+
+  // get clinic for audit
+  $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmtClinic->execute([$branch_id]);
+  $clinicId = $stmtClinic->fetchColumn() ?: 0;
+
   // process uploads
   $img1 = handleUpload($_FILES['image_1'] ?? null, 'photos', ['jpg', 'jpeg', 'png']);
   $img2 = handleUpload($_FILES['image_2'] ?? null, 'photos', ['jpg', 'jpeg', 'png']);
@@ -54,6 +62,8 @@ try {
   $existing = $checkStmt->fetch();
 
   if($existing) {
+    $recordId = $existing['medical_id'];
+
     // update
     $updateFields = [
       "record_type = :record_type",
@@ -108,6 +118,9 @@ try {
 
     $sql = "UPDATE medrecord_tb SET " . implode(', ', $updateFields) . " WHERE appointment_id = :app_id";
     $pdo->prepare($sql)->execute($params);
+
+    // audit update med record
+    log_audit($pdo, $user->user_id, $clinicId, $branch_id, 'UPDATE', 'MEDICAL_RECORD_DETAILS', $recordId);
     $message = "Record updated successfully.";
   } else {   
 
@@ -129,9 +142,14 @@ try {
       ':doc1' => $doc1,
       ':doc2' => $doc2
     ]);
+    $recordId = $pdo->lastInsertId();
+
+    // audit create medical record details
+    log_audit($pdo, $user->user_id, $clinicId, $branch_id, 'CREATE', 'MEDICAL_RECORD_DETAILS', $recordId);
     $message = "Record saved successfully.";
   }
 
+  $pdo->commit();
   echo json_encode(["success" => true, "message" => $message]);
 
 } catch (Exception $e) {
