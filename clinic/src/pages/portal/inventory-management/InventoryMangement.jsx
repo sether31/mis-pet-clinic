@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 // hooks
 import { useUI } from '../../../hooks/useUI';
 // utils
@@ -61,36 +62,59 @@ export default function InventoryManagement() {
     setSelectedProduct(null);
   };
 
-  // handle inventory status
   const handleToggleStatus = async (item) => {
-    const isCurrentlyActive = Number(item.is_active) === 1;
-    const newStatus = isCurrentlyActive ? 0 : 1;
-    const actionText = newStatus === 0 ? 'archive' : 'restore';
+    const isArchiving = Number(item.is_active) === 1;
+    const newStatus = isArchiving ? 0 : 1;
 
-    if (!window.confirm(`Are you sure you want to ${actionText} "${item.name}"?`)) return;
-
-    showLoader();
-    try {
-      const response = await authFetch(`${API_URL}/api/clinic/general/inventory/update-inventory-status.php`, {
-        method: 'POST',
-        body: JSON.stringify({
-          inventory_id: item.inventory_id,
-          status: newStatus
-        })
-      });
-
-      if(response.success) {
-        toast.success(response.message);
-        await fetchInventory(); 
-      } else {
-        toast.error(response.message);
+    // alert
+    const result = await Swal.fire({
+      title: isArchiving ? 'Archive Product?' : 'Restore Product?',
+      text: `Are you sure you want to ${isArchiving ? 'archive' : 'restore'} "${item.name}?"`,
+      icon: isArchiving ? 'warning' : 'info',
+      buttonsStyling: false,
+      showCancelButton: true,
+      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Restore',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: '!rounded-xl border !border-gray-300 !max-w-lg',
+        title: `!text-xl !font-black !uppercase !tracking-tight
+          ${isArchiving ? '!text-red-600' : '!text-(--clr-primary)'}
+        `,
+        
+        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold 
+        ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}
+        `,
+        cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold'
       }
-    } catch(error) {
-      toast.error("Something went wrong");
-    } finally {
-      hideLoader();
+    });
+
+    if(result.isConfirmed) {
+      showLoader();
+      try {
+        const response = await authFetch(`${API_URL}/api/clinic/general/inventory/update-inventory-status.php`, {
+          method: 'POST',
+          body: JSON.stringify({
+            inventory_id: item.inventory_id,
+            status: newStatus
+          })
+        });
+
+        if(response.success) {
+          toast.success(response.message || "Status updated successfully");
+          fetchInventory(); 
+        } else {
+          toast.error(response.message || "Failed to update status");
+        }
+      } catch (error) {
+        toast.error("Something went wrong");
+      } finally {
+        hideLoader();
+      }
     }
   };
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />

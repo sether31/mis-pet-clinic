@@ -19,6 +19,20 @@ try {
   $pdo = (new Database())->pdo;
   $pdo->beginTransaction();
 
+  // get for audit 
+  $stmtDetails = $pdo->prepare(
+    "SELECT i.branch_id, b.clinic_id 
+    FROM inventory_tb i
+    JOIN clinic_branches_tb b ON i.branch_id = b.branch_id
+    WHERE i.inventory_id = :id"
+  );
+$stmtDetails->execute([':id' => $data['inventory_id']]);
+  $item = $stmtDetails->fetch();
+
+  if(!$item) {
+    throw new Exception("Product not found.");
+  }
+
   $stmt = $pdo->prepare(
     "UPDATE inventory_tb 
     SET is_active = :status 
@@ -36,11 +50,11 @@ try {
     log_audit(
       $pdo, 
       $adminId, 
-      $clinicId, 
-      $branchId, 
+      $item['clinic_id'],  
+      $item['branch_id'],  
       $auditAction, 
       'INVENTORY', 
-      $productId
+      $data['inventory_id'] 
     );
 
     $pdo->commit();
