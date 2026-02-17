@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
-validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$userToken = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
 $data = $_POST;
 $user_id = $data['user_id'] ?? null;
@@ -15,6 +16,20 @@ if(!$user_id) {
 try {
   $pdo = (new Database())->pdo;
   $pdo->beginTransaction();
+
+  // get for audit
+  $stmtLoc = $pdo->prepare(
+    "SELECT bs.branch_id, b.clinic_id, bs.status as old_status
+    FROM branch_staff_tb bs
+    JOIN clinic_branches_tb b ON bs.branch_id = b.branch_id
+    WHERE bs.user_id = ?"
+  );
+  $stmtLoc->execute([$user_id]);
+  $location = $stmtLoc->fetch();
+
+  if(!$location) throw new Exception("Staff record not found.");
+  $branch_id = $location['branch_id'];
+  $clinicId = $location['clinic_id'];
 
   $userSql = "UPDATE user_tb SET first_name = :fname, last_name = :lname, email = :email, role_id = :role_id";
   $params = [
@@ -95,6 +110,17 @@ try {
       ]);
     }
   }
+
+  // audit update staff
+  log_audit(
+    $pdo, 
+    $userToken->user_id, 
+    $clinicId, 
+    $branch_id, 
+    'UPDATE', 
+    'STAFF_MEMBER', 
+    $user_id
+  );
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Staff updated successfully"]);

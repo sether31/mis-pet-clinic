@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 $user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
 header("Content-Type: application/json");
@@ -111,7 +112,7 @@ try {
 
   $pdo->beginTransaction();
 
-  if ($appointment_id) {
+  if($appointment_id) {
     // update existing 
     $updateStmt = $pdo->prepare(
       "UPDATE appointments_tb SET 
@@ -124,6 +125,8 @@ try {
       $branch_id, $start_time, $end_time, $appointment_id
     ]);
     $msg = "Appointment updated and confirmed.";
+     $action = 'UPDATE';
+    $targetId = $appointment_id;
   } else {
     // insert new
   $insertStmt = $pdo->prepare(
@@ -136,8 +139,29 @@ try {
       $user_id, $pet_id, $service_id, $staff_id, 
       $branch_id, $start_time, $end_time
     ]);
+    $targetId = $pdo->lastInsertId();
+    $action = 'CREATE';
     $msg = "Appointment successfully scheduled.";
   }
+
+
+  // get clinic for audit
+  $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmtClinic->execute([$branch_id]);
+  $clinicId = $stmtClinic->fetchColumn() ?: 0;
+
+  $action = $appointment_id ? 'UPDATE' : 'CREATE';
+
+  // audit create appointment
+  log_audit(
+    $pdo, 
+    $user->user_id, 
+    $clinicId, 
+    $branch_id, 
+    $action, 
+    'APPOINTMENT', 
+    $targetId
+  );
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => $msg]);

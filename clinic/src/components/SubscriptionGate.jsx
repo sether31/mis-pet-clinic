@@ -1,4 +1,3 @@
-// components/SubscriptionGate.jsx
 import { useOutletContext } from 'react-router-dom';
 import { cloneElement } from 'react';
 import { IoLockClosedOutline } from "react-icons/io5";

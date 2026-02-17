@@ -1,8 +1,10 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 $decoded = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$adminId = $decoded->user_id;
 $data = json_decode(file_get_contents("php://input"), true);
 
 $appointment_id = $data['appointment_id'] ?? null;
@@ -17,44 +19,69 @@ if(!$appointment_id || !$status) {
 
 try {
   $pdo = (new Database())->pdo;
+  $pdo->beginTransaction();
 
-  // check if the appointment exist
-  $checkStmt = $pdo->prepare("SELECT status FROM appointments_tb WHERE appointment_id = :id");
-  $checkStmt->execute([':id' => $appointment_id]);
-  $currentStatus = $checkStmt->fetchColumn();
+  $stmtDetails = $pdo->prepare(
+    "SELECT a.branch_id, b.clinic_id 
+    FROM appointments_tb a
+    JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
+    WHERE a.appointment_id = ?"
+  );
+  $stmtDetails->execute([$appointment_id]);
+  $details = $stmtDetails->fetch();
 
-  if($currentStatus === false) {
+  if(!$details) {
     echo json_encode(["success" => false, "message" => "Appointment not found."]);
     exit;
   }
 
-  // update appointment status
+  $branchId = $details['branch_id'];
+  $clinicId = $details['clinic_id'];
+
+  // 2. UPDATE appointment status
   $stmt = $pdo->prepare(
     "UPDATE appointments_tb 
-     SET status = :status, feedback = :feedback
-     WHERE appointment_id = :id"
+    SET status = :status, feedback = :feedback
+    WHERE appointment_id = :id"
   );
 
-  $result = $stmt->execute([
+  $stmt->execute([
     ':status' => $status,
     ':feedback' => $feedback,
     ':id' => $appointment_id
   ]);
 
+  // audit log
+  $auditTag = 'APPOINTMENT_' . strtoupper($status);
+
+  log_audit(
+    $pdo, 
+    $adminId, 
+    $clinicId, 
+    $branchId, 
+    'UPDATE', 
+    $auditTag, 
+    $appointment_id
+  );
+
+  $pdo->commit();
+
   $readable_status = [
     'confirmed' => 'approved',
     'rejected'  => 'declined',
-    'cancelled' => 'cancelled'
+    'cancelled' => 'cancelled',
+    'completed' => 'completed'
   ];
 
-  $action = $readable_status[$status] ?? $status;
+  $actionResponse = $readable_status[$status] ?? $status;
 
   echo json_encode([
     "success" => true, 
-    "message" => "The appointment has been successfully " . $action . "."
+    "message" => "The appointment has been successfully " . $actionResponse . "."
   ]);
 
 } catch(Exception $e) {
+  if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
   http_response_code(500);
   echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }

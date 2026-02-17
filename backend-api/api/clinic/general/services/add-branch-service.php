@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
-validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
 try {
   $pdo = (new Database())->pdo;
@@ -13,6 +14,11 @@ try {
   }
 
   $pdo->beginTransaction();
+
+  // get clinic for audit
+  $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmtClinic->execute([$data['branch_id']]);
+  $clinicId = $stmtClinic->fetchColumn() ?: 0;
 
   // check if the service exists in the master table
   $stmtCheck = $pdo->prepare("SELECT service_id FROM service_tb WHERE name = :name LIMIT 1");
@@ -52,6 +58,17 @@ try {
     ':duration' => $data['duration'],
     ':role' => $data['assigned_role']
   ]);
+  $branchServiceId = $pdo->lastInsertId();
+
+  log_audit(
+    $pdo, 
+    $user->user_id, 
+    $clinicId, 
+    $data['branch_id'], 
+    'CREATE', 
+    'BRANCH_SERVICE', 
+    $branchServiceId
+  );
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Service created successfully."]);

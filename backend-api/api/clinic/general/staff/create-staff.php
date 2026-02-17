@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
-validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$userToken = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
 $data = $_POST;
 
@@ -31,6 +32,11 @@ if(empty($fname) || empty($lname) || empty($email) || empty($branch_id) || empty
 try {
   $pdo = (new Database())->pdo;
   $pdo->beginTransaction();
+
+  // get clinic for audit
+  $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmtClinic->execute([$branch_id]);
+  $clinicId = $stmtClinic->fetchColumn() ?: 0;
 
   // check if email exists
   $checkEmail = $pdo->prepare("SELECT user_id FROM user_tb WHERE email = ? LIMIT 1");
@@ -104,6 +110,16 @@ try {
       ]);
     }
   }
+
+  log_audit(
+    $pdo, 
+    $userToken->user_id, 
+    $clinicId, 
+    $branch_id, 
+    'CREATE', 
+    'STAFF_MEMBER', 
+    $user_id
+  );
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Staff member created successfully."]);

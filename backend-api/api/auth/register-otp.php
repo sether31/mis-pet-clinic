@@ -6,6 +6,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../service/Otp.php';
+require_once __DIR__ . '/../../helper/log_audit.php';
 
 try {
   $pdo = (new Database())->pdo;
@@ -185,6 +186,15 @@ try {
     $vetLicensePath,
     $branchId
   ]);
+
+  // log create user
+  log_audit($pdo, $userId, $clinicId, $branchId, 'CREATE', 'USER', $userId);
+
+  // log create clinic
+  log_audit($pdo, $userId, $clinicId, $branchId, 'CREATE', 'CLINIC', $clinicId);
+
+  // log create branch
+  log_audit($pdo, $userId, $clinicId, $branchId, 'CREATE', 'BRANCH', $branchId);
 
   $pdo->commit();
 

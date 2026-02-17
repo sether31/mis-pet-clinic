@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
-$decodedToken = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$decodedToken = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);  
 $adminId = $decodedToken->user_id;
 
 $productId = $_POST['product_id'] ?? null;
@@ -21,8 +22,8 @@ $supplierName = trim($_POST['supplier_name'] ?? '');
 $supplierContact = trim($_POST['supplier_contact'] ?? '');
 
 if(!$productId || !$inventoryId || !$branchId || !$name) {
-    echo json_encode(["success" => false, "message" => "Missing required identifiers or product name."]);
-    exit;
+  echo json_encode(["success" => false, "message" => "Missing required identifiers or product name."]);
+  exit;
 }
 
 try {
@@ -30,7 +31,7 @@ try {
   $pdo->beginTransaction();
 
   $stmtVerify = $pdo->prepare(
-    "SELECT p.product_id, p.prod_pic 
+    "SELECT c.clinic_id, p.product_id, p.prod_pic 
     FROM products_tb p
     JOIN clinic_branches_tb b ON p.branch_id = b.branch_id
     JOIN clinics_tb c ON b.clinic_id = c.clinic_id
@@ -45,6 +46,8 @@ try {
     echo json_encode(["success" => false, "message" => "Product not found or unauthorized access."]);
     exit;
   }
+
+  $clinicId = $currentProduct['clinic_id'];
 
   // handle image
   $dbImagePath = $currentProduct['prod_pic']; 
@@ -92,6 +95,18 @@ try {
     $inventoryId, 
     $productId
   ]);
+
+
+  // audit update inventory
+  log_audit(
+    $pdo, 
+    $adminId, 
+    $clinicId, 
+    $branchId, 
+    'UPDATE', 
+    'INVENTORY_DETAILS', 
+    $productId
+  );
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Inventory item updated successfully."]);

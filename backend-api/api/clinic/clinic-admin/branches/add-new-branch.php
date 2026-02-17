@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/../../../../config/Database.php';
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 $admin = validate_auth(['clinic_admin']); 
 $userId = $admin->user_id ?? null;
@@ -157,6 +158,17 @@ try {
     $branchId
   ]);
 
+  log_audit(
+    $pdo, 
+    $userId, 
+    $clinicId, 
+    $branchId, 
+    'CREATE', 
+    'BRANCH', 
+    $branchId
+  );
+
+  // audit create branch
   $pdo->commit();
 
   echo json_encode([

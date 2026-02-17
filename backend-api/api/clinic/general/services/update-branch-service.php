@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
-validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
 try {
   $pdo = (new Database())->pdo;
@@ -11,6 +12,13 @@ try {
   if(empty($data['branch_service_id']) || empty($data['custom_name']) || empty($data['custom_description'])) {
     throw new Exception("Missing required service data.");
   }
+
+  $pdo->beginTransaction();
+
+  // get clinic for audit
+  $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmtClinic->execute([$data['branch_id']]);
+  $clinicId = $stmtClinic->fetchColumn() ?: 0;
 
   $stmt = $pdo->prepare(
     "UPDATE branch_service_tb 
@@ -44,6 +52,18 @@ try {
       "message" => "No changes were made."
     ]);
   }
+
+  log_audit(
+    $pdo, 
+    $user->user_id, 
+    $clinicId, 
+    $data['branch_id'], 
+    'UPDATE', 
+    'BRANCH_SERVICE', 
+    $data['branch_service_id']
+  );
+
+  $pdo->commit();
 
 } catch(Exception $e) {
   http_response_code(500);

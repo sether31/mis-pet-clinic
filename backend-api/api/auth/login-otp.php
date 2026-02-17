@@ -7,6 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../service/Jwt.php';  
 require_once __DIR__ . '/../../service/Otp.php';
+require_once __DIR__ . '/../../helper/log_audit.php';
 
 try {
   $pdo = (new Database())->pdo;
@@ -25,9 +26,17 @@ try {
 
   // get user 
   $stmtUser = $pdo->prepare(
-    "SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name, status
+    "SELECT 
+      u.user_id, 
+      u.email, 
+      u.first_name, 
+      u.last_name, 
+      u.status, 
+      r.role_name, 
+      c.clinic_id 
     FROM user_tb u
     JOIN roles_tb r ON u.role_id = r.role_id
+    LEFT JOIN clinics_tb c ON c.created_by = u.user_id
     WHERE u.user_id = :user_id"
   );
   $stmtUser->execute([":user_id" => $userId]);
@@ -39,6 +48,7 @@ try {
 
   $permissions = [];
   $branchId = null;
+  $clinicId = $user['clinic_id'] ?? 0;
 
   if ($user['role_name'] === 'clinic_admin') {
     // all access for admin
@@ -75,6 +85,9 @@ try {
   ];
 
   $accessToken = createJWT($payload, 1000000000);
+
+  // audit login user
+  log_audit($pdo, $user['user_id'], $clinicId ?: null, $branchId ?: null, 'LOGIN', 'USER', $user['user_id']);
 
   echo json_encode([
     "success" => true,
