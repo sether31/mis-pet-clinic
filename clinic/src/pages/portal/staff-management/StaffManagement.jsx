@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 // hooks
 import { useUI } from '../../../hooks/useUI';
 // utils
@@ -31,7 +32,6 @@ export default function StaffManagement() {
   const fetchBranchSettings = useCallback(async () => {
     if (!branchId) return;
     try {
-      // Use your existing endpoint for branch settings
       const response = await authFetch(
         `${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${branchId}`,
         { method: 'GET' }
@@ -71,37 +71,60 @@ export default function StaffManagement() {
   }, [fetchStaffData, fetchBranchSettings]);
 
   const handleToggleStatus = async (staff) => {
-    const newStatus = Number(staff.status) === 1 ? 0 : 1;
-    const actionText = newStatus === 1 ? 'active' : 'archive';
+    const isArchiving = Number(staff.status) === 1;
+    const newStatus = isArchiving ? 0 : 1;
 
-    if (!window.confirm(`Are you sure you want to ${actionText} this staff member?`)) return;
-
-    showLoader(`Please wait, ${actionText} staff...`);
-    try {
-      const response = await authFetch(
-        `${API_URL}/api/clinic/general/staff/update-staff-status.php`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            user_id: staff.user_id,
-            branch_id: branchId,
-            status: newStatus
-          })
-        }
-      );
-
-      if(response.success) {
-        toast.success(response.message);
-        fetchStaffData(); 
-      } else {
-        console.error(response.message)
-        toast.error(response.message || "Something went wrong");
+    // alert
+    const result = await Swal.fire({
+      title: isArchiving ? 'Archive Product?' : 'Restore Product?',
+      text: `Are you sure you want to ${isArchiving ? 'archive' : 'restore'} "${staff.fname} ${staff.lname}?"`,
+      icon: isArchiving ? 'warning' : 'info',
+      buttonsStyling: false,
+      showCancelButton: true,
+      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Restore',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        popup: '!rounded-xl border !border-gray-300 !max-w-lg',
+        title: `!text-xl !font-black !uppercase !tracking-tight
+          ${isArchiving ? '!text-red-600' : '!text-(--clr-primary)'}
+        `,
+        
+        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold 
+        ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}
+        `,
+        cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold'
       }
-    } catch (error) {
-      console.error("Toggle Error:", error);
-      toast.error("Something went wrong");
-    } finally {
-      hideLoader();
+    });
+
+    if(result.isConfirmed) {
+      showLoader();
+      try {
+        const response = await authFetch(
+          `${API_URL}/api/clinic/general/staff/update-staff-status.php`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              user_id: staff.user_id,
+              branch_id: branchId,
+              status: newStatus
+            })
+          }
+        );
+
+        if(response.success) {
+          toast.success(response.message);
+          fetchStaffData(); 
+        } else {
+          console.error(response.message)
+          toast.error(response.message || "Something went wrong");
+        }
+      } catch (error) {
+        console.error("Toggle Error:", error);
+        toast.error("Something went wrong");
+      } finally {
+        hideLoader();
+      }
     }
   };
 

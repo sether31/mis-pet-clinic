@@ -14,6 +14,7 @@ import { FaRectangleList } from "react-icons/fa6";
 // images
 import noImage from '../../../../assets/images/no-image.jpg'
 import { IoLockClosedOutline } from 'react-icons/io5';
+import Swal from 'sweetalert2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -160,26 +161,64 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   const pricing = getPricingBreakdown();
 
   const handleCancel = async () => {
-    const reason = window.prompt("Are you sure you want to cancel? Please enter a reason:");
-    if (!reason) return;
-    const appointmentId = activeTask?.id || activeTask?.appointment_id;
-    const actorName = user?.name || 'Staff';
-    const finalFeedback = `Cancelled by ${actorName}. Reason: ${reason}`;
-    showLoader('Cancelling...');
-    try {
-      const res = await authFetch(`${API_URL}/api/clinic/general/appointment/update-appointment-status.php`, {
-        method: 'POST',
-        body: JSON.stringify({ appointment_id: appointmentId, status: 'cancelled', feedback: finalFeedback })
-      });
-      if(res?.success) {
-        toast.info("Appointment cancelled.");
-        if (onRefresh) onRefresh();
-        onClose();
+    const { value: reason, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: 'Cancel Appointment?',
+      text: "Please provide a reason for cancellation:",
+      input: 'textarea',
+      inputPlaceholder: 'Type the reason here...',
+      inputAttributes: {
+        'aria-label': 'Type your reason here'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Confirm Cancellation',
+      cancelButtonText: 'Keep Appointment',
+      buttonsStyling: false,
+      reverseButtons: true,
+      customClass: {
+        popup: '!rounded-xl border !border-gray-300 !max-w-lg',
+        title: '!text-xl !font-black !uppercase !tracking-tight !text-red-600',
+        htmlContainer: '!text-sm !font-medium !text-gray-500',
+        input: '!rounded-xl !border-gray-300 !text-sm !focus:ring-(--clr-primary) !focus:border-(--clr-primary) !outline:none !m-4',
+     
+        confirmButton: 'rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold bg-red-500 hover:bg-red-600' ,
+        cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold'
+      },
+      // dont allow empty
+      preConfirm: (value) => {
+        if(!value) {
+          Swal.showValidationMessage('Cancellation reason is required');
+        }
+        return value;
       }
-    } catch(err) {
-      toast.error("Error during cancellation.");
-    } finally {
-      hideLoader();
+    });
+
+    if (isConfirmed && reason) {
+      const appointmentId = activeTask?.id || activeTask?.appointment_id;
+      const actorName = user?.name || 'Staff';
+      const finalFeedback = `Cancelled by ${actorName}. Reason: ${reason}`;
+
+      showLoader('Processing Cancellation...');
+      try {
+        const res = await authFetch(`${API_URL}/api/clinic/general/appointment/update-appointment-status.php`, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            appointment_id: appointmentId, 
+            status: 'cancelled', 
+            feedback: finalFeedback 
+          })
+        });
+
+        if(res?.success) {
+          toast.info("Appointment has been cancelled.");
+          if (onRefresh) onRefresh();
+          onClose(); 
+        }
+      } catch(err) {
+        toast.error("Something went wrong.");
+      } finally {
+        hideLoader();
+      }
     }
   };
 
@@ -224,7 +263,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   });
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-9999 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-300 bg-black/70 backdrop-blur-sm">
       <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white rounded-2xl">
         
         {/* tabs */}

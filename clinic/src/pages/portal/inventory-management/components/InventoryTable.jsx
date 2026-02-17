@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
+// images
+import NoImage from '../../../../assets/images/no-image.jpg';
+// icons
+import { CiSearch } from 'react-icons/ci';
 import { HiSearch, HiPencilAlt, HiPlus, HiArchive, HiExclamationCircle, HiRefresh } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
-import NoImage from '../../../../assets/images/no-image.jpg';
-import { CiSearch } from 'react-icons/ci';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
