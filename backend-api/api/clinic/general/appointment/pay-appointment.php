@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 $user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
 
@@ -102,10 +103,38 @@ try {
     $appt['custom_name'],  
     $appt['service_price']  
   ]);
+  $medRecordId = $pdo->lastInsertId();
 
   // update appointment status
   $pdo->prepare("UPDATE appointments_tb SET status = ?, order_id = ? WHERE appointment_id = ?")
     ->execute([$appointmentStatus, $order_id, $data->appointment_id]);
+
+  // get clinic for audit
+  $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmtClinic->execute([$data->branch_id]);
+  $clinicId = $stmtClinic->fetchColumn() ?: 0;
+
+  // audit create order bill
+  log_audit(
+    $pdo, 
+    $user->user_id, 
+    $clinicId, 
+    $data->branch_id, 
+    'CREATE', 
+    'BILLING_TRANSACTION', 
+    $order_id
+  );
+
+  // audit medical record create
+  log_audit(
+    $pdo, 
+    $user->user_id, 
+    $clinicId, 
+    $data->branch_id, 
+    'CREATE', 
+    'MEDICAL_RECORD', 
+    $medRecordId
+  );
 
   $pdo->commit();
 

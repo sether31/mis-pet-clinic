@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../helper/log_audit.php';
 
 $decodedToken = validate_auth(['clinic_admin']);
 $adminUserId = $decodedToken->user_id;
@@ -107,6 +108,17 @@ try {
   $finalParams = array_merge($mainParams, $imageParams, [$branchId]);
 
   $pdo->prepare($sql)->execute($finalParams);
+
+  // audit update pending branch 
+  log_audit(
+    $pdo, 
+    $adminUserId, 
+    $clinicId, 
+    $branchId, 
+    'UPDATE', 
+    'BRANCH_PENDING_RESUBMIT', 
+    $branchId
+  );
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Update Successfully"]);

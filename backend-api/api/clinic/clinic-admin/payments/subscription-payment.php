@@ -1,8 +1,10 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
-require_once __DIR__ . '/../../../../vendor/autoload.php';
-require_once __DIR__ . '/../../../../config/Database.php';
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
+require_once __DIR__ . '/../../../../config/Database.php';
+
+require_once __DIR__ . '/../../../../vendor/autoload.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
@@ -57,6 +59,17 @@ try {
     ":ext_id" => $external_id,
     ":amt" => $data->amount
   ]);
+
+  // audit create payment init
+  log_audit(
+    $pdo, 
+    $user->user_id, 
+    0,
+    $data->branch_id, 
+    'CREATE', 
+    'PAYMENT_INTENT', 
+    $data->subscription_id
+);
 
   echo json_encode(["success" => true, "checkout_url" => $result['invoice_url']]);
 } catch(Exception $e) {
