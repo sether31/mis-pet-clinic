@@ -32,6 +32,7 @@ import BranchScheduleSettings from "../pages/portal/branch-settings/BranchSchedu
 import InventoryManagement from "../pages/portal/inventory-management/InventoryMangement";
 import MedicalRecordManagement from "../pages/portal/medical-records/MedicalRecordManagement";
 import BranchSubscriptionSettings from "../pages/portal/branch-settings/BranchSubscriptionSettings";
+import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
 
 
 export const routes = createBrowserRouter([
@@ -118,6 +119,17 @@ export const routes = createBrowserRouter([
                       <StaffManagement />
                     </ProtectedRoute>
                     )
+                  },
+                  { 
+                    path: "transaction-management", 
+                    element: (
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="transaction_management"
+                    >
+                      <TransactionManagement />
+                    </ProtectedRoute>
+                    ) 
                   },
                   { 
                     path: "inventory-management", 
