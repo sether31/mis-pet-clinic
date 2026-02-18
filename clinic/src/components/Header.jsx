@@ -11,6 +11,7 @@ const links = [
   { label: 'Appointment Management', path: '/appointment-management' },
   { label: 'Medical Record Management', path: '/medical-record-management' },
   { label: 'Staff Management', path: '/staff-management' },
+  { label: 'Transaction Management', path: '/transaction-management' },
   { label: 'Inventory Management', path: '/inventory-management' },
   { label: 'Service Management', path: '/service-management' },
   { label: 'Branch Settings', path: '/branch-settings' },
