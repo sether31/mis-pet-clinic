@@ -37,7 +37,7 @@ export default function ClinicAdminView({
       {/* header */}
       <div className="flex flex-col items-center justify-between gap-4 pb-2 border-b border-gray-100 md:flex-row">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Transaction Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Transaction Management Overview</h1>
           <p className="text-gray-500">
             {isGlobalView 
               ? "Detailed sales and billing logs across all clinic branches" 
@@ -70,10 +70,10 @@ export default function ClinicAdminView({
         </div>
       </div>
 
-      {/* 2. Summary Stats Card */}
+      {/* card */}
       <TransactionCard summary={summary} />
 
-      {/* 3. Main Data Table */}
+      {/* table */}
       <div className="w-full">
         <TransactionTable 
           data={transactions} 
@@ -84,7 +84,7 @@ export default function ClinicAdminView({
         />
       </div>
 
-      {/* 4. Details Modal */}
+      {/* modal */}
       {isModalOpen && selectedTransaction && (
         <TransactionModal 
           transaction={selectedTransaction} 
