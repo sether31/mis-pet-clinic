@@ -23,7 +23,7 @@ const sidebarItems = [
   { label: 'Appointment Management', path: 'appointment-management', icon: FaRegCalendarAlt, requiredPermission: 'appointment_management' },
   { label: 'Medical Management', path: 'medical-record-management', icon: LuClipboard, requiredPermission: 'medical_record_management' },
   { label: 'Staff Management', path: 'staff-management', icon: LuUsers, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'staff_management' },
-  { label: 'Transaction Management', path: 'transaction-management', icon: LuReceipt, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'invoice_management' },
+  { label: 'Transaction Management', path: 'transaction-management', icon: LuReceipt, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'transaction_management' },
   { label: 'Inventory Management', path: 'inventory-management', icon: LuPackage, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'inventory_management' },
   { label: 'Service Management', path: 'service-management', allowedRoles: ['clinic_admin', 'branch_admin'], icon: MdOutlineHomeRepairService, requiredPermission: 'service_management' },
   { label: 'Branch Settings', path: 'branch-settings', icon: LuSettings2, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'branch_settings' },

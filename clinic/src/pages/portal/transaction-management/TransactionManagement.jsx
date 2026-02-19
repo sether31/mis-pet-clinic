@@ -22,7 +22,7 @@ export default function TransactionManagement() {
   const [branches, setBranches] = useState([]);
 
   const isClinicAdmin = user?.role === 'clinic_admin';
-  const [currentBranch, setCurrentBranch] = useState(urlBranchId || 'all');
+  const [currentBranch, setCurrentBranch] = useState(urlBranchId || (isClinicAdmin ? 'all' : urlBranchId));
   const lastUrlBranch = useRef(urlBranchId);
 
   const fetchAll = useCallback(async (isManualRefresh = false) => {
@@ -58,13 +58,11 @@ export default function TransactionManagement() {
     }
   }, [urlBranchId]);
 
-  const isAdmin = isClinicAdmin;
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <section className="w-full px-6 my-6 container-xl">
-        {isAdmin ? (
+        {isClinicAdmin ? (
           <ClinicAdminView 
             transactions={transactions} 
             summary={summary}
@@ -73,7 +71,6 @@ export default function TransactionManagement() {
             branches={branches}
             currentBranch={currentBranch}
             setCurrentBranch={setCurrentBranch} 
-            user={user}
             isClinicAdmin={isClinicAdmin}
           />
         ) : (
@@ -82,8 +79,6 @@ export default function TransactionManagement() {
             summary={summary}
             loading={loading}
             onRefresh={() => fetchAll(true)}
-            user={user}
-            branchId={urlBranchId}
           />
         )}
       </section>
