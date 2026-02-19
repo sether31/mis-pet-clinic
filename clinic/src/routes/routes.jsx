@@ -33,6 +33,7 @@ import InventoryManagement from "../pages/portal/inventory-management/InventoryM
 import MedicalRecordManagement from "../pages/portal/medical-records/MedicalRecordManagement";
 import BranchSubscriptionSettings from "../pages/portal/branch-settings/BranchSubscriptionSettings";
 import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
+import ForgotPassword from "../pages/auth/ForgotPassword";
 
 
 export const routes = createBrowserRouter([
@@ -52,7 +53,7 @@ export const routes = createBrowserRouter([
       // authentication
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
-      { path: "forgotPassword", element: "" },
+      { path: "forgot-password", element: <ForgotPassword /> },
       { path: "pending-user", element: <PendingUser /> },
       { path: "payment-success", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentSuccess /></ProtectedRoute> },
       { path: "payment-failed", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentFailed /></ProtectedRoute> },
