@@ -54,7 +54,7 @@ export default function AppointmentManagement() {
   if (loading && appointments.length === 0) return <p>Loading...</p>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
       
       <section className="w-full px-6 my-6 container-xl">
