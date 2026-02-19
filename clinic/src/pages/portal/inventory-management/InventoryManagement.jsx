@@ -116,7 +116,7 @@ export default function InventoryManagement() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <Header />
 
       <section className='px-6 my-6 container-xl'>
