@@ -36,16 +36,17 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     { id: "role_dashboard", label: "Role Dashboard"},
     { id: "appointment_management", label: "Appointment Management"},
     { id: "staff_management", label: "Staff Management"},
+    { id: "transaction_management", label: "Transaction Management"},
     { id: "inventory_management", label: "Inventory Management"},
     { id: "service_management", label: "Service Management"},
     { id: "branch_settings", label: "Branch Settings"},
   ];
 
   const defaultRolePermissions = {
-    3: ["role_dashboard", "appointment_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
-    4: ["role_dashboard", "appointment_management"], 
-    5: ["role_dashboard", "appointment_management"], 
-    6: ["role_dashboard", "appointment_management"] 
+    3: ["role_dashboard", "appointment_management", "staff_management", "transaction_management", "inventory_management", "service_management", "branch_settings"],
+    4: ["role_dashboard", "appointment_management", "transaction_management"], 
+    5: ["role_dashboard", "appointment_management", "transaction_management"], 
+    6: ["role_dashboard", "appointment_management", "transaction_management"] 
   };
 
   const format12h = (timeStr) => {
@@ -71,7 +72,7 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
       ? initialData.schedule 
       : daysOfWeek.reduce((acc, day) => ({
         ...acc,
-        [day]: { is_workday: true, start: "09:00", end: "18:00" }
+        [day]: { is_workday: true, start: null, end: null }
       }), {})
   });
 
@@ -307,10 +308,10 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
                     key={role.id} 
                     onClick={() => { 
                       const defaultPermissions = {
-                        3: ["role_dashboard", "appointment_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
-                        4: ["role_dashboard", "appointment_management"], 
-                        5: ["role_dashboard", "appointment_management"], 
-                        6: ["role_dashboard", "appointment_management"] 
+                        3: ["role_dashboard", "appointment_management", "transaction_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
+                        4: ["role_dashboard", "appointment_management", "transaction_management"], 
+                        5: ["role_dashboard", "appointment_management", "transaction_management"], 
+                        6: ["role_dashboard", "appointment_management", "transaction_management"] 
                       };
 
                       setForm(prev => ({ 

@@ -6,23 +6,27 @@ import { useUser } from '../hooks/useUser';
 // utils
 import { authFetch } from '../utils/authFetch';
 // icons
-import { RxHamburgerMenu } from "react-icons/rx"
-import { MdOutlineClose, MdOutlineHomeRepairService } from "react-icons/md"
-import { RiDashboardLine } from "react-icons/ri"
-import { LuUsers } from 'react-icons/lu';
-import { FaRegCalendarAlt } from "react-icons/fa";
-import { HiOutlineWrenchScrewdriver } from 'react-icons/hi2';
-import { BsBoxSeam } from "react-icons/bs";
-import { HiShieldCheck } from 'react-icons/hi';
+import { MdOutlineClose, MdOutlineHomeRepairService } from 'react-icons/md';
+import { RxHamburgerMenu } from "react-icons/rx";
+import { 
+  LuLayoutDashboard, 
+  LuClipboard, 
+  LuUsers, 
+  LuReceipt,       
+  LuPackage,      
+  LuSettings2
+} from "react-icons/lu";
+import { FaRegCalendarAlt } from 'react-icons/fa';
 
 const sidebarItems = [
-  { label: 'Dashboard', path: 'dashboard', icon: RiDashboardLine },
+  { label: 'Dashboard', path: 'dashboard', icon: LuLayoutDashboard },
   { label: 'Appointment Management', path: 'appointment-management', icon: FaRegCalendarAlt, requiredPermission: 'appointment_management' },
-  { label: 'Medical Management', path: 'medical-record-management', icon: HiShieldCheck, requiredPermission: 'medical_record_management' },
+  { label: 'Medical Management', path: 'medical-record-management', icon: LuClipboard, requiredPermission: 'medical_record_management' },
   { label: 'Staff Management', path: 'staff-management', icon: LuUsers, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'staff_management' },
-  { label: 'Inventory Management', path: 'inventory-management', icon: BsBoxSeam, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'inventory_management' },
+  { label: 'Transaction Management', path: 'transaction-management', icon: LuReceipt, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'transaction_management' },
+  { label: 'Inventory Management', path: 'inventory-management', icon: LuPackage, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'inventory_management' },
   { label: 'Service Management', path: 'service-management', allowedRoles: ['clinic_admin', 'branch_admin'], icon: MdOutlineHomeRepairService, requiredPermission: 'service_management' },
-  { label: 'Branch Settings', path: 'branch-settings', icon: HiOutlineWrenchScrewdriver, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'branch_settings' },
+  { label: 'Branch Settings', path: 'branch-settings', icon: LuSettings2, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'branch_settings' },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;

@@ -330,11 +330,9 @@ export default function Register() {
     hideLoader();
   };
 
-
-
   return (
     <>
-      <div className='mb-20 container-xl'>
+      <div className='mb-20 container-xl bg-gray-50'>
         <div className='flex flex-col items-center justify-between gap-4 my-5 md:flex-row'>
           <div className="flex items-center gap-2">
             {platformData?.platform_logo && (

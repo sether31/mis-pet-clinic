@@ -29,9 +29,11 @@ import ServiceManagement from "../pages/portal/service-management/ServiceManagem
 import BranchSettings from "../pages/portal/branch-settings/BranchSettings";
 import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranchSettings";
 import BranchScheduleSettings from "../pages/portal/branch-settings/BranchScheduleSettings";
-import InventoryManagement from "../pages/portal/inventory-management/InventoryMangement";
+import InventoryManagement from "../pages/portal/inventory-management/InventoryManagement";
 import MedicalRecordManagement from "../pages/portal/medical-records/MedicalRecordManagement";
 import BranchSubscriptionSettings from "../pages/portal/branch-settings/BranchSubscriptionSettings";
+import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
+import ForgotPassword from "../pages/auth/ForgotPassword";
 
 
 export const routes = createBrowserRouter([
@@ -51,7 +53,7 @@ export const routes = createBrowserRouter([
       // authentication
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
-      { path: "forgotPassword", element: "" },
+      { path: "forgot-password", element: <ForgotPassword /> },
       { path: "pending-user", element: <PendingUser /> },
       { path: "payment-success", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentSuccess /></ProtectedRoute> },
       { path: "payment-failed", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentFailed /></ProtectedRoute> },
@@ -118,6 +120,17 @@ export const routes = createBrowserRouter([
                       <StaffManagement />
                     </ProtectedRoute>
                     )
+                  },
+                  { 
+                    path: "transaction-management", 
+                    element: (
+                    <ProtectedRoute 
+                      allowedRoles={['clinic_admin', 'branch_admin']}
+                      requiredPermission="transaction_management"
+                    >
+                      <TransactionManagement />
+                    </ProtectedRoute>
+                    ) 
                   },
                   { 
                     path: "inventory-management", 
