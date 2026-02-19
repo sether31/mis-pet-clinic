@@ -9,6 +9,8 @@ $dotenv->load();
 
 function sendMailOtp($to_email, $otp_code, $name, $purpose, $expires_at) {
   $email = new PHPMailer(true);
+  $displayPurpose = str_replace('_', ' ', $purpose);
+  $readableTime = date("F j, Y, g:i a", strtotime($expires_at));
 
   try {
     $email->isSMTP();
@@ -25,14 +27,14 @@ function sendMailOtp($to_email, $otp_code, $name, $purpose, $expires_at) {
 
     // content
     $email->isHTML(true);
-    $email->Subject = $_ENV['SMTP_FROM_NAME'] . ' ' . strtoupper($purpose) . " OTP Code";
+    $email->Subject = $_ENV['SMTP_FROM_NAME'] . ' ' . strtoupper($displayPurpose) . " OTP Code";
     $email->Body = "
       <p>Hello <strong>$name</strong>,</p>
       <p>
-        Your OTP code for $purpose is: 
+        Your OTP code for $displayPurpose is: 
         <strong>$otp_code</strong>
       </p>
-      <p>This code will be expired at $expires_at</p>
+      <p>This code will be expired at $readableTime</p>
       <br>
       <p>
         Best regards,

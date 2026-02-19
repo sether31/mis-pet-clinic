@@ -21,6 +21,7 @@ import SubscriptionPlans from "../pages/subscription/SubscriptionPlans"
 import ServiceManagement from "../pages/service-management/ServiceManagement";
   // other links
 import Settings from "../pages/Navigation/Settings/Settings";
+import ForgotPassword from "../pages/auth/ForgotPassword";
 
 export const routes = createBrowserRouter([
   {
@@ -37,6 +38,10 @@ export const routes = createBrowserRouter([
       { 
         path: "/login", 
         element: <Login /> 
+      },
+      { 
+        path: "/forgot-password", 
+        element: <ForgotPassword /> 
       },
       { 
         path: "/", 
