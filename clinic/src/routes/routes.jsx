@@ -29,7 +29,7 @@ import ServiceManagement from "../pages/portal/service-management/ServiceManagem
 import BranchSettings from "../pages/portal/branch-settings/BranchSettings";
 import GeneralBranchSettings from "../pages/portal/branch-settings/GeneralBranchSettings";
 import BranchScheduleSettings from "../pages/portal/branch-settings/BranchScheduleSettings";
-import InventoryManagement from "../pages/portal/inventory-management/InventoryMangement";
+import InventoryManagement from "../pages/portal/inventory-management/InventoryManagement";
 import MedicalRecordManagement from "../pages/portal/medical-records/MedicalRecordManagement";
 import BranchSubscriptionSettings from "../pages/portal/branch-settings/BranchSubscriptionSettings";
 import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
