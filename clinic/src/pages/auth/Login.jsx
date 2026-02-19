@@ -233,7 +233,7 @@ export default function Login() {
 
   return (
     <>
-      <div className="relative flex items-center min-h-screen px-0 container-2xl">
+      <div className="relative flex items-center min-h-screen px-0 bg-gray-50 container-2xl">
         {/* login */}
         <div className="grid grid-cols-1 lg:grid-cols-[.85fr_1fr] min-h-[695px] flex-1 px-4 lg:px-0">
           {/* image section */}

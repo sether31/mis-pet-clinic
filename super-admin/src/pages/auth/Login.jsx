@@ -192,8 +192,8 @@ export default function Login() {
 
   if(!platformData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse text-gray-400 font-medium text-xl">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-xl font-medium text-gray-400 animate-pulse">
           Loading...
         </div>
       </div>
@@ -203,7 +203,7 @@ export default function Login() {
 
   return (
     <>
-      <div className="relative flex items-center min-h-screen px-0 container-2xl">
+      <div className="relative flex items-center min-h-screen px-0 bg-gray-50 container-2xl">
         {/* login */}
         <div className="grid grid-cols-1 place-content-center lg:place-content-stretch lg:grid-cols-[.85fr_1fr] min-h-[695px] flex-1 px-4 lg:px-0">
           {/* image section */}
@@ -230,12 +230,12 @@ export default function Login() {
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={formItemVariants} className="flex gap-2 items-center my-2">
+              <motion.div variants={formItemVariants} className="flex items-center gap-2 my-2">
                 {platformData?.platform_logo && (
                   <img 
                     src={`${API_URL}/${platformData.platform_logo}`} 
                     alt="Logo" 
-                    className="h-6 w-auto object-contain rounded-sm"
+                    className="object-contain w-auto h-6 rounded-sm"
                     onError={(e) => (e.target.style.display = 'none')} 
                   />
                 )}
@@ -291,7 +291,7 @@ export default function Login() {
               </form>
 
               <motion.p variants={formItemVariants}>
-                <Link to="/forgotPassword" className="block mt-2 text-base font-medium text-right text-gray-700 hover:text-gray-600">
+                <Link to="/forgot-password" className="block mt-2 text-base font-medium text-right text-gray-700 hover:text-gray-600">
                   Forgot Password?
                 </Link>
               </motion.p>
