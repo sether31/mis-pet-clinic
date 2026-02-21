@@ -22,6 +22,8 @@ import ServiceManagement from "../pages/service-management/ServiceManagement";
   // other links
 import Settings from "../pages/Navigation/Settings/Settings";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import GeneralSettings from "../pages/Navigation/Settings/components/GeneralSettings";
+import SecuritySettings from "../pages/Navigation/Settings/components/SecuritySettings";
 
 export const routes = createBrowserRouter([
   {
@@ -59,7 +61,14 @@ export const routes = createBrowserRouter([
           { path: "service-management", element: <ServiceManagement />},
           { path: "platform-analytics", element: <PlatformAnalytics /> },
           // other links
-          { path: "settings", element: <Settings /> },
+          { 
+            path: "settings", 
+            element: <Settings />,
+            children: [
+              { index: true, element: <GeneralSettings /> },
+              { path: "security", element: <SecuritySettings /> }, 
+            ]
+          },
           { path: "*", element: <NotFoundDashboard /> },
         ]
       },
