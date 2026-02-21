@@ -15,6 +15,7 @@ const links = [
   { label: 'Platform Analytics', path: '/platform-analytics' },
   // nav links
   { label: 'Settings', path: '/settings' },
+  { label: 'Account Security', path: '/settings/security' },
 ];
 
 export default function Header() {
