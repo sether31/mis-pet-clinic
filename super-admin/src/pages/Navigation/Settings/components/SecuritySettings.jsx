@@ -18,7 +18,6 @@ import {
   RiFingerprintLine,
   RiUserLine
 } from 'react-icons/ri';
-import { HiSave } from 'react-icons/hi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -40,7 +39,7 @@ export default function SecuritySettings() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (user) {
+    if(user) {
       setProfileData({
         firstName: user.fname || '',
         lastName: user.lname || '',
@@ -50,9 +49,17 @@ export default function SecuritySettings() {
     }
   }, [user]);
 
+  // handle change
   const handleProfileChange = (e) => {
     const { name, value, type, files } = e.target;
     setProfileData(prev => ({ ...prev, [name]: type === 'file' ? files[0] : value }));
+    
+    if (type !== 'file') {
+      setErrors(prev => ({ 
+        ...prev, 
+        [name]: value.trim() ? "valid" : `${name === 'firstName' ? 'First' : 'Last'} name is required.` 
+      }));
+    }
   };
 
   const handleEmailChange = (e) => {
@@ -77,11 +84,23 @@ export default function SecuritySettings() {
     }
     if(name === "confirm_password") {
       if (value !== passData.new_password) setErrors(prev => ({ ...prev, confirm_password: "Passwords do not match." }));
+      else if (!value.trim()) setErrors(prev => ({ ...prev, confirm_password: "Required." }));
       else setErrors(prev => ({ ...prev, confirm_password: "valid" }));
     }
   };
 
+  // submit
   const handleUpdateProfile = async () => {
+    const profileErrors = {
+      firstName: profileData.firstName.trim() ? "valid" : "First name is required.",
+      lastName: profileData.lastName.trim() ? "valid" : "Last name is required."
+    };
+    setErrors(prev => ({ ...prev, ...profileErrors }));
+
+    if (profileErrors.firstName !== "valid" || profileErrors.lastName !== "valid") {
+      return toast.error("Please provide valid profile information.");
+    }
+
     showLoader("Updating profile...");
     try {
       const fd = new FormData();
@@ -107,24 +126,28 @@ export default function SecuritySettings() {
     }
   };
 
+  // otp
   const requestSecurityOTP = async (type) => {
     let localErrors = {};
-    let hasErrors = false;
     if(type === 'change_email') {
-      if (!emailData.new_email.trim()) localErrors.new_email = "Email is required.";
-      if (!emailData.current_password.trim()) localErrors.email_pass = "Password required.";
-      if(localErrors.new_email || (errors.new_email && errors.new_email !== "valid") || (errors.email_pass && errors.email_pass !== "valid")) hasErrors = true;
+      localErrors.new_email = !emailData.new_email.trim() ? "Email is required." : 
+                              (!validateEmail(emailData.new_email) ? "Invalid email format." : "valid");
+      localErrors.email_pass = !emailData.current_password.trim() ? "Password required." : "valid";
     } else {
-      if (!passData.new_password.trim()) localErrors.new_password = "Required.";
-      if (passData.confirm_password !== passData.new_password) localErrors.confirm_password = "Mismatch.";
-      if (localErrors.new_password || localErrors.confirm_password || (errors.new_password && errors.new_password !== "valid") || (errors.confirm_password && errors.confirm_password !== "valid")) hasErrors = true;
+      localErrors.new_password = passData.new_password.length < 6 ? "Min. 6 characters." : "valid";
+      localErrors.confirm_password = !passData.confirm_password.trim() ? "Required." : 
+                                    (passData.confirm_password !== passData.new_password ? "Passwords do not match." : "valid");
     }
 
     setErrors(prev => ({ ...prev, ...localErrors }));
-    if(hasErrors) return toast.error("Please fix the errors first.");
+
+    const hasErrors = Object.values(localErrors).some(val => val !== "valid");
+    if (hasErrors) {
+      return toast.error("Please fill in all required fields correctly.");
+    }
 
     setPendingAction(type);
-    showLoader("Sending code...");
+    showLoader("Sending verification code...");
     try {
       const payload = { type, current_password: type === 'change_email' ? emailData.current_password : null };
       const res = await authFetch(`${API_URL}/api/super-admin/platform-settings/security/request-security-otp.php`, {
@@ -159,7 +182,7 @@ export default function SecuritySettings() {
         setShowOTP(false);
         setEmailData({ new_email: '', current_password: '' });
         setPassData({ new_password: '', confirm_password: '' });
-        setErrors({});
+        setErrors({}); 
         if (refreshUser) refreshUser(res);
       } else {
         toast.error(res.message);
@@ -173,43 +196,10 @@ export default function SecuritySettings() {
 
   return (
     <div className="p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16"> 
-        
-        {/* email */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 text-lg font-bold border-b text-gray-900 border-gray-100">
-            <RiMailSettingsLine size={24} className="text-gray-700" />
-            Account Email
-          </div>
-          <div className="space-y-4">
-            <Input label="New Email Address" name="new_email" isImportant value={emailData.new_email} onChange={handleEmailChange} placeholder="example@gmail.com" icon={<RiMailSettingsLine size={18} className="text-gray-400" />} error={errors.new_email} />
-            <Input label="Confirm with Password" name="current_password" type="password" isImportant value={emailData.current_password} onChange={handleEmailChange} placeholder="Enter current password" icon={<RiShieldFlashLine size={18} className="text-gray-400" />} error={errors.email_pass} />
-            
-            <button onClick={() => requestSecurityOTP('change_email')} className="flex items-center justify-center gap-2 px-10 py-3 font-bold text-white text-sm rounded-lg bg-(--clr-primary) hover:opacity-90 transition-all active:scale-95 w-full sm:w-auto cursor-pointer">
-              <HiSave size={18} /> Update Email
-            </button>
-          </div>
-        </section>
-
-        {/* password */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-2 pb-2 text-lg font-bold border-b text-gray-900 border-gray-100">
-            <RiFingerprintLine size={24} className="text-gray-700" />
-            Security Password
-          </div>
-          <div className="space-y-4">
-            <Input label="New Password" name="new_password" type="password" isImportant value={passData.new_password} onChange={handlePassChange} placeholder="Min. 6 characters" icon={<RiLockPasswordLine size={18} className="text-gray-400" />} error={errors.new_password} />
-            <Input label="Confirm New Password" name="confirm_password" type="password" isImportant value={passData.confirm_password} onChange={handlePassChange} placeholder="Repeat new password" icon={<RiLockPasswordLine size={18} className="text-gray-400" />} error={errors.confirm_password} />
-
-            <button onClick={() => requestSecurityOTP('change_password')} className="flex items-center justify-center gap-2 px-10 py-3 font-bold text-white text-sm rounded-lg bg-(--clr-primary) hover:opacity-90 transition-all active:scale-95 w-full sm:w-auto cursor-pointer">
-              <HiSave size={18} /> Update Password
-            </button>
-          </div>
-        </section>
-
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16">   
         {/* personal info */}
-        <section className="space-y-6 lg:pt-4 border-t border-gray-100 lg:border-none lg:pt-0">
-          <div className="flex items-center gap-2 pb-2 text-lg font-bold border-b text-gray-900 border-gray-100">
+        <section className="space-y-6 border-t border-gray-100 lg:pt-4 lg:border-none lg:pt-0">
+          <div className="flex items-center gap-2 pb-2 text-lg font-bold text-gray-900 border-b border-gray-100">
             <RiUserLine size={24} className="text-gray-700" />
             Personal Information
           </div>
@@ -221,14 +211,110 @@ export default function SecuritySettings() {
             size="100px" 
             onChange={handleProfileChange} 
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="First Name" name="firstName" value={profileData.firstName} onChange={handleProfileChange} placeholder="John" />
-            <Input label="Last Name" name="lastName" value={profileData.lastName} onChange={handleProfileChange} placeholder="Doe" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input 
+              label="First Name" 
+              name="firstName" 
+              value={profileData.firstName} 
+              onChange={handleProfileChange} 
+              placeholder="John" 
+              error={errors.firstName}
+            />
+            <Input 
+              label="Last Name" 
+              name="lastName" 
+              value={profileData.lastName} 
+              onChange={handleProfileChange} 
+              placeholder="Doe" 
+              error={errors.lastName}
+            />
           </div>
 
-          <button onClick={handleUpdateProfile} className="flex items-center justify-center gap-2 px-10 py-3 font-bold text-white text-sm rounded-lg bg-(--clr-primary) hover:opacity-90 transition-all active:scale-95 w-full sm:w-auto cursor-pointer">
-            <HiSave size={18} /> Update Profile
+          <button 
+            onClick={handleUpdateProfile} 
+            className="px-10 py-3 font-bold text-white text-sm rounded-lg bg-(--clr-primary)/95 hover:bg-(--clr-primary) transition-all active:scale-95 w-full sm:w-auto cursor-pointer"
+          >
+            Update Profile
           </button>
+        </section>
+        
+        <div className="hidden lg:block"></div>
+
+        {/* email */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 text-lg font-bold text-gray-900 border-b border-gray-100">
+            <RiMailSettingsLine size={24} className="text-gray-700" />
+            Account Email
+          </div>
+          <div className="space-y-4">
+            <Input 
+              label="New Email Address" 
+              name="new_email" 
+              isImportant 
+              value={emailData.new_email} 
+              onChange={handleEmailChange} 
+              placeholder="example@gmail.com" 
+              icon={<RiMailSettingsLine size={18} className="text-gray-400" />} 
+              error={errors.new_email} 
+            />
+            <Input 
+              label="Confirm with Password" 
+              name="current_password" 
+              type="password" 
+              isImportant 
+              value={emailData.current_password} 
+              onChange={handleEmailChange} 
+              placeholder="Enter current password" 
+              icon={<RiShieldFlashLine size={18} className="text-gray-400" />} 
+              error={errors.email_pass} 
+            />
+            
+            <button 
+              onClick={() => requestSecurityOTP('change_email')} 
+              className="px-10 py-3 font-bold text-white text-sm rounded-lg bg-(--clr-primary)/95 hover:bg-(--clr-primary) transition-all active:scale-95 w-full sm:w-auto cursor-pointer"
+            >
+              Update Email
+            </button>
+          </div>
+        </section>
+
+        {/* password */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-2 pb-2 text-lg font-bold text-gray-900 border-b border-gray-100">
+            <RiFingerprintLine size={24} className="text-gray-700" />
+            Security Password
+          </div>
+          <div className="space-y-4">
+            <Input 
+              label="New Password" 
+              name="new_password" 
+              type="password" 
+              isImportant 
+              value={passData.new_password} 
+              onChange={handlePassChange} 
+              placeholder="Min. 6 characters" 
+              icon={<RiLockPasswordLine size={18} className="text-gray-400" />} 
+              error={errors.new_password} 
+            />
+            <Input 
+              label="Confirm New Password" 
+              name="confirm_password" 
+              type="password" 
+              isImportant 
+              value={passData.confirm_password} 
+              onChange={handlePassChange} 
+              placeholder="Repeat new password" 
+              icon={<RiLockPasswordLine size={18} className="text-gray-400" />} 
+              error={errors.confirm_password} 
+            />
+
+            <button 
+              onClick={() => requestSecurityOTP('change_password')} 
+              className="px-10 py-3 font-bold text-white text-sm rounded-lg bg-(--clr-primary)/95 hover:bg-(--clr-primary) transition-all active:scale-95 w-full sm:w-auto cursor-pointer"
+            >
+              Update Password
+            </button>
+          </div>
         </section>
       </div>
 
