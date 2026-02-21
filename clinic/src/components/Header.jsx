@@ -52,10 +52,10 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-black hover:text-white rounded-lg transition-all">
+          <button className="p-2 transition-all rounded-lg hover:bg-black hover:text-white">
             <MdOutlineNotifications size={22} />
           </button>
-          <button className="p-2 hover:bg-black hover:text-white rounded-lg transition-all">
+          <button className="p-2 transition-all rounded-lg hover:bg-black hover:text-white">
             <LuSettings size={22} />
           </button>
         </div>

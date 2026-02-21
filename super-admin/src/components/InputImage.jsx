@@ -5,14 +5,18 @@ import noImage from '../assets/images/no-image.jpg';
 export default function InputImage({
   label = "Upload Image",
   name = "image",
-  required = true,
+  required = false,
   className = "",
   size = '150px',
   isPreview = false,
+  disabled= false,
   error,
-  onChange
+  onChange,
+  existingImage = null
 }) {
   const [preview, setPreview] = useState(null);
+
+  const displayImage = preview || (existingImage ? `${import.meta.env.VITE_API_URL}/${existingImage}` : noImage);
 
   const borderColor =
   error === "valid"
@@ -22,6 +26,8 @@ export default function InputImage({
     : "border-gray-300";
 
   const handleChange = (e) => {
+    if (disabled) return;
+    
     const file = e.target.files[0];
     if(!file) return;
 
@@ -44,43 +50,30 @@ export default function InputImage({
       {/* preview */}
       {isPreview && (
         <div
-          className='mb-4 overflow-hidden bg-gray-300 rounded-lg'
+          className="self-center mb-2 overflow-hidden bg-gray-300 rounded-lg"
           style={{ width: size, height: size }}
         >
-          {preview ? (
-            <a href={preview} target="_blank" rel="noopener noreferrer">
-              <img
-                src={preview}
-                alt="preview"
-                className="object-cover w-full h-full rounded-lg"
-              />
-            </a>
-          ) : (
-            <a rel="noopener noreferrer">
-              <img
-                src={noImage}
-                alt="preview"
-                className="object-cover w-full h-full rounded-lg"
-              />
-            </a>
-          )}
+          <a rel="noopener noreferrer">
+            <img
+              src={displayImage}
+              alt="preview"
+              className="object-cover w-full h-full rounded-lg"
+            />
+          </a>
         </div>
       )}
 
       <label className="ml-1 text-sm font-medium text-gray-700">
-        {label} {required ? (
-          <span className="text-red-500">*</span>
-        ) : (
-          <span className="text-gray-500">(optional)</span>
-        )}
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
 
       <input
         type="file"
         accept="image/*"
         name={name}
+        disabled={disabled}
         onChange={handleChange}
-        className={`block w-full p-2 mt-2 border border-gray-300 rounded-lg ${borderColor} cursor-pointer text-sm`}
+        className={`block w-full p-2 mt-1 border border-gray-300 rounded-lg disabled:cursor-not-allowed ${borderColor}`}
       />
 
       {error && error !== "valid" && (
