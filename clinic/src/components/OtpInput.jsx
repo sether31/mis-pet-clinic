@@ -38,7 +38,7 @@ export default function OTPInput({ length = 6, onComplete, setShowOTP, error }) 
   }
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center w-screen h-screen">
+    <div className="fixed inset-0 z-1000 flex items-center justify-center w-screen h-screen">
       <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
       <div className="relative bg-(--clr-bg-card) rounded-xl px-10 pb-10 pt-15 z-10 shadow-sm">
         {/* close */}
