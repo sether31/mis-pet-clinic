@@ -19,12 +19,6 @@ export default function Settings() {
       <Header />
       
       <section className='px-4 mt-6 lg:px-6 container-xl'>
-        {/* header*/}
-        <div className="mb-6">
-          <h1 className="text-2xl font-medium tracking-tight">Platform Settings</h1>
-          <p className="text-gray-500">Manage platform configurations.</p>
-        </div>
-
         {/* nav */}
         <nav className="relative flex items-center w-full overflow-x-auto border-b border-gray-200 scrollbar-hide pb-[1px]">
           <NavLink to="" end className={navClass}>
