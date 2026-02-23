@@ -24,6 +24,7 @@ import Settings from "../pages/Navigation/Settings/Settings";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import GeneralSettings from "../pages/Navigation/Settings/components/GeneralSettings";
 import SecuritySettings from "../pages/Navigation/Settings/components/SecuritySettings";
+import TransactionManagement from "../pages/transaction-management/TransactionManagement";
 
 export const routes = createBrowserRouter([
   {
@@ -58,6 +59,7 @@ export const routes = createBrowserRouter([
           { path: "clinic-applications", element: <ClinicApplications /> },
           { path: "registered-clinics", element: <RegisteredClinics /> },
           { path: "subscription-plans", element: <SubscriptionPlans />},
+          { path: "transaction-management", element: <TransactionManagement />},
           { path: "service-management", element: <ServiceManagement />},
           { path: "platform-analytics", element: <PlatformAnalytics /> },
           // other links

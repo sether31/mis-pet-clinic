@@ -12,6 +12,23 @@ try {
   $database = new Database();
   $pdo = $database->pdo;
 
+  // 1. FETCH PLATFORM DETAILS FOR FOOTER
+  $platformStmt = $pdo->query("SELECT platform_name, platform_logo FROM platform_settings_tb LIMIT 1");
+  $platform = $platformStmt->fetch();
+  $platformName = $platform['platform_name'] ?? 'Our Platform';
+  $platformLogoHtml = '';
+
+  if (!empty($platform['platform_logo'])) {
+    $logoPath = __DIR__ . '/../../../../' . $platform['platform_logo']; 
+    if(file_exists($logoPath)) {
+      $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+      $data = file_get_contents($logoPath);
+      $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+      $platformLogoHtml = "<img src='{$base64}' style='height: 12px; vertical-align: middle; margin-right: 4px;' />";
+    }
+  }
+
+  // get order and branch details
   $stmt = $pdo->prepare(
     "SELECT 
       o.order_id as transaction_id,
@@ -19,6 +36,8 @@ try {
       o.order_status,
       o.created_at as transaction_date,
       b.name as branch_name,
+      c.name as clinic_name, 
+      b.logo_picture as clinic_logo,
       pay.payment_method,
       p.name as pet_name,
       CONCAT(u.first_name, ' ', u.last_name) as owner_name,
@@ -27,6 +46,7 @@ try {
       a.end_time
     FROM order_tb o
     JOIN clinic_branches_tb b ON o.branch_id = b.branch_id
+    JOIN clinics_tb c ON b.clinic_id = c.clinic_id
     LEFT JOIN payments_tb pay ON o.order_id = pay.order_id
     LEFT JOIN appointments_tb a ON a.order_id = o.order_id
     LEFT JOIN pet_tb p ON a.pet_id = p.pet_id
@@ -36,11 +56,23 @@ try {
     WHERE o.order_id = :id"
   );
   $stmt->execute([':id' => $transaction_id]);
-  $trx = $stmt->fetch(PDO::FETCH_ASSOC);
+  $trx = $stmt->fetch();
 
   if (!$trx) die("Transaction not found.");
 
-  // get items
+  // header logo
+  $clinicLogoHtml = '';
+  if(!empty($trx['clinic_logo'])) {
+    $cLogoPath = __DIR__ . '/../../../../' . $trx['clinic_logo']; 
+    if(file_exists($cLogoPath)) {
+      $type = pathinfo($cLogoPath, PATHINFO_EXTENSION);
+      $data = file_get_contents($cLogoPath);
+      $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+      $clinicLogoHtml = "<td valign='middle' style='padding-right: 8px;'><img src='{$base64}' style='max-height: 24px; display: block; border-radius: 4px;' /></td>";
+    }
+  }
+
+  // get order items
   $itemStmt = $pdo->prepare(
     "SELECT oi.*, s.custom_name as service_name, prod.name as product_name 
     FROM order_items_tb oi 
@@ -49,26 +81,31 @@ try {
     WHERE oi.order_id = :id"
   );
   $itemStmt->execute([':id' => $transaction_id]);
-  $items = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+  $items = $itemStmt->fetchAll();
 
+  // setup DomPDF
   $options = new Options();
   $options->set('isHtml5ParserEnabled', true);
   $options->set('isRemoteEnabled', true); 
   $options->set('defaultFont', 'DejaVu Sans'); 
   $dompdf = new Dompdf($options);
 
+  // generate table rows
   $itemsHtml = '';
   foreach ($items as $item) {
-    $name = $item['service_name'] ?: $item['product_name'];
+    $name = ucwords(strtolower($item['service_name'] ?: $item['product_name']));
+    if(strlen($name) > 35) {
+      $name = substr($name, 0, 32) . '...';
+    }
     $type = $item['service_id'] ? 'Service' : 'Product';
     $itemsHtml .= "
       <tr>
         <td style='padding: 10px; border-bottom: 1px solid #eee;'>
-            <strong>$name</strong><br>
-            <small style='color:#666; text-transform: uppercase; font-size: 8px;'>$type</small>
+          <strong>$name</strong><br>
+          <small style='color:#666; text-transform: uppercase; font-size: 8px;'>$type</small>
         </td>
         <td align='center' style='padding: 10px; border-bottom: 1px solid #eee;'>{$item['quantity']}</td>
-        <td align='right' style='padding: 10px; border-bottom: 1px solid #eee;'>₱" . number_format($item['subtotal'], 2) . "</td>
+        <td align='right' style='padding: 10px; border-bottom: 1px solid #eee;'>PHP " . number_format($item['subtotal'], 2) . "</td>
       </tr>";
   }
 
@@ -86,6 +123,7 @@ try {
       </div>";
   }
 
+  // layout
   $html = "
   <html>
     <head>
@@ -94,6 +132,7 @@ try {
         body { font-family: 'DejaVu Sans', sans-serif; color: #333; margin: 0; padding: 0; }
         .container { padding: 30px; }
         .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        .clinic-name { display: inline-block; vertical-align: middle; font-size: 14px; font-weight: bold; color: #42756C; text-transform: uppercase; letter-spacing: 2px; }
         .info-section { width: 100%; margin-top: 20px; padding-bottom: 20px; }
         .table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .table th { background: #f4f4f4; padding: 10px; font-size: 10px; text-align: left; text-transform: uppercase; }
@@ -103,8 +142,17 @@ try {
     <body>
       <div class='container'>
         <div class='header'>
-          <h2 style='margin:0; letter-spacing: 1px;'>OFFICIAL TRANSACTION RECEIPT</h2>
-          <p style='color:#666; font-size:12px; margin-top: 5px;'>ID: #TRANSAC-{$trx['transaction_id']}</p>
+          <table align='center' style='margin: 0 auto 5px auto; border-collapse: collapse;'>
+            <tr>
+              {$clinicLogoHtml}
+              <td valign='middle'>
+                <div class='clinic-name'>" . htmlspecialchars($trx['clinic_name']) . "</div>
+              </td>
+            </tr>
+          </table>
+
+          <h2 style='margin:0; letter-spacing: 1.5px; font-size: 24px; color: #111;'>OFFICIAL TRANSACTION RECEIPT</h2>
+          <p style='color:#666; font-size:11px; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;'>ID: #TRANSAC-{$trx['transaction_id']}</p>
         </div>
 
         <table class='info-section'>
@@ -115,9 +163,8 @@ try {
               <span style='font-size: 11px; color: #555;'>Pet: " . htmlspecialchars($trx['pet_name'] ?: 'N/A') . "</span>
             </td>
             <td align='right' width='50%' valign='top'>
-              <small style='color:#888; text-transform: uppercase; font-size: 9px;'>Branch & Staff</small><br>
-              <strong style='font-size: 12px;'>" . htmlspecialchars($trx['branch_name']) . "</strong><br>
-              <span style='font-size: 11px; color: #555;'>Staff: " . htmlspecialchars($trx['assigned_staff'] ?: 'N/A') . "</span>
+              <small style='color:#888; text-transform: uppercase; font-size: 9px;'>Assigned Staff</small><br>
+              <strong style='font-size: 12px;'>" . htmlspecialchars($trx['assigned_staff'] ?: 'N/A') . "</strong><br>
               $appointmentInfo
             </td>
           </tr>
@@ -138,20 +185,23 @@ try {
           <table width='100%'>
             <tr>
               <td valign='middle'>
-                <small style='opacity:0.7; font-size: 9px; text-transform: uppercase;'>Payment Method</small><br>
-                <strong style='font-size: 12px;'>" . htmlspecialchars($trx['payment_method'] ?: 'PENDING') . "</strong>
+                <small style='opacity:0.7; font-size: 10px; text-transform: uppercase;'>Payment Method</small><br>
+                <strong style='font-size: 14px;'>" . htmlspecialchars($trx['payment_method'] ?: 'PENDING') . "</strong>
               </td>
               <td align='right' valign='middle'>
                 <span style='font-size:10px; opacity:0.7; text-transform: uppercase;'>Gross Amount Due</span><br>
-                <strong style='font-size:22px'>₱ " . number_format($trx['gross_amount'], 2) . "</strong>
+                <strong style='font-size:22px'>PHP " . number_format($trx['gross_amount'], 2) . "</strong>
               </td>
             </tr>
           </table>
         </div>
 
-        <div style='text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; padding-top: 20px;'>
+        <div style='text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; margin-top: 20px; padding-top: 15px; letter-spacing: 0.5px;'>
           Transaction Date: " . date("F d, Y", strtotime($trx['transaction_date'])) . " | Generated on " . date("F d, Y h:i A") . "<br>
-          <em>Thank you for trusting us with your pet's care!</em>
+          <em style='display: block; margin: 8px 0;'>Thank you for trusting us with your pet's care!</em>
+          <div style='margin-top: 15px; font-size: 8px; color: #bbb;'>
+            Powered by {$platformLogoHtml} <strong style='color: #42756C;'>{$platformName}</strong>
+          </div>
         </div>
       </div>
     </body>
@@ -166,3 +216,4 @@ try {
   http_response_code(500);
   die("Error: " . $e->getMessage());
 }
+?>
