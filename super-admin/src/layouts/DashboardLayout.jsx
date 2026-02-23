@@ -15,7 +15,7 @@ export default function DashboardLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex overflow-x-hidden"> 
+    <div className="flex min-h-screen bg-gray-100"> 
       <SideBar open={sidebarOpen} setOpen={setSidebarOpen} />
       <motion.main
         initial={false}
@@ -24,7 +24,7 @@ export default function DashboardLayout() {
           width: isMobile ? '100%' : `calc(100% - ${sidebarOpen ? 256 : 72}px)`
         }} 
         transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
-        className="relative flex flex-col min-h-screen min-w-0"
+        className="relative flex flex-col min-w-0 min-h-screen"
       >
         <Outlet />
       </motion.main>

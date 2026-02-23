@@ -11,6 +11,7 @@ const links = [
   { label: 'Clinic Applications', path: '/clinic-applications' },
   { label: 'Registered Clinics', path: '/registered-clinics' },
   { label: 'Subscription Plans', path : '/subscription-plans' },
+  { label: 'Transaction Management', path: '/transaction-management' },
   { label: 'Service Management', path: '/service-management' },
   { label: 'Platform Analytics', path: '/platform-analytics' },
   // nav links
@@ -34,7 +35,7 @@ export default function Header() {
   const role = `${rawRole} portal`;
 
   return (
-    <header className="fixed top-0 left-0 h-[81px] w-full z-50 flex items-center bg-gray-100 border-b">
+    <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-gray-100 border-b">
       <div className="flex items-center justify-between flex-1 px-6 pl-20 md:pl-6 container-xl">
         <div className="flex flex-col">
           <motion.h1 
