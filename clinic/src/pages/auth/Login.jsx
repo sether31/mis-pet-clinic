@@ -134,7 +134,7 @@ export default function Login() {
       if(!data.success) {
         if(data.message === "Invalid user") {
           setErrors({ email: data.message });
-        } else if(data.message === "Invalid password") {
+        } else if(data.message === "Incorrect password") {
           setErrors({ password: data.message });
         }
         toast.error(data.message);
