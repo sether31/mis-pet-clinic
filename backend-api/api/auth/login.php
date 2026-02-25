@@ -45,7 +45,7 @@ if(!$user) {
 }
 
 if(!password_verify($password, $user["password"])) {
-  echo json_encode(["success" => false, "message" => "Invalid password"]);
+  echo json_encode(["success" => false, "message" => "Incorrect password"]);
   exit;
 }
 
