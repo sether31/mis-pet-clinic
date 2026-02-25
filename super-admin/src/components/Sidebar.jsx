@@ -11,7 +11,7 @@ import { RxHamburgerMenu } from "react-icons/rx"
 import { MdOutlineClose, MdOutlineHomeRepairService } from "react-icons/md"
 import { RiDashboardLine } from "react-icons/ri"
 import { CgFileDocument } from "react-icons/cg"
-import { LuBuilding2 } from "react-icons/lu"
+import { LuBuilding2, LuWallet } from "react-icons/lu"
 import { TbGraph, TbLogout } from "react-icons/tb"
 import { MdOutlineSubscriptions } from "react-icons/md";
 
@@ -20,6 +20,7 @@ const sidebarItems = [
   { label: 'Clinic Applications', path: '/clinic-applications', icon: CgFileDocument },
   { label: 'Registered Clinics', path: '/registered-clinics', icon: LuBuilding2 },
   { label: 'Subscription Plans', path: '/subscription-plans', icon: MdOutlineSubscriptions},
+  { label: 'Transaction Management', path: '/transaction-management', icon: LuWallet},
   { label: 'Service Management', path: '/service-management', icon: MdOutlineHomeRepairService},
   { label: 'Platform Analytics', path: '/platform-analytics', icon: TbGraph }
 ];
@@ -121,7 +122,7 @@ export default function Sidebar({className, open, setOpen}) {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[90] bg-black/40 md:hidden"
+            className="fixed inset-0 z-60 bg-black/40 md:hidden" 
           />
         )}
       </AnimatePresence>

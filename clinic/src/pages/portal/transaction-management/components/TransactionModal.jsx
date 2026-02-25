@@ -64,7 +64,7 @@ export default function TransactionModal({ transaction, onClose }) {
                 {services.map((item, idx) => (
                   <tr key={`svc-${idx}`}>
                     <td className="py-3">
-                      <p className="font-bold text-gray-700">{item.service_name}</p>
+                      <p className="font-bold text-gray-700 capitalize">{item.service_name}</p>
                       <span className="text-[10px] text-blue-500 font-bold uppercase">Service</span>
                     </td>
                     <td className="py-3 text-center text-gray-500">1</td>
@@ -74,7 +74,7 @@ export default function TransactionModal({ transaction, onClose }) {
                 {products.map((item, idx) => (
                   <tr key={`prod-${idx}`}>
                     <td className="py-3">
-                      <p className="font-bold text-gray-700">{item.product_name}</p>
+                      <p className="font-bold text-gray-700 capitalize">{item.product_name}</p>
                       <span className="text-[10px] text-purple-500 font-bold uppercase">Product</span>
                     </td>
                     <td className="py-3 text-center text-gray-500">{item.quantity}</td>

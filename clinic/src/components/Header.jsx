@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 // hooks
 import { useUser } from '../hooks/useUser'
@@ -20,6 +20,7 @@ const links = [
 ];
 
 export default function Header() {
+  const { branchId } = useParams();
   const location = useLocation();
   const { user } = useUser();
 
@@ -33,6 +34,8 @@ export default function Header() {
 
   const pageTitle = getPageTitle();
   const role = `${user?.role?.replace(/_/g, ' ') || 'User'} portal`;
+
+  const isSettingsActive = location.pathname.includes('/settings');
 
   return (
     <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-gray-100 border-b">
@@ -52,12 +55,17 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-black hover:text-white rounded-lg transition-all">
+          <button className="p-2 transition-all rounded-lg hover:bg-black hover:text-white">
             <MdOutlineNotifications size={22} />
           </button>
-          <button className="p-2 hover:bg-black hover:text-white rounded-lg transition-all">
+          <Link 
+            to={`/clinic/${branchId}/portal/settings`}
+            className={`p-2 transition-all rounded-lg hover:bg-black hover:text-white ${
+              isSettingsActive ? 'bg-black text-white' : 'text-gray-800'
+            }`}
+          >
             <LuSettings size={22} />
-          </button>
+          </Link>
         </div>
       </div>
     </header>

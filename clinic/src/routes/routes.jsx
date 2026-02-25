@@ -34,6 +34,7 @@ import MedicalRecordManagement from "../pages/portal/medical-records/MedicalReco
 import BranchSubscriptionSettings from "../pages/portal/branch-settings/BranchSubscriptionSettings";
 import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import Settings from "../pages/navigation/settings/Settings";
 
 
 export const routes = createBrowserRouter([
@@ -169,6 +170,10 @@ export const routes = createBrowserRouter([
                       { path: "schedule", element: <BranchScheduleSettings /> },
                       { path: "subscription", element: <BranchSubscriptionSettings /> },
                     ]
+                  },
+                  { 
+                    path: "settings", 
+                    element: <Settings />
                   },
                   { path: "*", element: <NotFoundDashboard />},
                 ]

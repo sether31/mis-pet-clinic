@@ -53,7 +53,7 @@ export default function SidebarLayout() {
   }, [fetchBranchData]);
 
 
-  if (loading || !branchData) {
+  if(!branchData) {
     return null; 
   }
 

@@ -12,7 +12,7 @@ try {
   $userId = $decoded->user_id;
 
   $stmtUser = $pdo->prepare(
-    "SELECT u.user_id, u.email, u.first_name, u.last_name, r.role_name, u.status
+    "SELECT u.user_id, u.profile_picture, u.email, u.first_name, u.last_name, r.role_name, u.status
     FROM user_tb u
     JOIN roles_tb r ON u.role_id = r.role_id
     WHERE u.user_id = :user_id"
@@ -47,6 +47,7 @@ try {
   $payload = [
     "user_id" => $user['user_id'],
     "role" => $user['role_name'],
+    "profile_picture" => $user['profile_picture'],
     "email" => $user['email'],
     "fname" => $user['first_name'],
     "lname" => $user['last_name'],
@@ -56,17 +57,18 @@ try {
   ];
 
   // generate token
-  $accessToken = createJWT($payload, 1000000000); 
+  $accessToken = createJWT($payload, 604800);
 
   echo json_encode([
     "success" => true,
     "user" => [
-        "user_id" => $user['user_id'],
-        "fname" => $user['first_name'],
-        "lname" => $user['last_name'],
-        "role" => $user['role_name'],
-        "branch_id" => $branchId,
-        "permissions" => $permissions
+      "user_id" => $user['user_id'],
+      "profile_picture" => $user['profile_picture'],
+      "fname" => $user['first_name'],
+      "lname" => $user['last_name'],
+      "role" => $user['role_name'],
+      "branch_id" => $branchId,
+      "permissions" => $permissions
     ],
     "new_token" => $accessToken 
   ]);

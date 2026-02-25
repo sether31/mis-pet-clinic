@@ -1,52 +1,67 @@
-import { useState } from 'react';
+import { NavLink, Outlet, useOutletContext, useLocation, Link } from 'react-router-dom';
 // components
-import Header from '../../../components/Header'
+import Header from '../../../components/Header';
 // icons
-import { RiGlobalLine, RiShieldKeyholeLine } from 'react-icons/ri';
-// sub components
-import GeneralSettings from './GeneralSettings';
+import { RiGlobalLine, RiShieldKeyholeLine, RiArrowRightSLine } from 'react-icons/ri';
+import { HiHome } from 'react-icons/hi';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('general');
-  const tabs = [
-    { id: 'general', label: 'General', icon: <RiGlobalLine color='text-(--clr-primary)' size={20} /> },
-    { id: 'security', label: 'Security', icon: <RiShieldKeyholeLine color='text-(--clr-primary)' size={20} /> },
-  ]
+  const context = useOutletContext();
+  const location = useLocation();
+
+  const isSecurity = location.pathname.includes('security');
+
+  const navClass = ({ isActive }) => 
+    `flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
+      isActive 
+        ? 'text-(--clr-primary) border-(--clr-primary)' 
+        : 'text-gray-400 border-transparent hover:text-gray-600'
+    }`;
 
   return (
-    <div className='bg-(--clr-bg-page) min-[200vh]'>
-      <Header />
-      
-      <section className='my-6 container-xl'>
-        {/* header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Platform Settings</h1>
-          <p className="text-gray-500">Manage platform configurations.</p>
-        </div>
+    <div className='min-h-screen bg-gray-100'>
+      <Header /> 
+      <section className='px-4 mt-30 lg:px-6 container-xl'>
+        {/* breadcrumbs */}
+        <nav className="flex items-center gap-2 mb-4 overflow-x-auto text-sm text-gray-500 whitespace-nowrap scrollbar-hide touch-pan-x">
+          <Link to="/dashboard" className="flex items-center gap-1 hover:text-(--clr-primary) duration-300 ease-in-out shrink-0">
+            <HiHome size={16} />
+            <span>Dashboard</span>
+          </Link>
+          
+          <RiArrowRightSLine size={16} className="text-gray-400 shrink-0" />
+          
+          <Link 
+            to="/settings" 
+            className={`hover:text-(--clr-primary) duration-300 ease-in-out shrink-0 ${!isSecurity ? 'font-bold text-gray-900' : ''}`}
+          >
+            Platform Settings
+          </Link>
 
-         {/* tabs */}
-        <div className="flex p-1 mb-8 border border-gray-300 rounded-2xl w-fit">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === tab.id 
-                  ? 'bg-(--clr-primary) text-(--clr-text-secondary)'
-                  : 'text-gray-500 hover:text-(--clr-text-primary)'
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
+          {isSecurity && (
+            <>
+              <RiArrowRightSLine size={16} className="text-gray-400 shrink-0" />
+              <span className="font-bold text-gray-900 shrink-0">Account Security</span>
+            </>
+          )}
+        </nav>
 
-        <div className="overflow-hidden border border-gray-300 rounded-lg">
-          {activeTab === 'general' && <GeneralSettings />}
-          {activeTab === 'security' && 'idk'}
-        </div>
+        {/* tab */}
+        <nav className="relative flex items-center w-full pb-px overflow-x-auto border-b border-gray-200 scrollbar-hide">
+          <NavLink to="" end className={navClass}>
+            <RiGlobalLine size={20} />
+            General
+          </NavLink>
+          <NavLink to="security" className={navClass}>
+            <RiShieldKeyholeLine size={20} />
+            Security
+          </NavLink>
+        </nav>
+
+        <main className="my-6 overflow-hidden bg-white border border-gray-300 rounded-xl">
+          <Outlet context={context} />
+        </main>
       </section>
     </div>
-  )
+  );
 }
