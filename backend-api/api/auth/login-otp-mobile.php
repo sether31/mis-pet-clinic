@@ -64,7 +64,16 @@ try {
   echo json_encode([
     "success" => true,
     "message" => "Login successful",
-    "access_token" => $accessToken
+    "access_token" => $accessToken,
+    "user" => [
+      "user_id" => $user['user_id'],
+      "email" => $user['email'],
+      "name" => $user['first_name'] . ' ' . $user['last_name'],
+      "fname" => $user['first_name'],
+      "lname" => $user['last_name'],
+      "role" => $user['role_name'],
+      "exp" => time() + 604800
+    ]
   ]);
 
 } catch (Throwable $e) {

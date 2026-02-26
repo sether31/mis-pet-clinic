@@ -63,6 +63,7 @@ export default function OTPInput({ length = 6, onComplete, error }) {
           onKeyPress={(e) => handleKeyPress(e, index)}
           onFocus={() => setFocusedIndex(index)}
           value={otp[index]}
+          autoFocus={index === 0}
         />
       ))}
     </View>
