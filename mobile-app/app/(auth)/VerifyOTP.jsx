@@ -6,6 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store'; 
 import { Colors } from '../../constants/Color';
+
+// Hooks
+import { useUI } from '../../hooks/useUI';
+import { useUser } from '../../hooks/useUser'; // <-- Need this to refresh the session!
+
+// Components
 import AppText from '../../components/AppText';
 import AppButton from '../../components/AppButton';
 import OTPInput from '../../components/OTPInput'; 
@@ -15,8 +21,11 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export default function VerifyOTP() {
   const router = useRouter();
   const { email, temp_id, user_id, userData, type } = useLocalSearchParams();
+  
+  const { showLoader, hideLoader, loading } = useUI(); 
+  const { setUser, refreshUser } = useUser(); 
+
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState(null); 
 
   const handleOtpComplete = (code) => {
@@ -27,11 +36,11 @@ export default function VerifyOTP() {
   const handleVerify = async () => {
     if (otp.length < 6) {
       setServerError("Please enter the full 6-digit code.");
-      Toast.show({ type: 'error', text1: 'Incomplete Code' });
       return;
     }
 
-    setLoading(true);
+    // lock the screen
+    showLoader(type === 'login' ? 'Logging in...' : 'Creating Account...');
     setServerError(null);
 
     try {
@@ -54,9 +63,14 @@ export default function VerifyOTP() {
 
       if (data.success) {
         if (isLogin) {
-          if (data.access_token) await SecureStore.setItemAsync('access_token', data.access_token);
+          if (data.access_token) {
+            await SecureStore.setItemAsync('access_token', data.access_token);
+            if (data.user) {
+              setUser(data.user);
+            }
+          }
           Toast.show({ type: 'success', text1: 'Login Successful!' });
-          router.replace('/(dashboard)/Home')
+          router.replace('/(dashboard)/Home');
         } else {
           Toast.show({ type: 'success', text1: 'Account Verified!' });
           router.replace('/Login');
@@ -64,20 +78,17 @@ export default function VerifyOTP() {
       } else {
         setOtp(''); 
         setServerError(data.message || "Invalid verification code.");
-        Toast.show({ type: 'error', text1: 'Verification Failed', text2: data.message });
       }
     } catch (error) {
       setServerError("Something went wrong");
-      Toast.show({ type: 'error', text1: 'Something went wrong' });
     } finally {
-      setLoading(false);
+      hideLoader();
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
         <View style={styles.content}>
           <View style={styles.headerContainer}>
             <AppText style={styles.headerTitle}>Verify Account</AppText>
@@ -93,7 +104,6 @@ export default function VerifyOTP() {
             error={!!serverError} 
           />
 
-          {/* Inline Error Text matching your web style */}
           {serverError && (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
@@ -103,21 +113,21 @@ export default function VerifyOTP() {
 
           <View style={styles.footerContainer}>
             <AppButton 
-              title={type === 'login' ? 'Verify & Sign In' : 'Complete Registration'}
+              title={type === 'login' ? 'Login' : 'Complete Registration'}
               onPress={handleVerify} 
-              loading={loading}
+              disabled={loading} 
             />
 
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} disabled={loading}>
               <AppText style={styles.backButtonText}>Wrong email? Go back</AppText>
             </TouchableOpacity>
           </View>
         </View>
-
       </View>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.bg50 },

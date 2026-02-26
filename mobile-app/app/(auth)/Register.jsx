@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView, Keyboard, Image, Platform } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView, Keyboard, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlatform } from '../../context/PlatformProvider';
 import { Colors } from '../../constants/Color';
+// components
 import AppText from '../../components/AppText';
 import AppButton from '../../components/AppButton';
+import AnimatedWrapper from '../../components/AnimatedWrapper'; 
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -23,6 +25,17 @@ export default function Register() {
     first_name: '', last_name: '', email: '', password: '', confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+
+  // Helper to render the Error with Icon
+  const renderError = (error) => {
+    if (!error) return null;
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="alert-circle" size={14} color="#EF4444" />
+        <AppText style={styles.errorText}>{error}</AppText>
+      </View>
+    );
+  };
 
   const getWrapperStyle = (name) => {
     if (errors[name]) return styles.inputErrorBorder;
@@ -92,10 +105,7 @@ export default function Register() {
       const data = await response.json();
       
       if(data.success) {
-        Toast.show({ 
-          type: 'info', 
-          text1: 'An OTP has been sent to your email.' 
-        });
+        Toast.show({ type: 'info', text1: 'An OTP has been sent to your email.' });
         router.push({ 
           pathname: '/VerifyOTP', 
           params: { 
@@ -122,8 +132,8 @@ export default function Register() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         
-        {/* Header Section */}
-        <View style={styles.headerContainer}>
+        {/* Header */}
+        <AnimatedWrapper index={0} style={styles.headerContainer}>
           <View style={styles.brandRow}>
             <View style={styles.logoWrapper}>
               {platformData?.platform_logo ? (
@@ -135,12 +145,11 @@ export default function Register() {
             <AppText style={styles.brandName}>{platformData?.platform_name || 'PetCare Clinic'}</AppText>
           </View>
           <AppText style={styles.subHeader}>Create an account to get started.</AppText>
-        </View>
+        </AnimatedWrapper>
 
         {/* Form Section */}
         <View style={styles.formContainer}>
-          
-          <View style={styles.row}>
+          <AnimatedWrapper index={1} style={styles.row}>
             {/* First Name */}
             <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
               <AppText style={styles.label}>First Name <AppText style={styles.requiredAsterisk}>*</AppText></AppText>
@@ -154,7 +163,7 @@ export default function Register() {
                   value={form.first_name}
                 />
               </View>
-              {errors.first_name && <AppText style={styles.errorText}>{errors.first_name}</AppText>}
+              {renderError(errors.first_name)}
             </View>
 
             {/* Last Name */}
@@ -170,18 +179,18 @@ export default function Register() {
                   value={form.last_name}
                 />
               </View>
-              {errors.last_name && <AppText style={styles.errorText}>{errors.last_name}</AppText>}
+              {renderError(errors.last_name)}
             </View>
-          </View>
+          </AnimatedWrapper>
 
           {/* Email */}
-          <View style={styles.inputGroup}>
+          <AnimatedWrapper index={2} style={styles.inputGroup}>
             <AppText style={styles.label}>Email Address <AppText style={styles.requiredAsterisk}>*</AppText></AppText>
             <View style={[styles.inputWrapper, getWrapperStyle('email')]}>
               <Ionicons name="mail-outline" size={20} color={errors.email ? '#EF4444' : '#9CA3AF'} style={styles.inputIcon} />
               <TextInput 
                 style={styles.input} 
-                placeholder="hello@example.com" 
+                placeholder="example@gmail.com" 
                 placeholderTextColor="#9CA3AF"
                 keyboardType="email-address" 
                 autoCapitalize="none" 
@@ -189,11 +198,11 @@ export default function Register() {
                 value={form.email}
               />
             </View>
-            {errors.email && <AppText style={styles.errorText}>{errors.email}</AppText>}
-          </View>
+            {renderError(errors.email)}
+          </AnimatedWrapper>
 
           {/* Password */}
-          <View style={styles.inputGroup}>
+          <AnimatedWrapper index={3} style={styles.inputGroup}>
             <AppText style={styles.label}>Password <AppText style={styles.requiredAsterisk}>*</AppText></AppText>
             <View style={[styles.inputWrapper, getWrapperStyle('password')]}>
               <Ionicons name="lock-closed-outline" size={20} color={errors.password ? '#EF4444' : '#9CA3AF'} style={styles.inputIcon} />
@@ -209,11 +218,11 @@ export default function Register() {
                 <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-            {errors.password && <AppText style={styles.errorText}>{errors.password}</AppText>}
-          </View>
+            {renderError(errors.password)}
+          </AnimatedWrapper>
 
           {/* Confirm Password */}
-          <View style={styles.inputGroup}>
+          <AnimatedWrapper index={4} style={styles.inputGroup}>
             <AppText style={styles.label}>Confirm Password <AppText style={styles.requiredAsterisk}>*</AppText></AppText>
             <View style={[styles.inputWrapper, getWrapperStyle('confirmPassword')]}>
               <Ionicons name="lock-closed-outline" size={20} color={errors.confirmPassword ? '#EF4444' : '#9CA3AF'} style={styles.inputIcon} />
@@ -229,22 +238,25 @@ export default function Register() {
                 <Ionicons name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-            {errors.confirmPassword && <AppText style={styles.errorText}>{errors.confirmPassword}</AppText>}
-          </View>
+            {renderError(errors.confirmPassword)}
+          </AnimatedWrapper>
 
-          <AppButton 
-            title="Create Account" 
-            onPress={handleSendOTP} 
-            loading={loading} 
-            style={{ marginTop: 20 }}
-          />
+          {/* Button & Footer */}
+          <AnimatedWrapper index={5}>
+            <AppButton 
+              title="Create Account" 
+              onPress={handleSendOTP} 
+              loading={loading} 
+              style={{ marginTop: 20 }}
+            />
 
-          <View style={styles.footer}>
-            <AppText style={styles.footerText}>Already have an account? </AppText>
-            <TouchableOpacity onPress={() => router.replace('/Login')}>
-              <AppText style={styles.link}>Sign in</AppText>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.footer}>
+              <AppText style={styles.footerText}>Already have an account? </AppText>
+              <TouchableOpacity onPress={() => router.replace('/Login')}>
+                <AppText style={styles.link}>Sign in</AppText>
+              </TouchableOpacity>
+            </View>
+          </AnimatedWrapper>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -254,7 +266,6 @@ export default function Register() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.bg50 },
   container: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 40 },
-  
   headerContainer: { alignItems: 'center', marginBottom: 32 },
   brandRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   logoWrapper: {
@@ -264,32 +275,35 @@ const styles = StyleSheet.create({
   logo: { width: 40, height: 40, borderRadius: 12, resizeMode: 'contain' },
   brandName: { fontSize: 26, fontWeight: '900', color: Colors.primary, flexShrink: 1 },
   subHeader: { fontSize: 15, color: '#6B7280', textAlign: 'center', paddingHorizontal: 20 },
-  
   formContainer: { width: '100%' },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   inputGroup: { marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4, color: '#374151' },
   requiredAsterisk: { color: '#EF4444' },
-  
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white,
     borderRadius: 12, borderWidth: 1, borderColor: '#D1D5DB', 
     paddingHorizontal: 16, height: 54,
   },
-  inputErrorBorder: { 
-    borderColor: '#EF4444', 
-    borderWidth: 1.5, 
+  inputErrorBorder: { borderColor: '#EF4444', borderWidth: 1.5 },
+  inputSuccessBorder: { borderColor: '#10B981', borderWidth: 1.5 },
+  errorContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 6, 
+    marginLeft: 4, 
+    gap: 2
   },
-  inputSuccessBorder: { 
-    borderColor: '#10B981', 
-    borderWidth: 1.5,
+  errorText: { 
+    color: '#EF4444', 
+    fontSize: 12, 
+    fontWeight: '500',
+    includeFontPadding: false,
+    lineHeight: 14 
   },
-  errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, marginLeft: 4, fontWeight: '500' },
-  
   inputIcon: { marginRight: 12 },
   input: { flex: 1, fontSize: 16, color: '#111827', height: '100%' },
   eyeIcon: { padding: 8 },
-  
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
   footerText: { color: '#6B7280', fontSize: 15 },
   link: { color: Colors.primary, fontWeight: 'bold', fontSize: 15 },

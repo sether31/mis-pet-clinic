@@ -6,13 +6,7 @@ import { getDashboardByRole } from "../utils/getDashboardByRole";
 
 export default function ProtectedRoute({ children, requiredPermission, allowedRoles = [] }) {
   const { user, loading } = useUser();
-  const { showLoader, hideLoader } = useUI();
   const { branchId } = useParams();
-
-  useEffect(() => {
-    loading ? showLoader("Checking permissions...") : hideLoader();
-    return () => hideLoader();
-  }, [loading]);
 
   if (loading) return null;
 
