@@ -9,7 +9,7 @@ import { Colors } from '../../constants/Color';
 
 // Hooks
 import { useUI } from '../../hooks/useUI';
-import { useUser } from '../../hooks/useUser'; // <-- Need this to refresh the session!
+import { useUser } from '../../hooks/useUser'; 
 
 // Components
 import AppText from '../../components/AppText';
@@ -39,19 +39,24 @@ export default function VerifyOTP() {
       return;
     }
 
-    // lock the screen
-    showLoader(type === 'login' ? 'Logging in...' : 'Creating Account...');
+    const loaderMsg = 
+      type === 'login' ? 'Logging in...' : 
+      type === 'password_reset' ? 'Verifying...' : 'Creating Account...';
+    
+    showLoader(loaderMsg);
     setServerError(null);
 
     try {
-      const isLogin = type === 'login';
-      const endpoint = isLogin 
-        ? `${API_URL}/api/auth/login-otp-mobile.php` 
-        : `${API_URL}/api/auth/register-otp-mobile.php`;
+      // endpoint
+      let endpoint = `${API_URL}/api/auth/register-otp-mobile.php`; 
+      if (type === 'login') endpoint = `${API_URL}/api/auth/login-otp-mobile.php`;
+      if (type === 'password_reset') endpoint = `${API_URL}/api/auth/verify-reset-otp.php`; 
 
-      const body = isLogin 
-        ? { otp, user_id } 
-        : { otp, temp_user_id: temp_id, full_data: JSON.parse(userData) };
+      // Determine the body
+      let body = { otp, temp_user_id: temp_id, full_data: userData ? JSON.parse(userData) : null };
+      if (type === 'login' || type === 'password_reset') {
+        body = { otp, user_id };
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -62,16 +67,22 @@ export default function VerifyOTP() {
       const data = await response.json();
 
       if (data.success) {
-        if (isLogin) {
+        if (type === 'login') {
           if (data.access_token) {
             await SecureStore.setItemAsync('access_token', data.access_token);
-            if (data.user) {
-              setUser(data.user);
-            }
+            if (data.user) setUser(data.user);
           }
           Toast.show({ type: 'success', text1: 'Login Successful!' });
           router.replace('/(dashboard)/Home');
-        } else {
+        } 
+        else if (type === 'password_reset') {
+          Toast.show({ type: 'success', text1: 'Verified!', text2: 'Set your new password.' });
+          router.replace({
+            pathname: '/ResetPassword',
+            params: { user_id }
+          });
+        } 
+        else {
           Toast.show({ type: 'success', text1: 'Account Verified!' });
           router.replace('/Login');
         }
@@ -79,7 +90,7 @@ export default function VerifyOTP() {
         setOtp(''); 
         setServerError(data.message || "Invalid verification code.");
       }
-    } catch (error) {
+    } catch(error) {
       setServerError("Something went wrong");
     } finally {
       hideLoader();
@@ -91,7 +102,11 @@ export default function VerifyOTP() {
       <View style={styles.container}>
         <View style={styles.content}>
           <View style={styles.headerContainer}>
-            <AppText style={styles.headerTitle}>Verify Account</AppText>
+            <AppText style={styles.headerTitle}>
+              {type === 'login' && "Confirm Login"}
+              {type === 'password_reset' && "Reset Password"}
+              {type === 'register' && "Verify Account"}
+            </AppText>
             <AppText style={styles.subHeader}>
               Enter the 6-digit code sent to{"\n"}
               <AppText style={styles.emailText}>{email}</AppText>
@@ -113,7 +128,11 @@ export default function VerifyOTP() {
 
           <View style={styles.footerContainer}>
             <AppButton 
-              title={type === 'login' ? 'Login' : 'Complete Registration'}
+              title={
+                type === 'login' ? 'Login' : 
+                type === 'password_reset' ? 'Verify Code' : 
+                'Complete Registration'
+              }
               onPress={handleVerify} 
               disabled={loading} 
             />
@@ -131,7 +150,7 @@ export default function VerifyOTP() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.bg50 },
-  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 }, // Centered the whole block
+  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 }, 
   content: { width: '100%', alignItems: 'center' },
   headerContainer: { alignItems: 'center', marginBottom: 20 },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#111827', marginBottom: 12 },

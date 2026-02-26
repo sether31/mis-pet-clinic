@@ -53,8 +53,7 @@ export default function Login() {
     if (!validateForm()) {
       Toast.show({ 
         type: 'error', 
-        text1: 'Incomplete Fields', 
-        text2: 'Please fill in all required inputs correctly.' 
+        text1: 'Please fill in all required inputs correctly.' 
       });
       return;
     }
