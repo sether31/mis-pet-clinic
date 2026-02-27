@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { validRoleToken } from '../../utils/auth'; 
@@ -11,6 +11,7 @@ export default function DashboardLayout() {
 
   useEffect(() => {
     const checkSession = async () => {   
+      // Strictly checking for pet_owner role
       const decoded = await validRoleToken(['pet_owner']); 
       
       if(decoded) {
@@ -25,35 +26,75 @@ export default function DashboardLayout() {
     checkSession();
   }, []);
 
+  // Show a nice loader while checking the token
   if (isChecking) {
-    return <View style={{ flex: 1, backgroundColor: Colors.bg50 }} />;
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
   }
 
+  // Kick out unauthorized users
   if(!isAllowed) {
     return <Redirect href="/Login" />;
   }
 
+  // Render the premium 5-tab layout
   return (
-    <Tabs screenOptions={{
-      tabBarActiveTintColor: Colors.primary,
-      tabBarInactiveTintColor: 'gray',
-      headerShown: true,
-      tabBarStyle: { height: 60, paddingBottom: 10 }
-    }}>
+    <Tabs 
+      screenOptions={{
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: '#9CA3AF',
+        headerShown: false, 
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#F3F4F6',
+          height: 65,
+          paddingBottom: 10,
+          paddingTop: 10,
+          elevation: 5, 
+          shadowColor: '#000', 
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 2,
+        }
+      }}
+    >
       <Tabs.Screen
         name="Home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+          ),
         }}
       />
+      
+      {/* The Pets Stack */}
       <Tabs.Screen
-        name="Profile"
+        name="pets"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
+          title: 'My Pets',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "paw" : "paw-outline"} size={24} color={color} />
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  loaderContainer: { 
+    flex: 1, 
+    backgroundColor: Colors.bg50, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  }
+});
