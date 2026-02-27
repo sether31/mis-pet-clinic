@@ -59,14 +59,19 @@ export const authFetch = async (url, options = {}, allowedRoles = ['pet_owner'])
       Toast.show({
         type: 'error',
         text1: 'Access Denied',
-        text2: 'Your session has expired or been revoked.'
+        text2: 'Your session has expired.'
       });
-
       router.replace('/Login');
       return { error: response.status };
     }
 
-    return await response.json();
+    const rawText = await response.text();
+    try {
+      return JSON.parse(rawText);
+    } catch (parseError) {
+      console.error(rawText); 
+    }
+
   } catch(err) {
     console.error("Network Error:", err);
     throw err;
