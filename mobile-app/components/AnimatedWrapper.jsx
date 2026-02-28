@@ -6,7 +6,6 @@ export default function AnimatedWrapper({ children, index = 0, style }) {
   const slideAnim = useRef(new Animated.Value(20)).current; 
 
   useEffect(() => {
-    // Index 0 waits 0ms, Index 1 waits 100ms, Index 2 waits 200ms...
     const delayTime = index * 100; 
 
     Animated.parallel([
