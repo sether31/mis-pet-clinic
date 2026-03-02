@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Pressable, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppText from '../../../../components/AppText';
 import AnimatedWrapper from '../../../../components/AnimatedWrapper';
@@ -37,18 +37,37 @@ export default function PetAvatarSection({ pet, newImage, isEditing, activeTab, 
           <AppText style={styles.petSubText}>{pet?.breed} • {pet?.species}</AppText>
           
           <View style={styles.tabContainer}>
-            <TouchableOpacity 
+            <Pressable 
               style={[styles.tabBtn, activeTab === 'profile' && styles.tabBtnActive]} 
               onPress={() => onTabChange('profile')}
             >
-              <AppText style={[styles.tabText, activeTab === 'profile' && styles.tabTextActive]}>Profile</AppText>
-            </TouchableOpacity>
-            <TouchableOpacity 
+              <View style={styles.tabRow}>
+                <Ionicons 
+                  name={activeTab === 'profile' ? "paw" : "paw-outline"} 
+                  size={16} 
+                  color={activeTab === 'profile' ? Colors.primary : '#9CA3AF'} 
+                />
+                <AppText style={[styles.tabText, activeTab === 'profile' && styles.tabTextActive]}>
+                  Profile
+                </AppText>
+              </View>
+            </Pressable>
+            
+            <Pressable 
               style={[styles.tabBtn, activeTab === 'records' && styles.tabBtnActive]} 
               onPress={() => onTabChange('records')}
             >
-              <AppText style={[styles.tabText, activeTab === 'records' && styles.tabTextActive]}>Medical Records</AppText>
-            </TouchableOpacity>
+              <View style={styles.tabRow}>
+                <Ionicons 
+                  name={activeTab === 'records' ? "document-text" : "document-text-outline"} 
+                  size={16} 
+                  color={activeTab === 'records' ? Colors.primary : '#9CA3AF'} 
+                />
+                <AppText style={[styles.tabText, activeTab === 'records' && styles.tabTextActive]}>
+                  Records
+                </AppText>
+              </View>
+            </Pressable>
           </View>
         </>
       )}
@@ -59,18 +78,20 @@ export default function PetAvatarSection({ pet, newImage, isEditing, activeTab, 
 const styles = StyleSheet.create({
   imageSection: { alignItems: 'center', paddingTop: 30, paddingBottom: 15, backgroundColor: Colors.white },
   imageWrapper: { 
-    width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.bg50, 
-    elevation: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, 
-    borderWidth: 4, borderColor: Colors.white, overflow: 'hidden', 
+    width: 120, height: 120, borderRadius: 60, backgroundColor: Colors.bg50,  
+    borderWidth: 4, borderColor: Colors.primary, overflow: 'hidden', 
     marginBottom: 16, position: 'relative' 
   },
   petImage: { width: '100%', height: '100%' },
   editBadge: { position: 'absolute', bottom: 0, width: '100%', backgroundColor: 'rgba(0,0,0,0.5)', paddingVertical: 6, alignItems: 'center' },
   petMainName: { fontSize: 24, fontWeight: '900', color: '#111827', textTransform: 'capitalize' },
   petSubText: { fontSize: 15, color: '#6B7280', marginTop: 4, fontWeight: '500', textTransform: 'capitalize' },
-  tabContainer: { flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 10, padding: 4, marginTop: 24, width: '85%' },
-  tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  
+  tabContainer: { flexDirection: 'row', backgroundColor: '#E5E7EB', borderRadius: 10, padding: 4, width: '90%', marginTop: 24 },
+  tabBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   tabBtnActive: { backgroundColor: Colors.white },
+  
+  tabRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   tabText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
-  tabTextActive: { color: '#111827', fontWeight: '700' },
+  tabTextActive: { color: Colors.primary, fontWeight: '800' },
 });
