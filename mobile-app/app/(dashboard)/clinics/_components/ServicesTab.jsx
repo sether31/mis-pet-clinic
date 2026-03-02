@@ -20,10 +20,10 @@ export default function ServicesTab({ services, branchId }) {
     );
   }
 
-  const handleBookService = (serviceId) => {
+  const handleBookService = (branchServiceId) => {
     router.push({
-      pathname: `/(dashboard)/clinics/book`,
-      params: { branch_id: branchId, service_id: serviceId }
+      pathname: `/(dashboard)/clinics/BookAppointment`,
+      params: { branch_id: branchId, branch_service_id: branchServiceId }
     });
   };
 
@@ -58,7 +58,7 @@ export default function ServicesTab({ services, branchId }) {
                     </View>
                     
                     <View style={styles.metaBadge}>
-                      <Ionicons name="pricetag-outline" size={14} color="#10B981" />
+                      <Ionicons name="cash-outline" size={14} color="#10B981" />
                       <AppText style={[styles.metaText, { color: Colors.primary }]}>₱{parseFloat(item.price).toFixed(2)}</AppText>
                     </View>
                   </View>
