@@ -6,6 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store'; 
 import { Colors } from '../../constants/Color';
+
+// Hooks
+import { useUI } from '../../hooks/useUI';
+import { useUser } from '../../hooks/useUser'; 
+
+// Components
 import AppText from '../../components/AppText';
 import AppButton from '../../components/AppButton';
 import OTPInput from '../../components/OTPInput'; 
@@ -15,8 +21,11 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 export default function VerifyOTP() {
   const router = useRouter();
   const { email, temp_id, user_id, userData, type } = useLocalSearchParams();
+  
+  const { showLoader, hideLoader, loading } = useUI(); 
+  const { setUser, refreshUser } = useUser(); 
+
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState(null); 
 
   const handleOtpComplete = (code) => {
@@ -27,22 +36,27 @@ export default function VerifyOTP() {
   const handleVerify = async () => {
     if (otp.length < 6) {
       setServerError("Please enter the full 6-digit code.");
-      Toast.show({ type: 'error', text1: 'Incomplete Code' });
       return;
     }
 
-    setLoading(true);
+    const loaderMsg = 
+      type === 'login' ? 'Logging in...' : 
+      type === 'password_reset' ? 'Verifying...' : 'Creating Account...';
+    
+    showLoader(loaderMsg);
     setServerError(null);
 
     try {
-      const isLogin = type === 'login';
-      const endpoint = isLogin 
-        ? `${API_URL}/api/auth/login-otp-mobile.php` 
-        : `${API_URL}/api/auth/register-otp-mobile.php`;
+      // endpoint
+      let endpoint = `${API_URL}/api/auth/register-otp-mobile.php`; 
+      if (type === 'login') endpoint = `${API_URL}/api/auth/login-otp-mobile.php`;
+      if (type === 'password_reset') endpoint = `${API_URL}/api/auth/verify-reset-otp.php`; 
 
-      const body = isLogin 
-        ? { otp, user_id } 
-        : { otp, temp_user_id: temp_id, full_data: JSON.parse(userData) };
+      // Determine the body
+      let body = { otp, temp_user_id: temp_id, full_data: userData ? JSON.parse(userData) : null };
+      if (type === 'login' || type === 'password_reset') {
+        body = { otp, user_id };
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -53,34 +67,46 @@ export default function VerifyOTP() {
       const data = await response.json();
 
       if (data.success) {
-        if (isLogin) {
-          if (data.access_token) await SecureStore.setItemAsync('access_token', data.access_token);
+        if (type === 'login') {
+          if (data.access_token) {
+            await SecureStore.setItemAsync('access_token', data.access_token);
+            if (data.user) setUser(data.user);
+          }
           Toast.show({ type: 'success', text1: 'Login Successful!' });
-          router.replace('/(dashboard)/Home')
-        } else {
+          router.replace('/(dashboard)/Home');
+        } 
+        else if (type === 'password_reset') {
+          Toast.show({ type: 'success', text1: 'Verified!', text2: 'Set your new password.' });
+          router.replace({
+            pathname: '/ResetPassword',
+            params: { user_id }
+          });
+        } 
+        else {
           Toast.show({ type: 'success', text1: 'Account Verified!' });
           router.replace('/Login');
         }
       } else {
         setOtp(''); 
         setServerError(data.message || "Invalid verification code.");
-        Toast.show({ type: 'error', text1: 'Verification Failed', text2: data.message });
       }
-    } catch (error) {
+    } catch(error) {
       setServerError("Something went wrong");
-      Toast.show({ type: 'error', text1: 'Something went wrong' });
     } finally {
-      setLoading(false);
+      hideLoader();
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
         <View style={styles.content}>
           <View style={styles.headerContainer}>
-            <AppText style={styles.headerTitle}>Verify Account</AppText>
+            <AppText style={styles.headerTitle}>
+              {type === 'login' && "Confirm Login"}
+              {type === 'password_reset' && "Reset Password"}
+              {type === 'register' && "Verify Account"}
+            </AppText>
             <AppText style={styles.subHeader}>
               Enter the 6-digit code sent to{"\n"}
               <AppText style={styles.emailText}>{email}</AppText>
@@ -93,7 +119,6 @@ export default function VerifyOTP() {
             error={!!serverError} 
           />
 
-          {/* Inline Error Text matching your web style */}
           {serverError && (
             <View style={styles.errorContainer}>
               <Ionicons name="alert-circle" size={16} color="#EF4444" />
@@ -103,25 +128,29 @@ export default function VerifyOTP() {
 
           <View style={styles.footerContainer}>
             <AppButton 
-              title={type === 'login' ? 'Verify & Sign In' : 'Complete Registration'}
+              title={
+                type === 'login' ? 'Login' : 
+                type === 'password_reset' ? 'Verify Code' : 
+                'Complete Registration'
+              }
               onPress={handleVerify} 
-              loading={loading}
+              disabled={loading} 
             />
 
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} disabled={loading}>
               <AppText style={styles.backButtonText}>Wrong email? Go back</AppText>
             </TouchableOpacity>
           </View>
         </View>
-
       </View>
     </SafeAreaView>
   );
 }
 
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.bg50 },
-  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 }, // Centered the whole block
+  container: { flex: 1, justifyContent: 'center', paddingHorizontal: 28 }, 
   content: { width: '100%', alignItems: 'center' },
   headerContainer: { alignItems: 'center', marginBottom: 20 },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#111827', marginBottom: 12 },

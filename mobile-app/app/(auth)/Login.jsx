@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView, Keyboard, Image, Platform } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView, Keyboard, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlatform } from '../../context/PlatformProvider'; 
 import { Colors } from '../../constants/Color';
+
+// Components
 import AppText from '../../components/AppText'; 
 import AppButton from '../../components/AppButton';
+import AnimatedWrapper from '../../components/AnimatedWrapper';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -50,8 +53,7 @@ export default function Login() {
     if (!validateForm()) {
       Toast.show({ 
         type: 'error', 
-        text1: 'Incomplete Fields', 
-        text2: 'Please fill in all required inputs correctly.' 
+        text1: 'Please fill in all required inputs correctly.' 
       });
       return;
     }
@@ -73,11 +75,15 @@ export default function Login() {
           params: { email: form.email, user_id: data.user_id, type: 'login' }
         });
       } else {
-        if (data.message.toLowerCase().includes('email') || data.message.toLowerCase().includes('user not found')) {
+        const msg = data.message.toLowerCase();
+
+        if(msg.includes('email') || msg.includes('user') || msg.includes('access')) {
           setErrors(prev => ({ ...prev, email: data.message }));
         } 
-        else if(data.message.toLowerCase().includes('password')) {
+        else if(msg.includes('password')) {
           setErrors(prev => ({ ...prev, password: data.message }));
+        } else {
+          setErrors(prev => ({ ...prev, email: data.message }));
         }
 
         Toast.show({ type: 'error', text1: 'Login Failed', text2: data.message });
@@ -93,8 +99,8 @@ export default function Login() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         
-        {/* Header Section */}
-        <View style={styles.headerContainer}>
+        {/* Header */}
+        <AnimatedWrapper index={0} style={styles.headerContainer}>
           <View style={styles.brandRow}>
             <View style={styles.logoWrapper}>
               {platformData?.platform_logo ? (
@@ -106,22 +112,18 @@ export default function Login() {
             <AppText style={styles.brandName}>{platformData?.platform_name || 'PetCare Clinic'}</AppText>
           </View>
           <AppText style={styles.subHeader}>Welcome back! Please login to your account.</AppText>
-        </View>
+        </AnimatedWrapper>
 
-        {/* Form Section */}
         <View style={styles.formContainer}>
           
           {/* Email Input */}
-          <View style={styles.inputGroup}>
+          <AnimatedWrapper index={1} style={styles.inputGroup}>
             <AppText style={styles.label}>Email Address <AppText style={{color: '#EF4444'}}>*</AppText></AppText>
-            <View style={[
-              styles.inputWrapper, 
-              errors.email && styles.inputErrorBorder 
-            ]}>
+            <View style={[styles.inputWrapper, errors.email && styles.inputErrorBorder]}>
               <Ionicons name="mail-outline" size={20} color={errors.email ? '#EF4444' : '#9CA3AF'} style={styles.inputIcon} />
               <TextInput 
                 style={styles.input} 
-                placeholder="hello@example.com"
+                placeholder="example@gmail.com"
                 placeholderTextColor="#9CA3AF"
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -132,16 +134,18 @@ export default function Login() {
                 }}
               />
             </View>
-            {errors.email && <AppText style={styles.errorText}>{errors.email}</AppText>}
-          </View>
+            {errors.email && (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle" size={14} color="#EF4444" />
+                <AppText style={styles.errorText}>{errors.email}</AppText>
+              </View>
+            )}
+          </AnimatedWrapper>
 
           {/* Password Input */}
-          <View style={styles.inputGroup}>
+          <AnimatedWrapper index={2} style={styles.inputGroup}>
             <AppText style={styles.label}>Password <AppText style={{color: '#EF4444'}}>*</AppText></AppText>
-            <View style={[
-              styles.inputWrapper, 
-              errors.password && styles.inputErrorBorder 
-            ]}>
+            <View style={[styles.inputWrapper, errors.password && styles.inputErrorBorder]}>
               <Ionicons name="lock-closed-outline" size={20} color={errors.password ? '#EF4444' : '#9CA3AF'} style={styles.inputIcon} />
               <TextInput 
                 style={styles.input} 
@@ -158,25 +162,34 @@ export default function Login() {
                 <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={22} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
-            {errors.password && <AppText style={styles.errorText}>{errors.password}</AppText>}
-          </View>
+            {errors.password && (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle" size={14} color="#EF4444" />
+                <AppText style={styles.errorText}>{errors.password}</AppText>
+              </View>
+            )}
+          </AnimatedWrapper>
 
-          <TouchableOpacity style={styles.forgotBtn} onPress={() => router.push('/ForgotPassword')}>
-            <AppText style={styles.forgotText}>Forgot Password?</AppText>
-          </TouchableOpacity>
-
-          <AppButton 
-            title="Sign In" 
-            onPress={handleLogin} 
-            loading={loading} 
-          />
-
-          <View style={styles.footer}>
-            <AppText style={styles.footerText}>Don't have an account? </AppText>
-            <TouchableOpacity onPress={() => router.push('/Register')}>
-              <AppText style={styles.link}>Sign up</AppText>
+          {/* Button & Footer */}
+          <AnimatedWrapper index={3}>
+            <TouchableOpacity style={styles.forgotBtn} onPress={() => router.push('/ForgotPassword')}>
+              <AppText style={styles.forgotText}>Forgot Password?</AppText>
             </TouchableOpacity>
-          </View>
+
+            <AppButton 
+              title="Sign In" 
+              onPress={handleLogin} 
+              loading={loading} 
+            />
+
+            <View style={styles.footer}>
+              <AppText style={styles.footerText}>Don't have an account? </AppText>
+              <TouchableOpacity onPress={() => router.push('/Register')}>
+                <AppText style={styles.link}>Sign up</AppText>
+              </TouchableOpacity>
+            </View>
+          </AnimatedWrapper>
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -207,7 +220,14 @@ const styles = StyleSheet.create({
     borderColor: '#EF4444', 
     borderWidth: 1.5, 
   },
-  errorText: { color: '#EF4444', fontSize: 12, marginTop: 6, marginLeft: 4, fontWeight: '500' },
+  errorText: { 
+    color: '#EF4444', 
+    fontSize: 12, 
+    marginLeft: 4, 
+    fontWeight: '500',
+    includeFontPadding: false,
+    lineHeight: 14 
+  },
   inputIcon: { marginRight: 12 },
   input: { flex: 1, fontSize: 16, color: '#111827', height: '100%' },
   eyeIcon: { padding: 8 },
@@ -216,4 +236,5 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 32 },
   footerText: { color: '#6B7280', fontSize: 15 },
   link: { color: Colors.primary, fontWeight: 'bold', fontSize: 15 },
+  errorContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 6, marginLeft: 4, gap: 2 },
 });
