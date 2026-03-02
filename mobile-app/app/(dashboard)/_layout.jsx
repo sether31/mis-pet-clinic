@@ -40,7 +40,6 @@ export default function DashboardLayout() {
     return <Redirect href="/Login" />;
   }
 
-  // Render the premium 5-tab layout
   return (
     <Tabs 
       screenOptions={{
@@ -76,13 +75,24 @@ export default function DashboardLayout() {
         }}
       />
       
-      {/* The Pets Stack */}
+      {/* pet */}
       <Tabs.Screen
         name="pets"
         options={{
           title: 'My Pets',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "paw" : "paw-outline"} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* clinics */}
+      <Tabs.Screen
+        name="clinics"
+        options={{
+          title: 'Clinics',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "business" : "business-outline"} size={24} color={color} />
           ),
         }}
       />
