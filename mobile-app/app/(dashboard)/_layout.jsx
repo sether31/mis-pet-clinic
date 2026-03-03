@@ -92,7 +92,18 @@ export default function DashboardLayout() {
         options={{
           title: 'Clinics',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "business" : "business-outline"} size={24} color={color} />
+            <Ionicons name={focused ? "search" : "search-outline"} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* appointments / activity */}
+      <Tabs.Screen
+        name="activity" 
+        options={{
+          title: 'My Activity', 
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "receipt" : "receipt-outline"} size={24} color={color} />
           ),
         }}
       />
