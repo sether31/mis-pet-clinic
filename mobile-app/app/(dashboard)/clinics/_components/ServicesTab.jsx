@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   cardInner: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   textContainer: { flex: 1, paddingRight: 16 },
   
-  serviceName: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 6 },
+  serviceName: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 6, textTransform: 'capitalize' },
   serviceDescription: { fontSize: 13, color: '#6B7280', lineHeight: 20, marginBottom: 12 },
   
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
