@@ -41,7 +41,8 @@ export default function ServicesTab({ services, branchId }) {
             {({ pressed }) => (
               <View style={styles.cardInner}>
                 <View style={styles.textContainer}>
-                  <AppText style={[styles.serviceName, pressed && { color: Colors.primary }]}>
+                  
+                  <AppText style={styles.serviceName}>
                     {item.service_name}
                   </AppText>
                   
@@ -64,9 +65,8 @@ export default function ServicesTab({ services, branchId }) {
                   </View>
                 </View>
 
-                {/* Booking Button Arrow */}
                 <View style={[styles.bookBtn, pressed && { backgroundColor: Colors.primary }]}>
-                  <Ionicons name="chevron-forward" size={20} color={pressed ? Colors.white : Colors.primary} />
+                  <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
                 </View>
               </View>
             )}
@@ -97,5 +97,5 @@ const styles = StyleSheet.create({
   metaBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   metaText: { fontSize: 13, fontWeight: '700' },
 
-  bookBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primary + '15', alignItems: 'center', justifyContent: 'center' }
+  bookBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' }
 });

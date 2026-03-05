@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Pressable, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Pressable, Image, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,93 @@ import { authFetch } from '../../../utils/auth';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const NO_IMAGE = require('../../../assets/images/no-image.jpg');
+
+const ClinicCardItem = ({ clinic, index, getMediaUrl, handleSelectClinic }) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const imageSource = getMediaUrl(clinic.branch_image) ? { uri: getMediaUrl(clinic.branch_image) } : NO_IMAGE;
+
+  const handlePressIn = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 1.1, 
+      duration: 300, 
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <AnimatedWrapper index={index}> 
+      <View style={styles.clinicCard}>
+        <Pressable 
+          onPress={() => handleSelectClinic(clinic.branch_id)}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={({ pressed }) => [pressed && { backgroundColor: '#F9FAFB' }]}
+        >
+          {({ pressed }) => (
+            <View>
+              <View style={styles.imageContainer}>
+                <Animated.Image 
+                  source={imageSource} 
+                  style={[styles.clinicImage, { transform: [{ scale: scaleAnim }] }]} 
+                />
+              </View>
+              
+              <View style={styles.cardContent}>
+                <View style={styles.cardMain}>
+                  <AppText style={styles.clinicName} numberOfLines={1}>
+                    {clinic.branch_name}
+                  </AppText>
+                  
+                  <View style={styles.infoRow}>
+                    <Ionicons name="location-outline" size={16} color="#6B7280" style={{ marginTop: 2 }} />
+                    <AppText style={styles.infoText} numberOfLines={2}>
+                      {clinic.full_address || "Address not provided"}
+                    </AppText>
+                  </View>
+                  
+                  <View style={styles.infoRow}>
+                    <Ionicons name="call-outline" size={16} color="#6B7280" />
+                    <AppText style={styles.infoText}>{clinic.contact_number || "N/A"}</AppText>
+                  </View>
+                </View>
+
+                <View style={[styles.chevronBtn, pressed && { backgroundColor: Colors.primary }]}>
+                  <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
+                </View>
+              </View>
+            </View>
+          )}
+        </Pressable>
+
+        {/* Services Chips */}
+        {clinic.services && clinic.services.length > 0 ? (
+          <View style={styles.servicesContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.servicesScroll}
+            >
+              {clinic.services.map((serviceName, i) => (
+                <View key={i} style={styles.servicePreviewChip}>
+                  <AppText style={styles.servicePreviewChipText}>{serviceName}</AppText>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+      </View>
+    </AnimatedWrapper>
+  );
+};
+
 
 export default function SelectClinic() {
   const router = useRouter();
@@ -29,7 +116,6 @@ export default function SelectClinic() {
   const [selectedMunicipality, setSelectedMunicipality] = useState('');
   const [selectedService, setSelectedService] = useState('');
 
-  //  track which dropdown is currently open
   const [openDropdown, setOpenDropdown] = useState(null);
 
   useEffect(() => {
@@ -107,7 +193,6 @@ export default function SelectClinic() {
 
   const isAnyFilterActive = selectedProvince !== '' || selectedMunicipality !== '' || selectedService !== '';
 
-  // Custom Reusable Dropdown Renderer
   const renderCustomDropdown = (label, options, selectedValue, onSelect, dropdownKey) => {
     const isOpen = openDropdown === dropdownKey;
 
@@ -128,7 +213,6 @@ export default function SelectClinic() {
         {isOpen && (
           <View style={styles.dropdownListWrapper}>
             <ScrollView nestedScrollEnabled style={styles.dropdownScroll} showsVerticalScrollIndicator={true}>
-              {/* Option to clear this specific filter */}
               <Pressable 
                 style={styles.dropdownItem} 
                 onPress={() => { onSelect(''); setOpenDropdown(null); }}
@@ -138,7 +222,6 @@ export default function SelectClinic() {
                 </AppText>
               </Pressable>
 
-              {/* Map through all unique options */}
               {options.map((opt, index) => {
                 const isSelected = selectedValue === opt;
                 return (
@@ -162,7 +245,6 @@ export default function SelectClinic() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      
       <View style={styles.header}>
         <AppText style={styles.headerTitle}>Clinics</AppText>
         
@@ -175,7 +257,6 @@ export default function SelectClinic() {
         </TouchableOpacity>
       </View>
 
-      {/*  Dropdown Filters */}
       {showFilters && (
         <View style={styles.filterSection}>
           <View style={styles.filterHeader}>
@@ -207,70 +288,15 @@ export default function SelectClinic() {
             </View>
           </AnimatedWrapper>
         ) : (
-          clinics.map((clinic, index) => { 
-            const imageSource = getMediaUrl(clinic.branch_image) ? { uri: getMediaUrl(clinic.branch_image) } : NO_IMAGE;
-
-            return (
-              <AnimatedWrapper key={clinic.branch_id} index={index}> 
-                <View style={styles.clinicCard}>
-                  
-                  <Pressable 
-                    onPress={() => handleSelectClinic(clinic.branch_id)}
-                    style={({ pressed }) => [pressed && { backgroundColor: '#F9FAFB' }]}
-                  >
-                    {({ pressed }) => (
-                      <View>
-                        <Image source={imageSource} style={[styles.clinicImage, pressed && { transform: [{ scale: 1.05 }] }]} />
-                        
-                        <View style={styles.cardContent}>
-                          <View style={styles.cardMain}>
-                            <AppText style={[styles.clinicName, pressed && { color: Colors.primary }]} numberOfLines={1}>
-                              {clinic.branch_name}
-                            </AppText>
-                            
-                            <View style={styles.infoRow}>
-                              <Ionicons name="location-outline" size={16} color="#6B7280" style={{ marginTop: 2 }} />
-                              <AppText style={styles.infoText} numberOfLines={2}>
-                                {clinic.full_address || "Address not provided"}
-                              </AppText>
-                            </View>
-                            
-                            <View style={styles.infoRow}>
-                              <Ionicons name="call-outline" size={16} color="#6B7280" />
-                              <AppText style={styles.infoText}>{clinic.contact_number || "N/A"}</AppText>
-                            </View>
-                          </View>
-
-                          <Ionicons name="chevron-forward" size={24} color={pressed ? Colors.primary : "#D1D5DB"} />
-                        </View>
-                      </View>
-                    )}
-                  </Pressable>
-
-                  {/* service */}
-                  {clinic.services && clinic.services.length > 0 ? (
-                    <View style={styles.servicesContainer}>
-                      <ScrollView 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false} 
-                        contentContainerStyle={styles.servicesScroll}
-                      >
-                        
-                        {/* Render ALL services directly */}
-                        {clinic.services.map((serviceName, i) => (
-                          <View key={i} style={styles.servicePreviewChip}>
-                            <AppText style={styles.servicePreviewChipText}>{serviceName}</AppText>
-                          </View>
-                        ))}
-
-                      </ScrollView>
-                    </View>
-                  ) : null}
-
-                </View>
-              </AnimatedWrapper>
-            );
-          })
+          clinics.map((clinic, index) => (
+            <ClinicCardItem 
+              key={clinic.branch_id} 
+              clinic={clinic} 
+              index={index} 
+              getMediaUrl={getMediaUrl} 
+              handleSelectClinic={handleSelectClinic} 
+            />
+          ))
         )}
       </ScrollView>
     </SafeAreaView>
@@ -292,7 +318,6 @@ const styles = StyleSheet.create({
   filterTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
   clearFiltersText: { fontSize: 14, fontWeight: '600', color: '#EF4444' },
 
-  // Dropdown Styles
   dropdownContainer: { paddingHorizontal: 20, marginBottom: 12 },
   filterLabel: { fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 6 },
   dropdownHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 },
@@ -314,7 +339,9 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 },
 
   clinicCard: { backgroundColor: Colors.white, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#E5E7EB', overflow: 'hidden' },
-  clinicImage: { width: '100%', height: 120, resizeMode: 'cover', backgroundColor: '#E5E7EB' },
+  
+  imageContainer: { width: '100%', height: 120, backgroundColor: '#E5E7EB', overflow: 'hidden' },
+  clinicImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   
   cardContent: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, justifyContent: 'space-between' },
   cardMain: { flex: 1, paddingRight: 16 },
@@ -322,6 +349,8 @@ const styles = StyleSheet.create({
   clinicName: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 8 },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 6 },
   infoText: { fontSize: 14, color: '#4B5563', flex: 1, lineHeight: 20 },
+
+  chevronBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' },
 
   servicesContainer: { borderTopWidth: 1, borderTopColor: '#F3F4F6', backgroundColor: '#F9FAFB', paddingVertical: 10 },
   servicesScroll: { paddingHorizontal: 16, gap: 8 },

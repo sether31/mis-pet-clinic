@@ -11,6 +11,7 @@ import { Colors } from '../../../constants/Color';
 import { authFetch } from '../../../utils/auth';
 
 import ServicesTab from './_components/ServicesTab';
+import ProductsTab from './_components/ProductsTab';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const NO_IMAGE = require('../../../assets/images/no-image.jpg');
@@ -227,9 +228,7 @@ export default function ClinicOverview() {
 
           ) : (
             hasShop ? (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <AppText style={{ color: '#6B7280' }}>Products coming soon...</AppText>
-              </View>
+              <ProductsTab branchId={id} />
             ) : (
               // UNAVAILABLE SHOP
               <AnimatedWrapper index={0}>
