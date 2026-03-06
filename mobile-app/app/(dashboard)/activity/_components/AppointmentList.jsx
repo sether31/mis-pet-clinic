@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Pressable, RefreshControl, Alert, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, Pressable, RefreshControl, Alert, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -70,7 +70,7 @@ export default function AppointmentsList({ activeTab }) {
 
   const goToClinicProfile = (branchId) => {
     setModalVisible(false); 
-    router.push(`/clinics/${branchId}`); 
+    router.push(`/(dashboard)/clinics/${branchId}?from=activity`); 
   };
 
   const filteredAppointments = appointments.filter(item => {
@@ -135,7 +135,7 @@ export default function AppointmentsList({ activeTab }) {
                 </View>
               </View>
 
-              <AppText style={[styles.serviceName, pressed && { color: Colors.primary }]}>
+              <AppText style={styles.serviceName}>
                 {item.service_name || "Custom Service"}
               </AppText>
               <AppText style={styles.clinicName}>{item.branch_name || "Unknown Branch"}</AppText>
@@ -192,12 +192,23 @@ export default function AppointmentsList({ activeTab }) {
               <>
                 <View style={styles.modalHeader}>
                   <AppText style={styles.modalTitle}>Appointment Details</AppText>
-                  <TouchableOpacity onPress={() => setModalVisible(false)}>
-                    <Ionicons name="close-circle" size={28} color="#D1D5DB" />
-                  </TouchableOpacity>
+                  
+                  <Pressable onPress={() => setModalVisible(false)}>
+                    {({ pressed }) => (
+                      <Ionicons 
+                        name="close-circle" 
+                        size={28} 
+                        color={pressed ? "#EF4444" : "#D1D5DB"} 
+                      />
+                    )}
+                  </Pressable>
                 </View>
 
                 <View style={styles.modalBody}>
+                  <View style={styles.detailRow}>
+                    <AppText style={styles.detailLabel}>Reference ID</AppText>
+                    <AppText style={styles.detailValue}>#{selectedAppointment.appointment_id}</AppText>
+                  </View> 
                   <View style={styles.detailRow}>
                     <AppText style={styles.detailLabel}>Status</AppText>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusStyle(selectedAppointment.status).bg }]}>
@@ -244,7 +255,6 @@ export default function AppointmentsList({ activeTab }) {
                   )}
                 </View>
 
-                {/* link to clinic */}
                 <Pressable 
                   style={({ pressed }) => [styles.viewClinicBtn, pressed && styles.viewClinicBtnPressed]} 
                   onPress={() => goToClinicProfile(selectedAppointment.branch_id)} 
@@ -254,12 +264,22 @@ export default function AppointmentsList({ activeTab }) {
                 </Pressable>
 
                 {selectedAppointment.status === 'pending' && (
-                  <TouchableOpacity 
-                    style={styles.modalCancelBtn} 
+                  <Pressable 
+                    style={({ pressed }) => [
+                      styles.modalCancelBtn, 
+                      pressed && styles.modalCancelBtnPressed
+                    ]} 
                     onPress={() => handleCancel(selectedAppointment.appointment_id)}
                   >
-                    <AppText style={styles.modalCancelText}>Cancel Appointment</AppText>
-                  </TouchableOpacity>
+                    {({ pressed }) => (
+                      <AppText style={[
+                        styles.modalCancelText, 
+                        pressed && { color: '#B91C1C' }
+                      ]}>
+                        Cancel Appointment
+                      </AppText>
+                    )}
+                  </Pressable>
                 )}
               </>
             )}
@@ -273,7 +293,7 @@ export default function AppointmentsList({ activeTab }) {
 const styles = StyleSheet.create({
   listContent: { padding: 20, paddingBottom: 40 },
   card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: Colors.border300 },
-  cardPressed: { opacity: 0.7, transform: [{ scale: 0.98 }], borderColor: Colors.primary }, 
+  cardPressed: { transform: [{ scale: 0.98 }], borderColor: Colors.primary, backgroundColor: '#F9FAFB' }, 
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   dateTime: { flexDirection: 'row', alignItems: 'center' },
   dateText: { fontSize: 12, color: '#6B7280', marginLeft: 4, fontWeight: '600' },
@@ -306,7 +326,20 @@ const styles = StyleSheet.create({
   viewClinicBtnPressed: { backgroundColor: Colors.primary },
   viewClinicText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
 
-  modalCancelBtn: { marginTop: 12, backgroundColor: '#FEE2E2', padding: 16, borderRadius: 12, alignItems: 'center' },
+  modalCancelBtn: { 
+    marginTop: 12, 
+    backgroundColor: '#FEF2F2', 
+    padding: 16, 
+    borderRadius: 12, 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FEE2E2'
+  },
+  modalCancelBtnPressed: {
+    backgroundColor: '#FECACA', 
+    borderColor: '#FCA5A5',
+    transform: [{ scale: 0.98 }]
+  },
   modalCancelText: { color: '#EF4444', fontWeight: '800', fontSize: 16 },
   
   feedbackBox: { backgroundColor: '#FEF2F2', padding: 16, borderRadius: 12, marginTop: 4, borderWidth: 1, borderColor: '#FEE2E2' },
