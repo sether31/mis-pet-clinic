@@ -19,6 +19,34 @@ try {
   $staff_id = $_GET['staff_id'];
   $dayOfWeek = date('l', strtotime($date));
 
+  // CHECK SUBSCRIPTION LIMIT 
+  $limitStmt = $pdo->prepare(
+    "SELECT s.appointment_limit, bs.created_at as sub_start_date 
+    FROM branch_subscriptions_tb bs
+    JOIN subscription_tb s ON bs.subscription_id = s.subscription_id
+    WHERE bs.branch_id = ? AND bs.status = 'active'
+    ORDER BY bs.created_at DESC LIMIT 1"
+  );
+  $limitStmt->execute([$branch_id]);
+  $subData = $limitStmt->fetch();
+  
+  $limit = $subData ? (int)$subData['appointment_limit'] : 0;
+  $sub_start_date = $subData ? $subData['sub_start_date'] : '2000-01-01 00:00:00';
+
+  if($limit > 0 && $limit < 1000) {
+    $capStmt = $pdo->prepare(
+      "SELECT COUNT(*) FROM appointments_tb 
+      WHERE branch_id = ? AND status NOT IN ('cancelled', 'rejected') AND created_at >= ?"
+    );
+    $capStmt->execute([$branch_id, $sub_start_date]);
+    $currentCount = (int)$capStmt->fetchColumn();
+
+    if($currentCount >= $limit) {
+      echo json_encode(["success" => true, "limit_reached" => true, "data" => []]);
+      exit;
+    }
+  }
+
   // Get Branch Operating Hours
   $stmtBranch = $pdo->prepare("SELECT start_time, end_time, is_closed FROM branch_operating_hours_tb WHERE branch_id = ? AND day_of_week = ? LIMIT 1");
   $stmtBranch->execute([$branch_id, $dayOfWeek]);
@@ -93,7 +121,7 @@ try {
     $slotStart += ($duration * 60);
   }
 
-  echo json_encode(["success" => true, "data" => $availableSlots]);
+  echo json_encode(["success" => true, "limit_reached" => false, "data" => $availableSlots]);
 
 } catch (Exception $e) {
   http_response_code(500);
