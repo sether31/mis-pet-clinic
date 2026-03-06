@@ -108,7 +108,7 @@ export default function MedicalRecordDetail() {
 
   const goToClinicProfile = () => {
     if (record?.branch_id) {
-      router.push(`/clinics/${record.branch_id}`);
+      router.push(`/(dashboard)/clinics/${record.branch_id}`);
     } else {
       Toast.show({ type: 'info', text1: 'Clinic profile not available.' });
     }
@@ -183,7 +183,6 @@ export default function MedicalRecordDetail() {
               </AppText>
               
               <TouchableOpacity style={styles.clinicRow} onPress={goToClinicProfile} activeOpacity={0.6}>
-                {/* 💥 CHANGED: Icons and Text are now Primary Color */}
                 <Ionicons name="business-outline" size={14} color={Colors.primary} />
                 <AppText style={styles.clinicName}>{record?.branch_name}</AppText>
                 <Ionicons name="chevron-forward" size={14} color={Colors.primary} style={{marginLeft: 2}} />

@@ -37,6 +37,7 @@ try {
       m.updated_at,   
       a.start_time, 
       a.end_time,   
+      cb.branch_id,
       cb.name AS branch_name,
       cb.logo_picture AS branch_image,
       u.first_name AS vet_first_name,
