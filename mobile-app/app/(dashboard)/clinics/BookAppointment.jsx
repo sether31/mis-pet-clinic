@@ -27,6 +27,7 @@ export default function BookAppointment() {
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [loadingStaff, setLoadingStaff] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLimitReached, setIsLimitReached] = useState(false);
   
   // Dropdown States
   const [isPetDropdownOpen, setIsPetDropdownOpen] = useState(false);
@@ -85,8 +86,15 @@ export default function BookAppointment() {
 
     try {
       const res = await authFetch(`${API_URL}/api/pet-owner/appointments/get-available-times.php?branch_id=${branch_id}&branch_service_id=${branch_service_id}&staff_id=${staffId}&date=${formattedDate}`);
-      if (res?.success) {
-        setAvailableTimes(res.data || []); 
+
+      if(res?.success) {
+        if(res.limit_reached) {
+          setIsLimitReached(true);
+          setAvailableTimes([]);
+        } else {
+          setIsLimitReached(false);
+          setAvailableTimes(res.data || []); 
+        }
       }
     } catch (error) {
       console.error("Failed to fetch times", error);
@@ -287,10 +295,20 @@ export default function BookAppointment() {
           )}
         </View>
 
+    
         {/* Step 4: Available Times */}
         <View style={styles.section}>
           <AppText style={styles.sectionTitle}>4. Available Times</AppText>
-          {!selectedStaff ? (
+
+          {isLimitReached ? (
+            <View style={[styles.centerBox, { borderColor: '#EF4444', backgroundColor: '#FEF2F2' }]}>
+              <Ionicons name="warning-outline" size={40} color="#EF4444" style={{ marginBottom: 8 }} />
+              <AppText style={[styles.closedTitle, { color: '#991B1B' }]}>Fully Booked</AppText>
+              <AppText style={[styles.closedText, { color: '#B91C1C' }]}>
+                This clinic is currently not accepting new appointments for services. Please check back later.
+              </AppText>
+            </View>
+          ) : !selectedStaff ? (
             <View style={styles.centerBox}>
               <Ionicons name="time-outline" size={40} color="#9CA3AF" style={{ marginBottom: 8 }} />
               <AppText style={styles.closedText}>Select a professional to view their available schedule.</AppText>
