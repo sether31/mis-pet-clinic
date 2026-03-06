@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Modal, Pressable } from 'react-native';
+import { View, StyleSheet, Image, ScrollView, ActivityIndicator, TextInput, Modal, Pressable, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +14,7 @@ const NO_IMAGE = require('../../../../assets/images/no-image.jpg');
 
 export default function ProductDetailScreen() {
   const router = useRouter();
-  const { productId, branch_id } = useLocalSearchParams(); 
+  const { productId, branch_id, from } = useLocalSearchParams(); 
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -132,7 +132,12 @@ export default function ProductDetailScreen() {
           text2: 'Your items have been reserved successfully.',
           position: 'top'
         });
-        router.replace('/activity');
+        
+        if (from === 'activity') {
+          router.navigate('/(dashboard)/activity');
+        } else {
+          router.replace('/activity');
+        }
       } else {
         setDateError('Something went wrong');
       }
@@ -201,13 +206,26 @@ export default function ProductDetailScreen() {
   const safeQty = parseInt(quantity) || 1;
   const totalPrice = (parseFloat(product.price) * safeQty).toFixed(2);
 
+  const handleSmartBack = () => {
+    if(from === 'activity') {
+      router.navigate('/(dashboard)/activity'); 
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
+        <Pressable 
+          style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]} 
+          onPress={handleSmartBack}
+        >
+          <Ionicons name="arrow-back" size={26} color="#111827" />
+        </Pressable>
+        <AppText style={styles.headerTitle}>Product Details</AppText>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
@@ -246,9 +264,12 @@ export default function ProductDetailScreen() {
 
             <View style={styles.actionRow}>
               <View style={styles.quantityContainer}>
-                <TouchableOpacity style={styles.qtyBtn} onPress={decreaseQuantity}>
+                <Pressable 
+                  style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]} 
+                  onPress={decreaseQuantity}
+                >
                   <Ionicons name="remove" size={20} color="#111827" />
-                </TouchableOpacity>
+                </Pressable>
                 
                 <TextInput 
                   style={styles.qtyInput}
@@ -259,15 +280,18 @@ export default function ProductDetailScreen() {
                   maxLength={3} 
                 />
                 
-                <TouchableOpacity style={styles.qtyBtn} onPress={increaseQuantity}>
+                <Pressable 
+                  style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]} 
+                  onPress={increaseQuantity}
+                >
                   <Ionicons name="add" size={20} color="#111827" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               <Pressable 
                 style={({ pressed }) => [
                   styles.reserveBtn,
-                  pressed && { backgroundColor: Colors.primary }
+                  pressed && styles.solidBtnPressed
                 ]}
                 onPress={() => {
                   setDateError(''); 
@@ -301,17 +325,23 @@ export default function ProductDetailScreen() {
                 <AppText style={styles.modalTitle}>Pickup Schedule</AppText>
                 <AppText style={styles.modalSub}>Reservations are held for a maximum of 3 days.</AppText>
               </View>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close-circle" size={28} color="#D1D5DB" />
-              </TouchableOpacity>
+              <Pressable onPress={() => setIsModalVisible(false)}>
+                {({ pressed }) => (
+                  <Ionicons name="close-circle" size={28} color={pressed ? "#EF4444" : "#D1D5DB"} />
+                )}
+              </Pressable>
             </View>
 
             <AppText style={styles.pickerLabel}>Select Date</AppText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerScroll}>
               {pickupDates.map(date => (
-                <TouchableOpacity 
+                <Pressable 
                   key={date.id} 
-                  style={[styles.pickerBtn, selectedDate === date.id && styles.pickerBtnActive]}
+                  style={({ pressed }) => [
+                    styles.pickerBtn, 
+                    selectedDate === date.id && styles.pickerBtnActive,
+                    pressed && styles.pickerBtnPressed
+                  ]}
                   onPress={() => {
                     setSelectedDate(date.id);
                     setDateError(''); 
@@ -320,28 +350,35 @@ export default function ProductDetailScreen() {
                   <AppText style={[styles.pickerBtnText, selectedDate === date.id && styles.pickerBtnTextActive]}>
                     {date.label}
                   </AppText>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
 
             <View style={styles.infoBox}>
               <Ionicons name="time-outline" size={24} color="#1D4ED8" style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
-                <AppText style={styles.infoBoxTitle}>{product.branch_name} Hours</AppText>
+                <AppText style={styles.infoBoxTitle}>{product.branch_name} Pickup Info</AppText>
                 
                 {selectedDayInfo ? (
-                  <AppText style={styles.infoBoxText}>
-                    Please pick up your item during operating hours on this date:{"\n"}
-                    <AppText style={{fontWeight: '800'}}> {selectedDayInfo.startTime} - {selectedDayInfo.endTime}</AppText>
-                  </AppText>
+                  <View>
+                    <AppText style={styles.infoBoxText}>
+                      You can claim your reserved items anytime between {selectedDayInfo.startTime} - {selectedDayInfo.endTime} on your selected date.
+                    </AppText>
+                    
+                    <View style={styles.cashNotice}>
+                      <Ionicons name="pricetag-outline" size={16} color="#1E3A8A" />
+                      <AppText style={styles.cashNoticeText}>
+                        Payment is strictly Cash Only at the clinic.
+                      </AppText>
+                    </View>
+                  </View>
                 ) : (
-                  <AppText style={styles.infoBoxText}>Please select a valid date.</AppText>
+                  <AppText style={styles.infoBoxText}>Please select a valid date to see pickup hours.</AppText>
                 )}
                 
               </View>
             </View>
 
-            {/* Error Box */}
             {dateError ? (
               <View style={styles.errorContainer}>
                 <Ionicons name="alert-circle" size={16} color="#EF4444" />
@@ -352,7 +389,7 @@ export default function ProductDetailScreen() {
             <Pressable 
               style={({ pressed }) => [
                 styles.confirmBtn,
-                pressed && { backgroundColor: Colors.primary }
+                pressed && styles.solidBtnPressed
               ]} 
               onPress={handleConfirmReservation}
             >
@@ -368,8 +405,30 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFF' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
-  header: { position: 'absolute', top: 40, left: 20, zIndex: 10 },
-  backBtn: { width: 44, height: 44, backgroundColor: '#FFF', borderRadius: 22, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
+  
+  // 💥 MATCHED HEADER STYLES
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 20, 
+    paddingVertical: 15, 
+    backgroundColor: Colors.white, 
+    zIndex: 10, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#E5E7EB' 
+  },
+  headerTitle: { 
+    flex: 1, 
+    fontSize: 18, 
+    fontWeight: '800', 
+    color: '#111827', 
+    textAlign: 'center', 
+    marginHorizontal: 12 
+  },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  backBtnPressed: { opacity: 0.5 },
+
   imageWrapper: { width: '100%', height: 350, backgroundColor: '#F3F4F6' },
   productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   detailsContainer: { padding: 24 },
@@ -388,8 +447,10 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 16 },
   quantityContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB' },
   qtyBtn: { width: 44, height: 48, justifyContent: 'center', alignItems: 'center' },
+  qtyBtnPressed: { backgroundColor: '#E5E7EB', borderRadius: 10 },
   qtyInput: { width: 40, height: 48, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#111827' },
   reserveBtn: { flex: 1, backgroundColor: '#111827', height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  solidBtnPressed: { backgroundColor: Colors.primary, transform: [{ scale: 0.98 }] },
   reserveBtnDisabled: { backgroundColor: '#9CA3AF' },
   reserveBtnText: { color: '#FFF', fontSize: 15, fontWeight: '800' },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
@@ -402,14 +463,16 @@ const styles = StyleSheet.create({
   pickerScroll: { gap: 10, paddingBottom: 10 },
   pickerBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
   pickerBtnActive: { backgroundColor: Colors.primary + '15', borderColor: Colors.primary },
+  pickerBtnPressed: { backgroundColor: '#E5E7EB', transform: [{ scale: 0.97 }] },
   pickerBtnText: { fontSize: 14, fontWeight: '600', color: '#4B5563' },
   pickerBtnTextActive: { color: Colors.primary, fontWeight: '800' },
   infoBox: { flexDirection: 'row', backgroundColor: '#DBEAFE', padding: 16, borderRadius: 12, marginTop: 20, marginBottom: 10, alignItems: 'flex-start', gap: 12 },
   infoBoxTitle: { fontSize: 14, color: '#1E3A8A', fontWeight: '800', marginBottom: 4 },
-  infoBoxText: { flex: 1, fontSize: 13, color: '#1E3A8A', lineHeight: 20, fontWeight: '500' },
+  infoBoxText: { fontSize: 13, color: '#1E3A8A', lineHeight: 20, fontWeight: '500' },
+  cashNotice: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6, backgroundColor: '#BFDBFE', padding: 8, borderRadius: 8 },
+  cashNoticeText: { fontSize: 12, color: '#1E3A8A', fontWeight: '800' },
   errorContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 12, borderRadius: 8, marginBottom: 12, gap: 6 },
   errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600', flex: 1, lineHeight: 18 },
-  
   confirmBtn: { backgroundColor: '#111827', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   confirmBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' }
 });

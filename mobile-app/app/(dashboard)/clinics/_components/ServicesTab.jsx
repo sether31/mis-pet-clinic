@@ -59,7 +59,7 @@ export default function ServicesTab({ services, branchId }) {
                     </View>
                     
                     <View style={styles.metaBadge}>
-                      <Ionicons name="cash-outline" size={14} color="#10B981" />
+                      <Ionicons name="pricetag-outline" size={14} color="#10B981" />
                       <AppText style={[styles.metaText, { color: Colors.primary }]}>₱{parseFloat(item.price).toFixed(2)}</AppText>
                     </View>
                   </View>

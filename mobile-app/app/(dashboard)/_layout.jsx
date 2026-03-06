@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { validRoleToken } from '../../utils/auth'; 
 import { Colors } from '../../constants/Color';
 
 export default function DashboardLayout() {
+  const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
 
@@ -94,6 +95,12 @@ export default function DashboardLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "search" : "search-outline"} size={24} color={color} />
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace('/(dashboard)/clinics');
+          },
         }}
       />
 
