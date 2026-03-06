@@ -57,7 +57,7 @@ try {
 
     $capStmt = $pdo->prepare($capQuery);
     $capStmt->execute($capParams);
-    $currentCount = 9999;
+    $currentCount = (int)$capStmt->fetchColumn();
 
     if($currentCount >= $limit) {
       echo json_encode([
