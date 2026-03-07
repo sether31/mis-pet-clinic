@@ -20,10 +20,10 @@ export default function ServicesTab({ services, branchId }) {
     );
   }
 
-  const handleBookService = (serviceId) => {
+  const handleBookService = (branchServiceId) => {
     router.push({
-      pathname: `/(dashboard)/clinics/book`,
-      params: { branch_id: branchId, service_id: serviceId }
+      pathname: `/(dashboard)/clinics/BookAppointment`,
+      params: { branch_id: branchId, branch_service_id: branchServiceId }
     });
   };
 
@@ -41,7 +41,8 @@ export default function ServicesTab({ services, branchId }) {
             {({ pressed }) => (
               <View style={styles.cardInner}>
                 <View style={styles.textContainer}>
-                  <AppText style={[styles.serviceName, pressed && { color: Colors.primary }]}>
+                  
+                  <AppText style={styles.serviceName}>
                     {item.service_name}
                   </AppText>
                   
@@ -64,9 +65,8 @@ export default function ServicesTab({ services, branchId }) {
                   </View>
                 </View>
 
-                {/* Booking Button Arrow */}
                 <View style={[styles.bookBtn, pressed && { backgroundColor: Colors.primary }]}>
-                  <Ionicons name="chevron-forward" size={20} color={pressed ? Colors.white : Colors.primary} />
+                  <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
                 </View>
               </View>
             )}
@@ -90,12 +90,12 @@ const styles = StyleSheet.create({
   cardInner: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   textContainer: { flex: 1, paddingRight: 16 },
   
-  serviceName: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 6 },
+  serviceName: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 6, textTransform: 'capitalize' },
   serviceDescription: { fontSize: 13, color: '#6B7280', lineHeight: 20, marginBottom: 12 },
   
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   metaBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   metaText: { fontSize: 13, fontWeight: '700' },
 
-  bookBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primary + '15', alignItems: 'center', justifyContent: 'center' }
+  bookBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' }
 });

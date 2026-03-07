@@ -11,6 +11,7 @@ import { Colors } from '../../../constants/Color';
 import { authFetch } from '../../../utils/auth';
 
 import ServicesTab from './_components/ServicesTab';
+import ProductsTab from './_components/ProductsTab';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const NO_IMAGE = require('../../../assets/images/no-image.jpg');
@@ -23,10 +24,15 @@ export default function ClinicOverview() {
   const [clinic, setClinic] = useState(null);
   const [services, setServices] = useState([]);
   
+  const [isCheckingCapacity, setIsCheckingCapacity] = useState(true);
+  const [isClinicFull, setIsClinicFull] = useState(false);
   const [activeTab, setActiveTab] = useState('services');
 
   useEffect(() => {
-    if (id) fetchClinicData();
+    if (id) {
+        fetchClinicData();
+        checkClinicCapacity(); 
+    }
   }, [id]);
 
   const fetchClinicData = async () => {
@@ -49,6 +55,20 @@ export default function ClinicOverview() {
     }
   };
 
+  const checkClinicCapacity = async () => {
+    setIsCheckingCapacity(true);
+    try {
+      const res = await authFetch(`${API_URL}/api/pet-owner/appointments/check-capacity.php?branch_id=${id}`);
+      if (res?.success && res.data?.is_full) {
+        setIsClinicFull(true);
+      }
+    } catch (error) {
+      console.error("Failed to check capacity", error);
+    } finally {
+      setIsCheckingCapacity(false);
+    }
+  };
+
   const getMediaUrl = (path) => {
     if (!path || path.trim() === '') return null;
     if (path.startsWith('http')) return path; 
@@ -56,7 +76,6 @@ export default function ClinicOverview() {
     return `${API_URL}/${cleanPath}`;
   };
 
-  // Helper function to open URLs safely
   const handleOpenLink = async (url, type) => {
     if(!url) {
       Toast.show({ type: 'info', text1: `${type} not provided by this clinic.` });
@@ -117,7 +136,6 @@ export default function ClinicOverview() {
             <AppText style={styles.infoText}>{clinic?.full_address || "Address not provided"}</AppText>
           </View>
 
-          {/* Always show Phone Row, use N/A if empty */}
           <View style={styles.infoRow}>
             <Ionicons name="call" size={16} color={Colors.primary} />
             <AppText style={[styles.infoText, !clinic?.contact_number && { color: '#9CA3AF' }]}>
@@ -125,9 +143,7 @@ export default function ClinicOverview() {
             </AppText>
           </View>
 
-          {/* show links, apply disabled style if empty */}
           <View style={styles.linksRow}>
-
             <Pressable 
               style={[styles.linkBtn, { backgroundColor: '#1877F2' }, !clinic?.facebook && styles.linkBtnDisabled]} 
               onPress={() => handleOpenLink(clinic?.facebook, 'Facebook page')}
@@ -153,7 +169,7 @@ export default function ClinicOverview() {
           </View>
         </View>
 
-        {/* Tabs */}
+        {/* ALWAYS SHOW TABS */}
         <View style={styles.tabContainer}>
           <Pressable 
             style={[styles.tabBtn, activeTab === 'services' && styles.tabBtnActive]} 
@@ -187,14 +203,34 @@ export default function ClinicOverview() {
         {/* Content Area */}
         <View style={styles.contentArea}>
           {activeTab === 'services' ? (
-            <ServicesTab services={services} branchId={id} />
-          ) : (
-            // check if have shop
-            hasShop ? (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <AppText style={{ color: '#6B7280' }}>Products coming soon...</AppText>
+            
+            isCheckingCapacity ? (
+              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+                <AppText style={{ marginTop: 10, color: '#6B7280' }}>Checking service availability...</AppText>
               </View>
+            ) : isClinicFull ? (
+              // FULL CAPACITY
+              <AnimatedWrapper index={0}>
+                <View style={styles.fullCapacityContainer}>
+                  <View style={styles.fullCapacityIconCircle}>
+                      <Ionicons name="lock-closed" size={40} color="#9CA3AF" />
+                  </View>
+                  <AppText style={styles.fullCapacityTitle}>Services at Capacity</AppText>
+                  <AppText style={styles.fullCapacitySubtitle}>
+                    This clinic is currently not accepting new appointments for services. Please check back later.
+                  </AppText>
+                </View>
+              </AnimatedWrapper>
             ) : (
+              <ServicesTab services={services} branchId={id} />
+            )
+
+          ) : (
+            hasShop ? (
+              <ProductsTab branchId={id} />
+            ) : (
+              // UNAVAILABLE SHOP
               <AnimatedWrapper index={0}>
                 <View style={styles.unavailableContainer}>
                   <View style={styles.unavailableIconCircle}>
@@ -219,32 +255,21 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.bg50 },
   
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 15, backgroundColor: Colors.white, zIndex: 10 },
-  headerTitle: { 
-    flex: 1,               
-    fontSize: 18, 
-    fontWeight: '800', 
-    color: '#111827', 
-    textAlign: 'center',   
-    marginHorizontal: 4   
-  },  
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: '#111827', textAlign: 'center', marginHorizontal: 4 },  
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
   bannerImage: { width: '100%', height: 180, resizeMode: 'cover', backgroundColor: '#E5E7EB' },
   
   infoContainer: { padding: 20, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 10 },
   clinicName: { fontSize: 24, fontWeight: '900', color: '#111827', flex: 1 },
   estBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 4 },
   estText: { color: Colors.primary, fontSize: 13, fontWeight: '800' },
-  
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   infoText: { fontSize: 14, color: '#4B5563', flex: 1, lineHeight: 20 },
-  
   linksRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: 16 },
   linkBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, gap: 6 },
   linkBtnDisabled: { opacity: 0.4 }, 
   linkBtnText: { color: Colors.white, fontSize: 13, fontWeight: '700' },
-  
   descriptionContainer: { marginTop: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
   descriptionTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 6 },
   descriptionText: { fontSize: 14, color: '#6B7280', lineHeight: 22 },
@@ -253,15 +278,21 @@ const styles = StyleSheet.create({
   tabContainer: { flexDirection: 'row', backgroundColor: '#E5E7EB', borderRadius: 10, padding: 4, marginHorizontal: 20, marginTop: 20, marginBottom: 10 },
   tabBtn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   tabBtnActive: { backgroundColor: Colors.white, shadowOpacity: 0.05 },
-  
   tabRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   tabText: { fontSize: 15, fontWeight: '600', color: '#6B7280' },
   tabTextActive: { color: Colors.primary, fontWeight: '800' },
 
   contentArea: { flex: 1, marginTop: 10 }, 
   
+  // Unavailable Shop Style (Gray)
   unavailableContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50, marginHorizontal: 20, backgroundColor: Colors.white, borderRadius: 16, borderStyle: 'dashed', borderWidth: 2, borderColor: '#D1D5DB' },
   unavailableIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   unavailableTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8 },
   unavailableSubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 30, lineHeight: 22 },
+
+  // Full Capacity Style
+  fullCapacityContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50, marginHorizontal: 20, borderRadius: 16, borderStyle: 'dashed', borderWidth: 2, borderColor: '#D1D5DB' },
+  fullCapacityIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  fullCapacityTitle: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 8 },
+  fullCapacitySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 30, lineHeight: 22 },
 });

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { validRoleToken } from '../../utils/auth'; 
 import { Colors } from '../../constants/Color';
 
 export default function DashboardLayout() {
+  const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
 
@@ -46,6 +47,7 @@ export default function DashboardLayout() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: '#9CA3AF',
         headerShown: false, 
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
@@ -92,7 +94,35 @@ export default function DashboardLayout() {
         options={{
           title: 'Clinics',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "business" : "business-outline"} size={24} color={color} />
+            <Ionicons name={focused ? "search" : "search-outline"} size={24} color={color} />
+          ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace('/(dashboard)/clinics');
+          },
+        }}
+      />
+
+      {/* appointments / activity */}
+      <Tabs.Screen
+        name="activity" 
+        options={{
+          title: 'My Activity', 
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "receipt" : "receipt-outline"} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* profile */}
+      <Tabs.Screen
+        name="profile" 
+        options={{
+          title: 'Profile', 
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={24} color={color} />
           ),
         }}
       />

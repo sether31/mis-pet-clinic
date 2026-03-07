@@ -4,9 +4,10 @@ export default function ClinicsLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="product/[productId]" />
-      <Stack.Screen name="[id]" />
-      <Stack.Screen name="BookAppointment" />
+      <Stack.Screen name="EditProfile" />
+      <Stack.Screen name="ChangeEmail" />
+      <Stack.Screen name="ChangePassword" />
+      <Stack.Screen name="VerifyOTP" />
     </Stack>
   );
 }

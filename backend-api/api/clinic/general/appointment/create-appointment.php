@@ -4,7 +4,6 @@ require_once __DIR__ . '/../../../../config/Database.php';
 require_once __DIR__ . '/../../../../helper/log_audit.php';
 
 $user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
-header("Content-Type: application/json");
 
 try {
   $pdo = (new Database())->pdo;
@@ -26,28 +25,31 @@ try {
     throw new Exception("Missing required fields.");
   }
 
-  // check appointment limit
   $limitStmt = $pdo->prepare(
-    "SELECT s.appointment_limit 
+    "SELECT s.appointment_limit, bs.created_at as sub_start_date 
     FROM branch_subscriptions_tb bs
     JOIN subscription_tb s ON bs.subscription_id = s.subscription_id
     WHERE bs.branch_id = ? AND bs.status = 'active'
-    LIMIT 1"
+    ORDER BY bs.created_at DESC LIMIT 1"
   );
   $limitStmt->execute([$branch_id]);
   $subData = $limitStmt->fetch();
   
   $limit = $subData ? (int)$subData['appointment_limit'] : 0;
+  $sub_start_date = $subData ? $subData['sub_start_date'] : '2000-01-01 00:00:00';
 
   // only check if limit is below 1000 
-  if($limit < 1000) {
+  if($limit > 0 && $limit < 1000) {
+    // only count appointments created AFTER the current subscription started
     $capQuery = "SELECT COUNT(*) FROM appointments_tb 
                   WHERE branch_id = ? 
-                  AND status NOT IN ('cancelled', 'rejected')";
+                  AND status NOT IN ('cancelled', 'rejected')
+                  AND created_at >= ?";
     
-    $capParams = [$branch_id];
+    // Pass the start date into the query
+    $capParams = [$branch_id, $sub_start_date];
 
-    // ignore this specific ID in the count
+    // ignore this specific ID in the count (Allows editing when at max capacity)
     if($appointment_id) {
       $capQuery .= " AND appointment_id != ?";
       $capParams[] = $appointment_id;
@@ -60,7 +62,7 @@ try {
     if($currentCount >= $limit) {
       echo json_encode([
         "success" => false, 
-        "message" => "Subscription Limit Reached: This branch is limited to $limit active appointments."
+        "message" => "Subscription Limit Reached: This branch is limited to $limit appointments"
       ]);
       exit;
     }
@@ -125,7 +127,6 @@ try {
       $branch_id, $start_time, $end_time, $appointment_id
     ]);
     $msg = "Appointment updated and confirmed.";
-     $action = 'UPDATE';
     $targetId = $appointment_id;
   } else {
     // insert new
@@ -140,10 +141,8 @@ try {
       $branch_id, $start_time, $end_time
     ]);
     $targetId = $pdo->lastInsertId();
-    $action = 'CREATE';
     $msg = "Appointment successfully scheduled.";
   }
-
 
   // get clinic for audit
   $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");

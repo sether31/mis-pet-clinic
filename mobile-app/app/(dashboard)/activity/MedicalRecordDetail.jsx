@@ -9,14 +9,14 @@ import Toast from 'react-native-toast-message';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
-import { Colors } from '../../../../constants/Color';
-import { authFetch } from '../../../../utils/auth';
-import { displayDate } from '../../../../utils/dateFormatter';
-import AppText from '../../../../components/AppText';
-import AnimatedWrapper from '../../../../components/AnimatedWrapper';
+import { Colors } from '../../../constants/Color';
+import { authFetch } from '../../../utils/auth';
+import { displayDate } from '../../../utils/dateFormatter';
+import AppText from '../../../components/AppText';
+import AnimatedWrapper from '../../../components/AnimatedWrapper';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
-const NO_IMAGE = require('../../../../assets/images/no-image.jpg'); 
+const NO_IMAGE = require('../../../assets/images/no-image.jpg'); 
 
 export default function MedicalRecordDetail() {
   const router = useRouter();
@@ -106,7 +106,15 @@ export default function MedicalRecordDetail() {
     return Colors.primary; 
   };
 
-  if (loading) {
+  const goToClinicProfile = () => {
+    if (record?.branch_id) {
+      router.push(`/(dashboard)/clinics/${record.branch_id}`);
+    } else {
+      Toast.show({ type: 'info', text1: 'Clinic profile not available.' });
+    }
+  };
+
+  if(loading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -173,17 +181,19 @@ export default function MedicalRecordDetail() {
               <AppText style={styles.vetName}>
                 Dr. {record?.vet_first_name} {record?.vet_last_name}
               </AppText>
-              <View style={styles.clinicRow}>
-                <Ionicons name="business-outline" size={14} color="#6B7280" />
+              
+              <TouchableOpacity style={styles.clinicRow} onPress={goToClinicProfile} activeOpacity={0.6}>
+                <Ionicons name="business-outline" size={14} color={Colors.primary} />
                 <AppText style={styles.clinicName}>{record?.branch_name}</AppText>
-              </View>
+                <Ionicons name="chevron-forward" size={14} color={Colors.primary} style={{marginLeft: 2}} />
+              </TouchableOpacity>
+              
             </View>
           </View>
         </AnimatedWrapper>
 
         <View style={styles.detailsContainer}>
           
-          {/* use "N/A" if empty */}
           <AnimatedWrapper index={2} style={styles.section}>
             <AppText style={styles.sectionTitle}>Diagnosis</AppText>
             <View style={styles.readOnlyBlock}>
@@ -193,7 +203,6 @@ export default function MedicalRecordDetail() {
             </View>
           </AnimatedWrapper>
 
-          {/* use "N/A" if empty */}
           <AnimatedWrapper index={3} style={styles.section}>
             <AppText style={styles.sectionTitle}>Treatment & Prescriptions</AppText>
             <View style={styles.readOnlyBlock}>
@@ -304,8 +313,9 @@ const styles = StyleSheet.create({
   vetAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
   providerInfo: { flex: 1 },
   vetName: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 2, textTransform: 'capitalize' },
-  clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  clinicName: { fontSize: 13, color: '#6B7280', fontWeight: '500', textTransform: 'capitalize' },
+  
+  clinicRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, paddingVertical: 4 },
+  clinicName: { fontSize: 13, color: Colors.primary, fontWeight: '700', textTransform: 'capitalize' },
 
   detailsContainer: { paddingHorizontal: 20 },
   section: { marginBottom: 24 },
