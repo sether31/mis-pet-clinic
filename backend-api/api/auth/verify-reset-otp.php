@@ -23,9 +23,6 @@ try {
     throw new Exception("Invalid or expired verification code");
   }
 
-  // audit verify otp
-  log_audit($pdo, $userId, null, null, 'PASSWORD_RESET_OTP_VERIFIED', 'USER', $userId);
-
   echo json_encode([
     "success" => true,
     "message" => "OTP verified successfully. You may now reset your password."

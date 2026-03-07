@@ -47,6 +47,7 @@ export default function DashboardLayout() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: '#9CA3AF',
         headerShown: false, 
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
@@ -111,6 +112,17 @@ export default function DashboardLayout() {
           title: 'My Activity', 
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "receipt" : "receipt-outline"} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* profile */}
+      <Tabs.Screen
+        name="profile" 
+        options={{
+          title: 'Profile', 
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={24} color={color} />
           ),
         }}
       />

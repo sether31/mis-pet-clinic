@@ -46,7 +46,7 @@ try {
     exit;
   }
 
-  $otpData = generateOtp($user['user_id'], 'login', 6);
+  $otpData = generateOtp($user['user_id'], 'login', 5);
     
   sendMailOTP($user['email'], $otpData['otp'], $user['first_name'], 'login', $otpData['expires_at']);
 

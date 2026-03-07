@@ -4,6 +4,7 @@ error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED);
 require_once __DIR__ . '/../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../config/Database.php';
 require_once __DIR__ . '/../../../vendor/autoload.php';
+require_once __DIR__ . '/../../../helper/log_audit.php';
 
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
@@ -24,12 +25,14 @@ try {
   $pdo->beginTransaction();
 
   // 1. Get the order_id
-  $stmtAppt = $pdo->prepare("SELECT order_id FROM appointments_tb WHERE appointment_id = ?");
+  $stmtAppt = $pdo->prepare("SELECT order_id, branch_id FROM appointments_tb WHERE appointment_id = ?");
   $stmtAppt->execute([$data->appointment_id]);
   $appt = $stmtAppt->fetch();
   
   if (!$appt || !$appt['order_id']) throw new Exception("No order found.");
+
   $order_id = $appt['order_id'];
+  $branch_id = $appt['branch_id'];
 
   // 2. Get the payment record
   $stmtPay = $pdo->prepare("SELECT payment_id, xendit_invoice_id, payment_status FROM payments_tb WHERE order_id = ? AND payment_type = 'appointment' FOR UPDATE");
@@ -62,6 +65,20 @@ try {
 
     // 6. Update order table to 'completed' (Keep everything in sync!)
     $pdo->prepare("UPDATE order_tb SET order_status = 'completed' WHERE order_id = ?")->execute([$order_id]);
+
+    $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
+    $stmtClinic->execute([$branch_id]);
+    $clinicId = $stmtClinic->fetchColumn() ?: 0;
+
+    log_audit(
+      $pdo, 
+      $decoded->user_id,     
+      $clinicId,             
+      $branch_id,           
+      'PAY',              
+      'APPOINTMENT_BILL', 
+      $payRecord['payment_id'] 
+    );
 
     $pdo->commit();
     echo json_encode(["success" => true, "message" => "Payment successful!"]);
