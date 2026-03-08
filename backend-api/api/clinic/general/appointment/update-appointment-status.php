@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
 require_once __DIR__ . '/../../../../helper/log_audit.php';
+require_once __DIR__ . '/../../../../helper/send_notification.php';
 
 $decoded = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 $adminId = $decoded->user_id;
@@ -22,9 +23,10 @@ try {
   $pdo->beginTransaction();
 
   $stmtDetails = $pdo->prepare(
-    "SELECT a.branch_id, b.clinic_id 
+    "SELECT a.branch_id, b.clinic_id, a.user_id, p.name AS pet_name, b.name AS clinic_name
     FROM appointments_tb a
     JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
+    JOIN pet_tb p ON a.pet_id = p.pet_id           
     WHERE a.appointment_id = ?"
   );
   $stmtDetails->execute([$appointment_id]);
@@ -37,8 +39,11 @@ try {
 
   $branchId = $details['branch_id'];
   $clinicId = $details['clinic_id'];
+  $petOwnerId = $details['user_id'];
+  $clinicName = $details['clinic_name'] ?? 'Veterinary Clinic';
+  $petName = $details['pet_name'] ?? 'your pet';
 
-  // 2. UPDATE appointment status
+  // UPDATE appointment status
   $stmt = $pdo->prepare(
     "UPDATE appointments_tb 
     SET status = :status, feedback = :feedback
@@ -64,8 +69,6 @@ try {
     $appointment_id
   );
 
-  $pdo->commit();
-
   $readable_status = [
     'confirmed' => 'approved',
     'rejected'  => 'declined',
@@ -74,6 +77,18 @@ try {
   ];
 
   $actionResponse = $readable_status[$status] ?? $status;
+
+  // notif
+  $title = $clinicName; 
+  $notificationMessage = "Your appointment for " . $petName . " has been " . $actionResponse . ".";
+  
+  if (!empty($feedback)) {
+    $notificationMessage .= "\n\nClinic Note: " . $feedback;
+  }
+
+  send_notification($pdo, $petOwnerId, 'appointment', $title, $notificationMessage);
+
+  $pdo->commit();
 
   echo json_encode([
     "success" => true, 
