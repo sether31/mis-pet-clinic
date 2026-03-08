@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
 require_once __DIR__ . '/../../../../helper/log_audit.php';
+require_once __DIR__ . '/../../../../helper/send_notification.php';
 
 $user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
 
@@ -18,10 +19,13 @@ try {
   // get owner details
   $stmtInfo = $pdo->prepare(
     "SELECT 
-        a.user_id, a.pet_id, a.start_time, a.staff_id as assigned_staff_id,
-        bs.custom_name, bs.price as service_price
+      a.user_id, a.pet_id, a.start_time, a.staff_id as assigned_staff_id,
+      bs.custom_name, bs.price as service_price,
+      p.name as pet_name, cb.name as clinic_name
     FROM appointments_tb a
     INNER JOIN branch_service_tb bs ON a.service_id = bs.branch_service_id
+    LEFT JOIN pet_tb p ON a.pet_id = p.pet_id
+    LEFT JOIN clinic_branches_tb cb ON a.branch_id = cb.branch_id
     WHERE a.appointment_id = ?"
   );
   $stmtInfo->execute([$data->appointment_id]);
@@ -135,6 +139,23 @@ try {
     'MEDICAL_RECORD', 
     $medRecordId
   );
+
+
+  $petName = ucwords($appt['pet_name'] ?? 'pet name');
+  $clinicName = ucwords($appt['clinic_name'] ?? 'the clinic');
+  $formattedTotal = number_format($data->total, 2);
+
+  if($is_card) {
+    // Notification for online Payment
+    $notifTitle = "Action Required: Pay Bill";
+    $notifMessage = "Your bill of ₱{$formattedTotal} for {$petName}'s appointment at {$clinicName} is ready. Please go to activity to complete your payment.";
+  } else {
+    // Notification for Cash Payment
+    $notifTitle = "Payment Received";
+    $notifMessage = "Your cash payment of ₱{$formattedTotal} for {$petName}'s appointment at {$clinicName} has been successfully processed. Thank you!";
+  }
+
+  send_notification($pdo, $appt['user_id'], 'billing', $notifTitle, $notifMessage);
 
   $pdo->commit();
 

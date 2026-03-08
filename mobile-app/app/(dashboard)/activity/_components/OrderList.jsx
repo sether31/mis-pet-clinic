@@ -82,7 +82,7 @@ export default function OrderList({ activeTab }) {
 
   const filteredOrders = orders.filter(item => {
     if (activeTab === 'upcoming') {
-      return item.order_status === 'pending';
+      return item.order_status === 'pending' || item.order_status === 'confirmed';
     } else {
       return item.order_status === 'completed' || item.order_status === 'cancelled';
     }
@@ -90,10 +90,16 @@ export default function OrderList({ activeTab }) {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'completed': return { bg: '#DCFCE7', text: Colors.primary, label: 'Picked Up' }; 
-      case 'pending': return { bg: '#FEF3C7', text: '#92400E', label: 'Awaiting Pickup' }; 
-      case 'cancelled': return { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' }; 
-      default: return { bg: '#F3F4F6', text: '#374151', label: status }; 
+      case 'completed': 
+        return { bg: '#DCFCE7', text: Colors.primary, label: 'Picked Up' }; 
+      case 'confirmed': 
+        return { bg: '#DBEAFE', text: '#1E40AF', label: 'Ready for Pickup' }; 
+      case 'pending': 
+        return { bg: '#FEF3C7', text: '#92400E', label: 'Waiting for confirmation' }; 
+      case 'cancelled': 
+        return { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' }; 
+      default: 
+        return { bg: '#F3F4F6', text: '#374151', label: status }; 
     }
   };
 
@@ -122,10 +128,11 @@ export default function OrderList({ activeTab }) {
                     {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </AppText>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, marginTop: 4 }]}>
-                    <AppText style={[styles.statusText, { color: statusStyle.text }]}>{statusStyle.label}</AppText>
-                  </View>
+                {/* 💥 Status Badge now uses dynamic labels (Waiting vs Awaiting) */}
+                <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                  <AppText style={[styles.statusText, { color: statusStyle.text }]}>
+                    {statusStyle.label}
+                  </AppText>
                 </View>
               </View>
 
@@ -135,7 +142,7 @@ export default function OrderList({ activeTab }) {
                   style={styles.prodImg} 
                 />
                 <View style={{flex: 1}}>
-                  <AppText style={styles.serviceName}>
+                  <AppText style={styles.serviceName} numberOfLines={1}>
                     {item.product_name}
                   </AppText>
                   <AppText style={styles.clinicName}>{item.branch_name}</AppText>

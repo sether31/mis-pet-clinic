@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Pressable, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,10 +8,21 @@ import { Colors } from '../../../constants/Color';
 
 import AppointmentsList from './_components/AppointmentList';
 import OrdersList from './_components/OrderList';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function ActivityScreen() {
+  const { tab } = useLocalSearchParams(); 
+
   const [mainTab, setMainTab] = useState('appointments');
   const [activeTab, setActiveTab] = useState('upcoming'); 
+
+  useEffect(() => {
+    if (tab === 'orders') {
+      setMainTab('orders');
+    } else if (tab === 'appointments') {
+      setMainTab('appointments');
+    }
+  }, [tab]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

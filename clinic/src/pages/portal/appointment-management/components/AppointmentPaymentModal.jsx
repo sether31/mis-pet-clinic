@@ -263,7 +263,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   });
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-300 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-10000 bg-black/70 backdrop-blur-sm">
       <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white rounded-2xl">
         
         {/* tabs */}

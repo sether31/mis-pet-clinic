@@ -10,7 +10,7 @@ export default function SubscriptionGate({ children, type }) {
   
   const isExpired = sub?.end_date ? sub.end_date < today : true;
   const isOverLimit = type === 'appointment' 
-    ? (Number(sub?.current_usage) + 95) >= Number(sub?.appointment_limit)
+    ? (Number(sub?.current_usage)) >= Number(sub?.appointment_limit)
     : false;
 
   const isLocked = isExpired || isOverLimit;
