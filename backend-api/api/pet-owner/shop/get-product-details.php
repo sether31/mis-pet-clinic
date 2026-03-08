@@ -25,6 +25,7 @@ try {
       p.description, 
       p.category, 
       p.prod_pic,
+      b.logo_picture as branch_image,
       b.name as branch_name,
       COALESCE(SUM(i.stock_level), 0) as total_stock,
       COALESCE((

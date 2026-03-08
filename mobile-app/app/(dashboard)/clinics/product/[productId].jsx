@@ -11,6 +11,7 @@ import { authFetch } from '../../../../utils/auth';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const NO_IMAGE = require('../../../../assets/images/no-image.jpg');
+const DEFAULT_CLINIC_LOGO = require('../../../../assets/images/no-image.jpg'); 
 
 export default function ProductDetailScreen() {
   const router = useRouter();
@@ -202,6 +203,9 @@ export default function ProductDetailScreen() {
   }
 
   const imageSource = getMediaUrl(product.prod_pic) ? { uri: getMediaUrl(product.prod_pic) } : NO_IMAGE;
+  // Fallback to default if clinic_logo isn't provided by the API yet
+  const clinicLogoSource = getMediaUrl(product.branch_image) ? { uri: getMediaUrl(product.branch_image) } : DEFAULT_CLINIC_LOGO;
+  
   const isOutOfStock = parseInt(product.total_stock) <= 0;
   const safeQty = parseInt(quantity) || 1;
   const totalPrice = (parseFloat(product.price) * safeQty).toFixed(2);
@@ -244,6 +248,32 @@ export default function ProductDetailScreen() {
               {isOutOfStock ? 'Sold Out' : `${product.total_stock} items left in stock`}
             </AppText>
           </View>
+
+          <View style={styles.divider} />
+
+          {/* SELLER PROFILE SECTION */}
+          <Pressable 
+            style={({ pressed }) => [
+              styles.sellerContainer, 
+              pressed && styles.sellerContainerPressed
+            ]}
+            onPress={() => router.push(`/(dashboard)/clinics/${branch_id}`)}
+          >
+            {({ pressed }) => (
+              <>
+                <Image source={clinicLogoSource} style={styles.sellerLogo} />
+                <View style={styles.sellerInfo}>
+                  <AppText style={styles.sellerName}>{product.branch_name}</AppText>
+                  <AppText style={styles.sellerSubtitle}>View Clinic Profile</AppText>
+                </View>
+                <Ionicons 
+                  name="chevron-forward" 
+                  size={20} 
+                  color={pressed ? "#9CA3AF" : Colors.primary} 
+                />
+              </>
+            )}
+          </Pressable>
 
           <View style={styles.divider} />
 
@@ -406,7 +436,6 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFF' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
   
-  // 💥 MATCHED HEADER STYLES
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -437,7 +466,15 @@ const styles = StyleSheet.create({
   price: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 20 },
   stockBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', alignSelf: 'flex-start' },
   stockText: { fontSize: 14, fontWeight: '700', color: '#374151', marginLeft: 8 },
-  divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 24 },
+  
+  sellerContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 12 },
+  sellerContainerPressed: { backgroundColor: '#F3F4F6' },
+  sellerLogo: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#E5E7EB', borderWidth: 1, borderColor: '#D1D5DB' },
+  sellerInfo: { flex: 1, marginLeft: 12 },
+  sellerName: { fontSize: 16, fontWeight: '800', color: '#111827', marginBottom: 2 },
+  sellerSubtitle: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
+
+  divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 12 },
   description: { fontSize: 15, color: '#4B5563', lineHeight: 24 },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', padding: 20, paddingBottom: 30, borderTopWidth: 1, borderTopColor: '#E5E7EB' },
