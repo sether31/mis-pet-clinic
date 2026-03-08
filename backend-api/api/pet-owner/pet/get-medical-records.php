@@ -29,6 +29,8 @@ try {
       record_type, med_image_1, med_image_2, med_doc_1, med_doc_2
     FROM medrecord_tb 
     WHERE pet_id = :pet_id 
+      AND record_type IS NOT NULL 
+      AND record_type != 'unset'
     ORDER BY record_date DESC" 
   );
   

@@ -25,7 +25,7 @@ export default function MedicalRecordsList({ records, petName, onRecordPress }) 
     if(t.includes('non')) {
       return 'paw'; 
     }
-    return 'fitness';
+    return 'medkit';
   };
 
   if (!records || records.length === 0) {
@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
   },
   
   recordHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 4 },
   
-  recordType: { fontSize: 16, fontWeight: '800', color: '#111827', flexShrink: 1 },
+  recordType: { fontSize: 16, fontWeight: '800', color: '#111827', flexShrink: 1, textTransform: 'capitalize' },
   
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   badgeText: { fontSize: 10, fontWeight: '800', color: Colors.white, letterSpacing: 0.5 },
