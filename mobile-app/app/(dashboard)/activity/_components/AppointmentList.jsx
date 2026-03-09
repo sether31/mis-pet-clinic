@@ -118,9 +118,26 @@ export default function AppointmentsList({ activeTab }) {
     }
   };
 
-  const goToClinicProfile = (branchId) => {
+  const goToClinicProfile = (appointment) => {
+    if (!appointment?.branch_id) return;
+
+    if (
+      appointment.is_maintenance == 1 || 
+      appointment.clinic_status !== 'approved' || 
+      appointment.has_active_sub == 0
+    ) {
+      setModalVisible(false);
+      Toast.show({ 
+        type: 'info', 
+        text1: 'Clinic Unavailable', 
+        text2: 'This clinic is currently under maintenance or unavailable.',
+        visibilityTime: 4000 
+      });
+      return; 
+    }
+
     setModalVisible(false); 
-    router.push(`/(dashboard)/clinics/${branchId}?from=activity`); 
+    router.push(`/(dashboard)/clinics/${appointment.branch_id}?from=activity`); 
   };
 
   const filteredAppointments = appointments.filter(item => {
@@ -160,7 +177,8 @@ export default function AppointmentsList({ activeTab }) {
           style={({pressed}) => [styles.card, pressed && styles.cardPressed]}
           onPress={() => {
             if(item.status === 'completed') {
-              router.push(`/activity/MedicalRecordDetail?recordId=${item.record_id}`);
+              router.push(`/(dashboard)/pets/record/${item.record_id}?from=activity`);
+              
             } else {
               setSelectedAppointment(item);
               setModalVisible(true);
@@ -330,6 +348,14 @@ export default function AppointmentsList({ activeTab }) {
                       <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.service_name}</AppText>
                     </View>
 
+                    {/* 💥 NEW ROW: Always show the Base Service Fee */}
+                    <View style={styles.detailRow}>
+                      <AppText style={styles.detailLabel}>Service Fee</AppText>
+                      <AppText style={[styles.detailValue, { color: Colors.primary }]}>
+                        ₱{parseFloat(selectedAppointment.service_fee || 0).toFixed(2)}
+                      </AppText>
+                    </View>
+
                     <View style={styles.detailRow}>
                       <AppText style={styles.detailLabel}>Clinic</AppText>
                       <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.branch_name}</AppText>
@@ -340,13 +366,42 @@ export default function AppointmentsList({ activeTab }) {
                       <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.pet_name}</AppText>
                     </View>
 
+                    {/* 💥 DYNAMIC RECEIPT BLOCK (Only shows if there is a final bill) */}
+                    {selectedAppointment.total_amount && (
+                      <View style={styles.receiptContainer}>
+                        <AppText style={styles.receiptTitle}>Final Bill Breakdown</AppText>
+                        
+                        {(selectedAppointment.items || []).map((item, idx) => (
+                          <View key={idx} style={styles.receiptItemRow}>
+                            <View style={{flex: 1, paddingRight: 10}}>
+                              <AppText style={styles.receiptItemName}>{item.item_name}</AppText>
+                              <AppText style={styles.receiptItemQty}>
+                                {item.quantity} x ₱{parseFloat(item.price).toFixed(2)}
+                              </AppText>
+                            </View>
+                            <AppText style={styles.receiptItemSubtotal}>
+                              ₱{parseFloat(item.subtotal).toFixed(2)}
+                            </AppText>
+                          </View>
+                        ))}
+
+                        {/* Final Total Row */}
+                        <View style={styles.receiptTotalRow}>
+                          <AppText style={styles.receiptTotalLabel}>Final Total</AppText>
+                          <AppText style={styles.receiptTotalValue}>
+                            ₱{parseFloat(selectedAppointment.total_amount).toFixed(2)}
+                          </AppText>
+                        </View>
+                      </View>
+                    )}
+
                     {(selectedAppointment.status === 'rejected' || selectedAppointment.status === 'cancelled') && selectedAppointment.feedback && (
                       <View style={styles.feedbackBox}>
                         <AppText style={styles.feedbackLabel}>Reason for {selectedAppointment.status}:</AppText>
                         <AppText style={styles.feedbackText}>{selectedAppointment.feedback}</AppText>
                       </View>
                     )}
-                  </View>
+                  </View> 
                 )}
 
                 {/* ONLY SHOW BOTTOM BUTTONS IF NOT IN PAYMENT SELECTOR MODE */}
@@ -364,7 +419,7 @@ export default function AppointmentsList({ activeTab }) {
 
                     <Pressable 
                       style={({ pressed }) => [styles.viewClinicBtn, pressed && styles.viewClinicBtnPressed]} 
-                      onPress={() => goToClinicProfile(selectedAppointment.branch_id)} 
+                      onPress={() => goToClinicProfile(selectedAppointment)} 
                     >
                       <Ionicons name="business" size={20} color="#FFFFFF" style={{marginRight: 8}}/>
                       <AppText style={styles.viewClinicText}>View Clinic Profile</AppText>
@@ -459,6 +514,17 @@ const styles = StyleSheet.create({
   feedbackBox: { backgroundColor: '#FEF2F2', padding: 16, borderRadius: 12, marginTop: 4, borderWidth: 1, borderColor: '#FEE2E2' },
   feedbackLabel: { fontSize: 12, fontWeight: '800', color: '#991B1B', marginBottom: 6, textTransform: 'uppercase' },
   feedbackText: { fontSize: 14, color: '#7F1D1D', fontStyle: 'italic', lineHeight: 20 },
+
+  // Receipt Styles
+  receiptContainer: { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 16, marginTop: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  receiptTitle: { fontSize: 13, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 0.5 },
+  receiptItemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  receiptItemName: { fontSize: 14, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
+  receiptItemQty: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  receiptItemSubtotal: { fontSize: 14, fontWeight: '700', color: '#1E293B' },
+  receiptTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#CBD5E1' },
+  receiptTotalLabel: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
+  receiptTotalValue: { fontSize: 18, fontWeight: '900', color: Colors.primary },
 
   // Styles for the Wallet Selection Buttons
   walletBtn: { flexDirection: 'row', padding: 18, borderRadius: 12, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 } },

@@ -20,7 +20,40 @@ try {
   $reqQty = (int)$data->quantity;
   $pickupDate = $data->pickup_date; 
 
-  // STALE DATA VALIDATION
+  // Stop the checkout if clinic expired 
+  $checkStmt = $pdo->prepare(
+    "SELECT 
+      cb.is_maintenance, 
+      cb.status, 
+      (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
+        WHERE bs.branch_id = cb.branch_id 
+          AND LOWER(bs.status) = 'active' 
+          AND bs.end_date >= CURDATE()
+      ) as has_sub,
+      (SELECT sub.has_shop FROM branch_subscriptions_tb bs 
+        JOIN subscription_tb sub ON bs.subscription_id = sub.subscription_id
+        WHERE bs.branch_id = cb.branch_id 
+          AND LOWER(bs.status) = 'active' 
+          AND bs.end_date >= CURDATE()
+        LIMIT 1
+      ) as has_shop
+    FROM clinic_branches_tb cb 
+    WHERE cb.branch_id = ?"
+  );
+  $checkStmt->execute([$branchId]);
+  $clinicCheck = $checkStmt->fetch();
+
+  // If clinic is closed, maintenance, expired, OR no longer has shop access
+  if (!$clinicCheck || 
+    $clinicCheck['is_maintenance'] == 1 || 
+    strtolower($clinicCheck['status']) !== 'approved' || 
+    $clinicCheck['has_sub'] == 0 ||
+    $clinicCheck['has_shop'] == 0
+  ) {
+    throw new Exception("This clinic's shop is currently under maintenance or unavailable.");
+  }
+
+  // CHECK IF DAY IS CLOSED 
   $dayOfWeek = strtolower(date('l', strtotime($pickupDate)));
   
   $stmtCheckDay = $pdo->prepare("SELECT is_closed FROM branch_operating_hours_tb WHERE branch_id = :bid AND LOWER(day_of_week) = :dow");
@@ -34,48 +67,36 @@ try {
   // START TRANSACTION
   $pdo->beginTransaction();
 
-  // FEFO LOGIC
+  // Only lock and check the FIRST available batch!
   $stmtInv = $pdo->prepare(
     "SELECT inventory_id, stock_level, price 
     FROM inventory_tb 
     WHERE product_id = :pid AND branch_id = :bid 
       AND stock_level > 0 
       AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
-    ORDER BY expiry_date ASC
+    ORDER BY expiry_date IS NULL ASC, expiry_date ASC
+    LIMIT 1
     FOR UPDATE"
   );
   $stmtInv->execute([':pid' => $productId, ':bid' => $branchId]);
-  $inventoryRows = $stmtInv->fetchAll();
+  $inventoryBatch = $stmtInv->fetch();
 
-  $totalAvailable = 0;
-  foreach($inventoryRows as $row) {
-    $totalAvailable += $row['stock_level'];
+  // If there is no batch, or the user asks for more than this specific batch holds
+  if(!$inventoryBatch || $reqQty > $inventoryBatch['stock_level']) {
+    throw new Exception("Stock level changed during checkout. Please refresh the product page.");
   }
 
-  if($reqQty > $totalAvailable) {
-    throw new Exception("Sorry, there is not enough stock available.");
-  }
+  // Calculate Price strictly off this single batch
+  $unitPrice = $inventoryBatch['price'];
+  $totalPrice = $reqQty * $unitPrice;
 
-  // Deduct Stock & Calculate Price
-  $qtyToFulfill = $reqQty;
-  $totalPrice = 0;
-
+  // Deduct Stock
+  $newStock = $inventoryBatch['stock_level'] - $reqQty;
   $updateInvStmt = $pdo->prepare("UPDATE inventory_tb SET stock_level = :new_stock WHERE inventory_id = :inv_id");
-
-  foreach($inventoryRows as $row) {
-    if($qtyToFulfill <= 0) break; 
-    
-    $take = min($row['stock_level'], $qtyToFulfill);
-    $totalPrice += ($take * $row['price']); 
-    
-    $newStock = $row['stock_level'] - $take;
-    $updateInvStmt->execute([
-      ':new_stock' => $newStock, 
-      ':inv_id' => $row['inventory_id']
-    ]);
-
-    $qtyToFulfill -= $take; 
-  }
+  $updateInvStmt->execute([
+    ':new_stock' => $newStock, 
+    ':inv_id' => $inventoryBatch['inventory_id']
+  ]);
 
   // Create the Main Order Record
   $stmtOrder = $pdo->prepare(
@@ -92,7 +113,6 @@ try {
   $orderId = $pdo->lastInsertId();
 
   // Create the Order Items Record
-  $avgPrice = $totalPrice / $reqQty; 
   $stmtItem = $pdo->prepare(
     "INSERT INTO order_items_tb (order_id, product_id, quantity, price)
     VALUES (:oid, :pid, :qty, :price)"
@@ -101,7 +121,7 @@ try {
     ':oid' => $orderId,
     ':pid' => $productId,
     ':qty' => $reqQty,
-    ':price' => $avgPrice
+    ':price' => $unitPrice
   ]);
 
   // Create the Pending Payment Record

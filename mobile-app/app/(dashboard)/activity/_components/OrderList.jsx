@@ -76,6 +76,27 @@ export default function OrderList({ activeTab }) {
   };
 
   const goToProduct = (item) => {
+    if (!item.product_id || !item.branch_id) {
+      Toast.show({ type: 'error', text1: 'Cannot load product details.' });
+      return;
+    }
+
+    if(
+      item.is_maintenance == 1 || 
+      item.clinic_status !== 'approved' || 
+      item.has_active_sub == 0
+    ) {
+      setModalVisible(false);
+      Toast.show({ 
+        type: 'info', 
+        text1: 'Clinic Unavailable', 
+        text2: 'This clinic is currently under maintenance or unavailable.',
+        visibilityTime: 4000 
+      });
+      
+      return; 
+    }
+    
     setModalVisible(false);
     router.push(`/(dashboard)/clinics/product/${item.product_id}?branch_id=${item.branch_id}&from=activity`);
   };
@@ -292,12 +313,12 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: Colors.border300 },
   cardPressed: { transform: [{ scale: 0.98 }], borderColor: Colors.primary, backgroundColor: '#F9FAFB' }, 
   
-  // 💥 FIX: Matched header alignment to AppointmentsList
+  // Matched header alignment to AppointmentsList
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }, 
   dateTime: { flexDirection: 'row', alignItems: 'center' },
   dateText: { fontSize: 12, color: '#6B7280', marginLeft: 4, fontWeight: '600' },
   
-  // 💥 FIX: Added refIdLabel
+  // Added refIdLabel
   refIdLabel: { fontSize: 11, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase' },
 
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },

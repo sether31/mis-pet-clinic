@@ -33,7 +33,7 @@ export default function HomeTab() {
     try {
       const [notifRes, pickupRes] = await Promise.all([
         authFetch(`${API_URL}/api/pet-owner/home/get-latest-notif.php`),
-        authFetch(`${API_URL}/api/pet-owner/shop/get-reservation-records.php`) 
+        authFetch(`${API_URL}/api/pet-owner/home/get-latest-pickups.php`) 
       ]);
 
       if (notifRes?.success) {
@@ -42,10 +42,7 @@ export default function HomeTab() {
       }
       
       if (pickupRes?.success) {
-        const activeOrders = (pickupRes.data || [])
-          .filter(item => item.order_status === 'pending' || item.order_status === 'confirmed')
-          .slice(0, 3);
-        setPickups(activeOrders);
+        setPickups(pickupRes.data || []);
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);

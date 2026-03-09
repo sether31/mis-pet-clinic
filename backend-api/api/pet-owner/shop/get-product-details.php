@@ -16,7 +16,43 @@ $branch_id = $_GET['branch_id'];
 try {
   $pdo = (new Database())->pdo;
 
-  // Get the Product Data & Branch Name
+  $checkStmt = $pdo->prepare(
+    "SELECT 
+      cb.is_maintenance, 
+      cb.status, 
+      (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
+        WHERE bs.branch_id = cb.branch_id 
+          AND LOWER(bs.status) = 'active' 
+          AND bs.end_date >= CURDATE()
+      ) as has_sub,
+      (SELECT sub.has_shop FROM branch_subscriptions_tb bs 
+        JOIN subscription_tb sub ON bs.subscription_id = sub.subscription_id
+        WHERE bs.branch_id = cb.branch_id 
+          AND LOWER(bs.status) = 'active' 
+          AND bs.end_date >= CURDATE()
+        LIMIT 1
+      ) as has_shop
+    FROM clinic_branches_tb cb 
+    WHERE cb.branch_id = ?"
+  );
+  $checkStmt->execute([$branch_id]);
+  $clinicCheck = $checkStmt->fetch();
+
+  if (!$clinicCheck || 
+    $clinicCheck['is_maintenance'] == 1 || 
+    strtolower($clinicCheck['status']) !== 'approved' || 
+    $clinicCheck['has_sub'] == 0 ||
+    $clinicCheck['has_shop'] == 0
+  ) {
+    echo json_encode([
+      "success" => false, 
+      "is_unavailable" => true, 
+      "message" => "This clinic's shop is currently under maintenance or unavailable."
+    ]);
+    exit; 
+  }
+
+  // FETCH BASE PRODUCT DETAILS
   $stmt = $pdo->prepare(
     "SELECT 
       p.product_id, 
@@ -25,48 +61,50 @@ try {
       p.description, 
       p.category, 
       p.prod_pic,
-      b.name as branch_name,
-      COALESCE(SUM(i.stock_level), 0) as total_stock,
-      COALESCE((
-        SELECT price 
-        FROM inventory_tb 
-        WHERE product_id = p.product_id 
-          AND branch_id = p.branch_id 
-          AND stock_level > 0 
-          AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
-        ORDER BY expiry_date ASC 
-        LIMIT 1
-      ), 0.00) as price
+      b.logo_picture as branch_image,
+      b.name as branch_name
     FROM products_tb p
     JOIN clinic_branches_tb b ON p.branch_id = b.branch_id 
-    LEFT JOIN inventory_tb i 
-      ON p.product_id = i.product_id 
-      AND i.branch_id = p.branch_id
-      AND i.stock_level > 0 
-      AND (i.expiry_date >= CURDATE() OR i.expiry_date IS NULL)
     WHERE p.product_id = :product_id AND p.branch_id = :branch_id
-    GROUP BY p.product_id, p.branch_id, p.name, p.description, p.category, p.prod_pic, b.name"
+    LIMIT 1"
   );
   $stmt->execute([':product_id' => $product_id, ':branch_id' => $branch_id]);
   $product = $stmt->fetch();
 
   if(!$product) {
-    throw new Exception("Product not found or unavailable.");
+    throw new Exception("Product not found.");
   }
 
-  // Clean up data types
-  $product['total_stock'] = (int)$product['total_stock'];
-  $product['price'] = number_format((float)$product['price'], 2, '.', '');
+  // grabs ONLY the stock level and price of the batch expiring first!
+  $stmtInv = $pdo->prepare(
+    "SELECT stock_level, price 
+    FROM inventory_tb 
+    WHERE product_id = :product_id 
+      AND branch_id = :branch_id 
+      AND stock_level > 0 
+      AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
+    ORDER BY expiry_date IS NULL ASC, expiry_date ASC 
+    LIMIT 1"
+  );
+  $stmtInv->execute([':product_id' => $product_id, ':branch_id' => $branch_id]);
+  $inventory = $stmtInv->fetch();
 
-  // Get the Branch Operating Hours
+  // If we found a valid batch, use its exact stock and price. Otherwise, set to 0.
+  if ($inventory) {
+    $product['total_stock'] = (int)$inventory['stock_level'];
+    $product['price'] = number_format((float)$inventory['price'], 2, '.', '');
+  } else {
+    $product['total_stock'] = 0;
+    $product['price'] = "0.00";
+  }
+
+  // GET OPERATING HOURS
   $stmtHours = $pdo->prepare(
     "SELECT day_of_week, start_time, end_time, is_closed 
     FROM branch_operating_hours_tb 
     WHERE branch_id = :branch_id"
   );
   $stmtHours->execute([':branch_id' => $branch_id]);
-  
-  // Attach the schedule array directly to the product object
   $product['schedule'] = $stmtHours->fetchAll();
 
   http_response_code(200);

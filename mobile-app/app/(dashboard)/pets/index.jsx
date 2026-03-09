@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, RefreshControl, Image } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, RefreshControl, Image, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,9 +10,7 @@ import { authFetch } from '../../../utils/auth';
 import AppText from '../../../components/AppText';
 import AppButton from '../../../components/AppButton';
 import AnimatedWrapper from '../../../components/AnimatedWrapper';
-import Skeleton from '../../../components/Skeleton'; 
 
-// Define the local placeholder image
 const PLACEHOLDER_IMAGE = require('../../../assets/images/no-image.jpg');
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -64,32 +62,24 @@ export default function PetsIndex() {
       <View style={styles.header}>
         <AppText style={styles.headerTitle}>My Pets</AppText>
         {pets.length > 0 && !loading && (
-          <TouchableOpacity 
-            style={styles.addButton} 
+          <Pressable 
+            style={({ pressed }) => [
+              styles.addButton, 
+              pressed && styles.addButtonPressed
+            ]} 
             onPress={() => router.push('/pets/Create')}
           >
             <Ionicons name="add" size={24} color="#FFF" />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 
       {loading ? (
-       <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
-        {[1, 2, 3, 4].map((item) => (
-          <View key={item} style={styles.petCard}>
-            <View style={styles.petCardInner}>
-              <Skeleton variant="avatar" style={{ marginRight: 16 }} />
-              
-              <View style={{ flex: 1, justifyContent: 'center' }}>
-                <Skeleton variant="title" />
-                <Skeleton variant="subtitle" style={{ marginBottom: 0 }} />
-              </View>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <AppText style={{ marginTop: 12, color: '#6B7280' }}>Loading your pets...</AppText>
+        </View>
       ) : pets.length === 0 ? (
-        // empty
         <ScrollView 
           contentContainerStyle={styles.emptyContainer}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -107,7 +97,7 @@ export default function PetsIndex() {
             <AppButton 
               title="Add Your First Pet" 
               icon={<Ionicons name="add-circle-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />}
-              onPress={() => router.push('/pets/create')} 
+              onPress={() => router.push('/pets/Create')} 
             />
           </AnimatedWrapper>
         </ScrollView>
@@ -115,63 +105,65 @@ export default function PetsIndex() {
         <ScrollView 
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         >
           {pets.map((pet, index) => {
             const isPressed = pressedId === pet.pet_id;
             
             return (
-              <AnimatedWrapper key={pet.pet_id} index={index} style={styles.petCard}>
+              <AnimatedWrapper key={pet.pet_id} index={index}>
                 <TouchableOpacity 
                   activeOpacity={1}
                   onPressIn={() => setPressedId(pet.pet_id)}
                   onPressOut={() => setPressedId(null)}
                   onPress={() => router.push(`/pets/${pet.pet_id}`)}
-                  style={styles.petCardInner}
+                  style={[
+                    styles.petCard,
+                    isPressed && { borderColor: Colors.primary } 
+                  ]}
                 >
-                  {/* Image Section */}
-                  <View style={styles.petImageContainer}>
-                    <Image 
-                      source={getPetImageSource(pet.pet_picture)} 
-                      style={styles.petImage} 
-                      resizeMode="cover"
-                    />
-                  </View>
+                  <View style={styles.petCardInner}>
+                    {/* Image Section */}
+                    <View style={styles.petImageContainer}>
+                      <Image 
+                        source={getPetImageSource(pet.pet_picture)} 
+                        style={styles.petImage} 
+                        resizeMode="cover"
+                      />
+                    </View>
 
-                  {/* Info Section */}
-                  <View style={styles.petDetails}>
-                    <View style={styles.petHeaderRow}>
+                    {/* Info Section */}
+                    <View style={styles.petDetails}>
+                      <View style={styles.petHeaderRow}>
+                        <AppText 
+                          numberOfLines={1} 
+                          ellipsizeMode="tail"
+                          style={styles.petName}
+                        >
+                          {pet.name}
+                        </AppText>
+                        <Ionicons 
+                          name={pet.sex === 'Male' ? "male" : "female"} 
+                          size={14} 
+                          color={pet.sex === 'Male' ? "#3B82F6" : "#EC4899"} 
+                          style={{ marginLeft: 6 }} 
+                        />
+                      </View>
                       <AppText 
                         numberOfLines={1} 
                         ellipsizeMode="tail"
-                        style={[
-                          styles.petName,
-                          isPressed && { color: Colors.primary } 
-                        ]}
+                        style={styles.petBreed}
                       >
-                        {pet.name}
+                        {pet.breed} • {pet.species}
                       </AppText>
-                      <Ionicons 
-                        name={pet.sex === 'Male' ? "male" : "female"} 
-                        size={16} 
-                        color={isPressed ? Colors.primary : (pet.sex === 'Male' ? "#3B82F6" : "#EC4899")} 
-                        style={{ marginLeft: 6 }} 
-                      />
                     </View>
-                    <AppText 
-                      numberOfLines={1} 
-                      ellipsizeMode="tail"
-                      style={styles.petBreed}
-                    >
-                      {pet.breed} • {pet.species}
-                    </AppText>
-                  </View>
 
-                  <Ionicons 
-                    name="chevron-forward" 
-                    size={20} 
-                    color={isPressed ? Colors.primary : "#D1D5DB"} 
-                  />
+                    <Ionicons 
+                      name="chevron-forward" 
+                      size={20} 
+                      color={isPressed ? Colors.primary : "#D1D5DB"} 
+                    />
+                  </View>
                 </TouchableOpacity>
               </AnimatedWrapper>
             );
@@ -193,7 +185,11 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#111827' },
   addButton: { 
     backgroundColor: Colors.primary, width: 40, height: 40, borderRadius: 20, 
-    alignItems: 'center', justifyContent: 'center', elevation: 4
+    alignItems: 'center', justifyContent: 'center'
+  },
+  addButtonPressed: {
+    opacity: 0.9, 
+    transform: [{ scale: 0.95 }], 
   },
   emptyContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyIconWrapper: { 
@@ -204,17 +200,20 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 15, color: '#6B7280', textAlign: 'center', lineHeight: 22 },
   listContainer: { padding: 20 },
   petCard: { 
-    backgroundColor: '#FFF', borderRadius: 16, marginBottom: 16, 
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 
+    backgroundColor: Colors.white, 
+    borderRadius: 8, 
+    marginBottom: 16, 
+    borderWidth: 1,      
+    borderColor: '#E5E7EB'
   },
   petCardInner: { flexDirection: 'row', alignItems: 'center', padding: 16 },
   petImageContainer: { 
-    width: 65, height: 65, borderRadius: 32.5, backgroundColor: '#F3F4F6', 
+    width: 60, height: 60, borderRadius: 30, backgroundColor: '#F3F4F6', 
     marginRight: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' 
   },
   petImage: { width: '100%', height: '100%' },
   petDetails: { flex: 1 },
   petHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
-  petName: { fontSize: 18, fontWeight: '700', color: '#111827', textTransform: 'capitalize', flexShrink: 1 },
+  petName: { fontSize: 18, fontWeight: '800', color: '#111827', textTransform: 'capitalize', flexShrink: 1 },
   petBreed: { fontSize: 14, color: '#6B7280', fontWeight: '500', textTransform: 'capitalize', flexShrink: 1 }
 });

@@ -64,10 +64,21 @@ export default function BookAppointment() {
     setLoadingStaff(true);
     try {
       const res = await authFetch(`${API_URL}/api/pet-owner/appointments/get-service-staff.php?branch_id=${branch_id}&branch_service_id=${branch_service_id}`);
-      if (res?.success) {
+      if(res?.success) {
         setAvailableStaff(res.data || []);
         if (res.data && res.data.length === 1) {
           setSelectedStaff(res.data[0].staff_id);
+        }
+      } else {
+        if(res?.is_unavailable) {
+          Toast.show({ 
+            type: 'error', 
+            text1: 'Clinic Unavailable', 
+            text2: res.message || 'This clinic cannot accept bookings right now.',
+            visibilityTime: 4000
+          });
+          router.back(); 
+          return;
         }
       }
     } catch (error) {
