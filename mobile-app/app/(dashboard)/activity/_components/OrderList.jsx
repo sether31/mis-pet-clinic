@@ -76,13 +76,34 @@ export default function OrderList({ activeTab }) {
   };
 
   const goToProduct = (item) => {
+    if (!item.product_id || !item.branch_id) {
+      Toast.show({ type: 'error', text1: 'Cannot load product details.' });
+      return;
+    }
+
+    if(
+      item.is_maintenance == 1 || 
+      item.clinic_status !== 'approved' || 
+      item.has_active_sub == 0
+    ) {
+      setModalVisible(false);
+      Toast.show({ 
+        type: 'info', 
+        text1: 'Clinic Unavailable', 
+        text2: 'This clinic is currently under maintenance or unavailable.',
+        visibilityTime: 4000 
+      });
+      
+      return; 
+    }
+    
     setModalVisible(false);
     router.push(`/(dashboard)/clinics/product/${item.product_id}?branch_id=${item.branch_id}&from=activity`);
   };
 
   const filteredOrders = orders.filter(item => {
     if (activeTab === 'upcoming') {
-      return item.order_status === 'pending';
+      return item.order_status === 'pending' || item.order_status === 'confirmed';
     } else {
       return item.order_status === 'completed' || item.order_status === 'cancelled';
     }
@@ -90,10 +111,16 @@ export default function OrderList({ activeTab }) {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'completed': return { bg: '#DCFCE7', text: Colors.primary, label: 'Picked Up' }; 
-      case 'pending': return { bg: '#FEF3C7', text: '#92400E', label: 'Awaiting Pickup' }; 
-      case 'cancelled': return { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' }; 
-      default: return { bg: '#F3F4F6', text: '#374151', label: status }; 
+      case 'completed': 
+        return { bg: '#DCFCE7', text: Colors.primary, label: 'Picked Up' }; 
+      case 'confirmed': 
+        return { bg: '#DBEAFE', text: '#1E40AF', label: 'Ready for Pickup' }; 
+      case 'pending': 
+        return { bg: '#FEF3C7', text: '#92400E', label: 'Waiting for confirmation' }; 
+      case 'cancelled': 
+        return { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' }; 
+      default: 
+        return { bg: '#F3F4F6', text: '#374151', label: status }; 
     }
   };
 
@@ -122,10 +149,11 @@ export default function OrderList({ activeTab }) {
                     {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </AppText>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, marginTop: 4 }]}>
-                    <AppText style={[styles.statusText, { color: statusStyle.text }]}>{statusStyle.label}</AppText>
-                  </View>
+                {/* 💥 Status Badge now uses dynamic labels (Waiting vs Awaiting) */}
+                <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                  <AppText style={[styles.statusText, { color: statusStyle.text }]}>
+                    {statusStyle.label}
+                  </AppText>
                 </View>
               </View>
 
@@ -135,7 +163,7 @@ export default function OrderList({ activeTab }) {
                   style={styles.prodImg} 
                 />
                 <View style={{flex: 1}}>
-                  <AppText style={styles.serviceName}>
+                  <AppText style={styles.serviceName} numberOfLines={1}>
                     {item.product_name}
                   </AppText>
                   <AppText style={styles.clinicName}>{item.branch_name}</AppText>
@@ -285,12 +313,12 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: Colors.border300 },
   cardPressed: { transform: [{ scale: 0.98 }], borderColor: Colors.primary, backgroundColor: '#F9FAFB' }, 
   
-  // 💥 FIX: Matched header alignment to AppointmentsList
+  // Matched header alignment to AppointmentsList
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }, 
   dateTime: { flexDirection: 'row', alignItems: 'center' },
   dateText: { fontSize: 12, color: '#6B7280', marginLeft: 4, fontWeight: '600' },
   
-  // 💥 FIX: Added refIdLabel
+  // Added refIdLabel
   refIdLabel: { fontSize: 11, fontWeight: '800', color: '#9CA3AF', textTransform: 'uppercase' },
 
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },

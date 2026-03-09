@@ -2,7 +2,6 @@
 ob_clean();
 require_once __DIR__ . '/../../../middleware/auth-middleware.php'; 
 require_once __DIR__ . '/../../../config/Database.php';
-require_once __DIR__ . '/../../../service/Jwt.php'; 
 
 $decoded = validate_auth(['pet_owner']); 
 
@@ -15,7 +14,6 @@ try {
   
   $branch_id = $_GET['branch_id'];
 
-  // Fetch Specific Clinic Details
   $stmtClinic = $pdo->prepare(
     "SELECT 
       cb.branch_id,
@@ -29,26 +27,41 @@ try {
       cb.website,     
       cb.facebook, 
       cb.est, 
-      bs.end_date as subscription_end,
-      sub.has_shop 
+      
+      -- GATEKEEPER 
+      cb.is_maintenance,
+      cb.status as clinic_status,
+      (SELECT IF(COUNT(*) > 0, 1, 0) 
+      FROM branch_subscriptions_tb bs 
+      WHERE bs.branch_id = cb.branch_id 
+        AND LOWER(bs.status) = 'active' 
+        AND bs.end_date >= CURDATE()
+      ) as has_active_sub,
+
+      -- Check if their ACTIVE subscription allows a shop
+      (SELECT sub.has_shop 
+      FROM branch_subscriptions_tb bs 
+      JOIN subscription_tb sub ON bs.subscription_id = sub.subscription_id
+      WHERE bs.branch_id = cb.branch_id 
+        AND LOWER(bs.status) = 'active' 
+        AND bs.end_date >= CURDATE()
+      LIMIT 1
+      ) as has_shop
+
     FROM clinic_branches_tb cb
-    JOIN branch_subscriptions_tb bs ON cb.branch_id = bs.branch_id
-    LEFT JOIN subscription_tb sub ON bs.subscription_id = sub.subscription_id 
     WHERE cb.branch_id = :branch_id
-      AND LOWER(cb.status) = 'approved' 
-      AND LOWER(bs.status) = 'active'
-      AND bs.end_date >= CURDATE()
     LIMIT 1"
   );
   
   $stmtClinic->execute([':branch_id' => $branch_id]);
-  $clinic = $stmtClinic->fetch();
+  $clinic = $stmtClinic->fetch(); 
 
+  // Only throw an error if the clinic literally does not exist in the database
   if (!$clinic) {
-    throw new Exception("Clinic not found, inactive, or subscription expired.");
+    throw new Exception("Clinic not found.");
   }
 
-  // Address Formatting (Checks for duplicates!)
+  // Address Formatting
   $base_address = trim($clinic['address']);
   $muni = trim($clinic['municipality']);
   $prov = trim($clinic['province']);
@@ -81,7 +94,7 @@ try {
     ORDER BY bsrv.created_at ASC"
   );
   $stmtServices->execute([':branch_id' => $branch_id]);
-  $services = $stmtServices->fetchAll();
+  $services = $stmtServices->fetchAll(); 
 
   echo json_encode([
     "success" => true,

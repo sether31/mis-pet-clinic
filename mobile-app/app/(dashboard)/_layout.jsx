@@ -68,12 +68,18 @@ export default function DashboardLayout() {
       }}
     >
       <Tabs.Screen
-        name="Home"
+        name="home"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace('/(dashboard)/home');
+          },
         }}
       />
       
@@ -113,6 +119,12 @@ export default function DashboardLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "receipt" : "receipt-outline"} size={24} color={color} />
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace('/(dashboard)/activity');
+          },
         }}
       />
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Pressable, Image, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 
@@ -18,7 +18,8 @@ const NO_IMAGE = require('../../../assets/images/no-image.jpg');
 
 export default function ClinicOverview() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  // 💥 ADDED: extract 'from' to handle custom back button routing
+  const { id, from } = useLocalSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [clinic, setClinic] = useState(null);
@@ -28,12 +29,15 @@ export default function ClinicOverview() {
   const [isClinicFull, setIsClinicFull] = useState(false);
   const [activeTab, setActiveTab] = useState('services');
 
-  useEffect(() => {
-    if (id) {
+  useFocusEffect(
+    useCallback(() => {
+      if(id) {
+        setLoading(true); 
         fetchClinicData();
         checkClinicCapacity(); 
-    }
-  }, [id]);
+      }
+    }, [id])
+  );
 
   const fetchClinicData = async () => {
     try {
@@ -93,6 +97,14 @@ export default function ClinicOverview() {
     }
   };
 
+  const handleBack = () => {
+    if (from === 'activity') {
+      router.push('/(dashboard)/activity'); 
+    } else {
+      router.back(); 
+    }
+  };
+
   if(loading) {
     return (
       <View style={styles.centerContainer}>
@@ -102,13 +114,19 @@ export default function ClinicOverview() {
   }
 
   const imageSource = getMediaUrl(clinic?.branch_image) ? { uri: getMediaUrl(clinic?.branch_image) } : NO_IMAGE;
-  const hasShop = clinic?.has_shop === 1;
+  const hasShop = clinic?.has_shop === 1 || clinic?.has_shop === "1";
+
+  // Gatekeeper 
+  const isClinicLocked = 
+    clinic?.is_maintenance == 1 || 
+    clinic?.clinic_status !== 'approved' || 
+    clinic?.has_active_sub == 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
+        <Pressable style={styles.backBtn} onPress={handleBack}>
           <Ionicons name="arrow-back" size={26} color="#111827" />
         </Pressable>
         <AppText numberOfLines={1} style={styles.headerTitle}>{clinic?.branch_name || "Overview"}</AppText>
@@ -169,82 +187,89 @@ export default function ClinicOverview() {
           </View>
         </View>
 
-        {/* ALWAYS SHOW TABS */}
-        <View style={styles.tabContainer}>
-          <Pressable 
-            style={[styles.tabBtn, activeTab === 'services' && styles.tabBtnActive]} 
-            onPress={() => setActiveTab('services')}
-          >
-            <View style={styles.tabRow}>
-              <Ionicons 
-                name={activeTab === 'services' ? "paw" : "paw-outline"} 
-                size={16} 
-                color={activeTab === 'services' ? Colors.primary : '#9CA3AF'} 
-              />
-              <AppText style={[styles.tabText, activeTab === 'services' && styles.tabTextActive]}>Services</AppText>
-            </View>
-          </Pressable>
-          
-          <Pressable 
-            style={[styles.tabBtn, activeTab === 'products' && styles.tabBtnActive]} 
-            onPress={() => setActiveTab('products')}
-          >
-            <View style={styles.tabRow}>
-              <Ionicons 
-                name={activeTab === 'products' ? "cart" : "cart-outline"} 
-                size={16} 
-                color={activeTab === 'products' ? Colors.primary : '#9CA3AF'} 
-              />
-              <AppText style={[styles.tabText, activeTab === 'products' && styles.tabTextActive]}>Products</AppText>
-            </View>
-          </Pressable>
-        </View>
-
-        {/* Content Area */}
-        <View style={styles.contentArea}>
-          {activeTab === 'services' ? (
-            
-            isCheckingCapacity ? (
-              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <ActivityIndicator size="small" color={Colors.primary} />
-                <AppText style={{ marginTop: 10, color: '#6B7280' }}>Checking service availability...</AppText>
+        {/* GATEKEEPER */}
+        {isClinicLocked ? (
+          <AnimatedWrapper index={0}>
+            <View style={styles.systemLockContainer}>
+              <View style={styles.systemLockIconCircle}>
+                <Ionicons name="warning" size={40} color="#EF4444" />
               </View>
-            ) : isClinicFull ? (
-              // FULL CAPACITY
-              <AnimatedWrapper index={0}>
-                <View style={styles.fullCapacityContainer}>
-                  <View style={styles.fullCapacityIconCircle}>
-                      <Ionicons name="lock-closed" size={40} color="#9CA3AF" />
-                  </View>
-                  <AppText style={styles.fullCapacityTitle}>Services at Capacity</AppText>
-                  <AppText style={styles.fullCapacitySubtitle}>
-                    This clinic is currently not accepting new appointments for services. Please check back later.
-                  </AppText>
+              <AppText style={styles.systemLockTitle}>Temporarily Unavailable</AppText>
+              <AppText style={styles.systemLockSubtitle}>
+                This clinic is currently under maintenance or unavailable. Online booking and shopping are disabled at this time.
+              </AppText>
+            </View>
+          </AnimatedWrapper>
+        ) : (
+          <>
+            {/* tabs */}
+            <View style={styles.tabContainer}>
+              <Pressable 
+                style={[styles.tabBtn, activeTab === 'services' && styles.tabBtnActive]} 
+                onPress={() => setActiveTab('services')}
+              >
+                <View style={styles.tabRow}>
+                  <Ionicons name={activeTab === 'services' ? "paw" : "paw-outline"} size={16} color={activeTab === 'services' ? Colors.primary : '#9CA3AF'} />
+                  <AppText style={[styles.tabText, activeTab === 'services' && styles.tabTextActive]}>Services</AppText>
                 </View>
-              </AnimatedWrapper>
-            ) : (
-              <ServicesTab services={services} branchId={id} />
-            )
+              </Pressable>
+              
+              <Pressable 
+                style={[styles.tabBtn, activeTab === 'products' && styles.tabBtnActive]} 
+                onPress={() => setActiveTab('products')}
+              >
+                <View style={styles.tabRow}>
+                  <Ionicons name={activeTab === 'products' ? "cart" : "cart-outline"} size={16} color={activeTab === 'products' ? Colors.primary : '#9CA3AF'} />
+                  <AppText style={[styles.tabText, activeTab === 'products' && styles.tabTextActive]}>Products</AppText>
+                </View>
+              </Pressable>
+            </View>
 
-          ) : (
-            hasShop ? (
-              <ProductsTab branchId={id} />
-            ) : (
-              // UNAVAILABLE SHOP
-              <AnimatedWrapper index={0}>
-                <View style={styles.unavailableContainer}>
-                  <View style={styles.unavailableIconCircle}>
-                    <Ionicons name="cart-outline" size={40} color="#9CA3AF" />
+            {/* Content Area */}
+            <View style={styles.contentArea}>
+              {activeTab === 'services' ? (
+                
+                isCheckingCapacity ? (
+                  <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                    <AppText style={{ marginTop: 10, color: '#6B7280' }}>Checking service availability...</AppText>
                   </View>
-                  <AppText style={styles.unavailableTitle}>Shop Unavailable</AppText>
-                  <AppText style={styles.unavailableSubtitle}>
-                    This clinic currently does not offer online products or shop items.
-                  </AppText>
-                </View>
-              </AnimatedWrapper>
-            )
-          )}
-        </View>
+                ) : isClinicFull ? (
+                  <AnimatedWrapper index={0}>
+                    <View style={styles.fullCapacityContainer}>
+                      <View style={styles.fullCapacityIconCircle}>
+                        <Ionicons name="lock-closed" size={40} color="#9CA3AF" />
+                      </View>
+                      <AppText style={styles.fullCapacityTitle}>Services at Capacity</AppText>
+                      <AppText style={styles.fullCapacitySubtitle}>
+                        This clinic is currently not accepting new appointments for services. Please check back later.
+                      </AppText>
+                    </View>
+                  </AnimatedWrapper>
+                ) : (
+                  <ServicesTab services={services} branchId={id} />
+                )
+
+              ) : (
+                hasShop ? (
+                  <ProductsTab branchId={id} />
+                ) : (
+                  <AnimatedWrapper index={0}>
+                    <View style={styles.unavailableContainer}>
+                      <View style={styles.unavailableIconCircle}>
+                        <Ionicons name="cart-outline" size={40} color="#9CA3AF" />
+                      </View>
+                      <AppText style={styles.unavailableTitle}>Shop Unavailable</AppText>
+                      <AppText style={styles.unavailableSubtitle}>
+                        This clinic currently does not offer online products or shop items.
+                      </AppText>
+                    </View>
+                  </AnimatedWrapper>
+                )
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -284,7 +309,7 @@ const styles = StyleSheet.create({
 
   contentArea: { flex: 1, marginTop: 10 }, 
   
-  // Unavailable Shop Style (Gray)
+  // Unavailable Shop Style 
   unavailableContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50, marginHorizontal: 20, backgroundColor: Colors.white, borderRadius: 16, borderStyle: 'dashed', borderWidth: 2, borderColor: '#D1D5DB' },
   unavailableIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   unavailableTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8 },
@@ -295,4 +320,9 @@ const styles = StyleSheet.create({
   fullCapacityIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   fullCapacityTitle: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 8 },
   fullCapacitySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 30, lineHeight: 22 },
+
+  systemLockContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, marginHorizontal: 20, marginTop: 20 },
+  systemLockIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  systemLockTitle: { fontSize: 18, fontWeight: '800', color: '#991B1B', marginBottom: 8 },
+  systemLockSubtitle: { fontSize: 14, color: '#7F1D1D', textAlign: 'center', paddingHorizontal: 30, lineHeight: 22 },
 });
