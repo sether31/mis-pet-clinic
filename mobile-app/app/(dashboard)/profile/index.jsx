@@ -9,6 +9,7 @@ import AppText from '../../../components/AppText';
 import AnimatedWrapper from '../../../components/AnimatedWrapper';
 import { authFetch } from '../../../utils/auth';
 import { useUser } from '../../../hooks/useUser'; 
+import { Colors } from '../../../constants/Color';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const DEFAULT_IMAGE = require('../../../assets/images/no-image.jpg'); 
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 100 },
   
   profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 20, borderRadius: 20, marginBottom: 20, borderWidth: 1, borderColor: '#D1D5DB' },
-  avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#F3F4F6', resizeMode: 'cover' },
+  avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#F3F4F6', resizeMode: 'cover', borderWidth: 4, borderColor: Colors.primary },
   profileInfo: { flex: 1, marginLeft: 15 },
   nameText: { fontSize: 20, fontWeight: '800', color: '#1F1F1F', marginBottom: 4, paddingRight: 10 },
   memberSinceText: { fontSize: 13, color: '#6B7280', fontWeight: '500' },

@@ -36,7 +36,16 @@ export default function ProductDetailScreen() {
       if (res?.success) {
         setProduct(res.data);
       } else {
-        Toast.show({ type: 'error', text1: 'Database Error', text2: res?.message });
+        if (res?.is_unavailable) {
+          Toast.show({ 
+            type: 'error', 
+            text1: 'Shop Unavailable', 
+            text2: 'This clinic is currently under maintenance or unavailable',
+            visibilityTime: 4000
+          });
+        } else {
+          Toast.show({ type: 'error', text1: 'Something went wrong' });
+        }
         router.back();
       }
     } catch (error) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, ActivityIndicator, Pressable, Image, TouchableOpacity, Animated } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, Pressable, Image, TouchableOpacity, Animated, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,7 +88,13 @@ const ClinicCardItem = ({ clinic, index, getMediaUrl, handleSelectClinic }) => {
             >
               {clinic.services.map((serviceName, i) => (
                 <View key={i} style={styles.servicePreviewChip}>
-                  <AppText style={styles.servicePreviewChipText}>{serviceName}</AppText>
+                  <AppText 
+                    style={styles.servicePreviewChipText}
+                    numberOfLines={1}  
+                    ellipsizeMode="tail"
+                  >
+                    {serviceName}
+                  </AppText>
                 </View>
               ))}
             </ScrollView>
@@ -115,6 +121,8 @@ export default function SelectClinic() {
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedMunicipality, setSelectedMunicipality] = useState('');
   const [selectedService, setSelectedService] = useState('');
+  
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [openDropdown, setOpenDropdown] = useState(null);
 
@@ -125,12 +133,27 @@ export default function SelectClinic() {
   useEffect(() => {
     let result = allClinics;
 
+    // Text Search Filter
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(c => {
+        const matchName = c.branch_name?.toLowerCase().includes(q);
+        const matchMuni = c.municipality?.toLowerCase().includes(q);
+        const matchProv = c.province?.toLowerCase().includes(q);
+        // Search inside services array too
+        const matchServ = c.services?.some(s => s.toLowerCase().includes(q)); 
+        
+        return matchName || matchMuni || matchProv || matchServ;
+      });
+    }
+
+    // Dropdown Filters
     if(selectedProvince) result = result.filter(c => c.province === selectedProvince);
     if(selectedMunicipality) result = result.filter(c => c.municipality === selectedMunicipality);
     if(selectedService) result = result.filter(c => c.services && c.services.includes(selectedService));
 
     setClinics(result);
-  }, [selectedProvince, selectedMunicipality, selectedService, allClinics]);
+  }, [searchQuery, selectedProvince, selectedMunicipality, selectedService, allClinics]);
 
   const fetchClinics = async () => {
     try {
@@ -180,6 +203,7 @@ export default function SelectClinic() {
     setSelectedProvince('');
     setSelectedMunicipality('');
     setSelectedService('');
+    setSearchQuery(''); 
     setOpenDropdown(null);
   };
 
@@ -257,11 +281,31 @@ export default function SelectClinic() {
         </TouchableOpacity>
       </View>
 
+      {/* Search Bar Wrapper */}
+      <View style={styles.searchWrapper}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search clinics, services, or cities..."
+            placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {showFilters && (
         <View style={styles.filterSection}>
           <View style={styles.filterHeader}>
             <AppText style={styles.filterTitle}>Filter by:</AppText>
-            {isAnyFilterActive ? (
+            {(isAnyFilterActive || searchQuery) ? (
               <Pressable onPress={clearFilters}>
                 <AppText style={styles.clearFiltersText}>Clear All</AppText>
               </Pressable>
@@ -284,7 +328,7 @@ export default function SelectClinic() {
             <View style={styles.emptyContainer}>
               <Ionicons name="search-outline" size={48} color="#9CA3AF" style={{ marginBottom: 12 }} />
               <AppText style={styles.emptyTitle}>No Clinics Found</AppText>
-              <AppText style={styles.emptySubtitle}>Try adjusting your filters to see more results.</AppText>
+              <AppText style={styles.emptySubtitle}>Try adjusting your filters or search terms.</AppText>
             </View>
           </AnimatedWrapper>
         ) : (
@@ -313,6 +357,12 @@ const styles = StyleSheet.create({
   filterBtn: { backgroundColor: '#FFF', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5 },
   filterBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   
+
+  searchWrapper: { paddingHorizontal: 20, paddingBottom: 10 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, paddingHorizontal: 16, height: 50, borderWidth: 1, borderColor: '#D1D5DB', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  searchInput: { flex: 1, fontSize: 16, color: '#111827', marginLeft: 10 },
+  clearSearchBtn: { padding: 4 },
+
   filterSection: { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: '#E5E7EB', paddingVertical: 16 },
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 12 },
   filterTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
@@ -325,7 +375,7 @@ const styles = StyleSheet.create({
   dropdownHeaderText: { fontSize: 14, color: '#6B7280' },
   dropdownHeaderTextSelected: { fontSize: 14, color: '#111827', fontWeight: '600' },
   
-  dropdownListWrapper: { marginTop: 4, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
+  dropdownListWrapper: { marginTop: 4, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
   dropdownScroll: { maxHeight: 160 }, 
   dropdownItem: { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   dropdownItemText: { fontSize: 14, color: '#4B5563', textTransform: 'capitalize' },
@@ -334,7 +384,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
   sectionSubtitle: { fontSize: 15, color: '#6B7280', marginBottom: 20, lineHeight: 22 },
 
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, backgroundColor: Colors.white, borderRadius: 16, borderStyle: 'dashed', borderWidth: 2, borderColor: '#D1D5DB' },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, backgroundColor: Colors.white },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 8 },
   emptySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 },
 
@@ -354,6 +404,6 @@ const styles = StyleSheet.create({
 
   servicesContainer: { borderTopWidth: 1, borderTopColor: '#F3F4F6', backgroundColor: '#F9FAFB', paddingVertical: 10 },
   servicesScroll: { paddingHorizontal: 16, gap: 8 },
-  servicePreviewChip: { backgroundColor: Colors.white, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#E5E7EB' },
-  servicePreviewChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280' }
+  servicePreviewChip: { backgroundColor: Colors.white, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#E5E7EB', maxWidth: 'max-content' },
+  servicePreviewChipText: { fontSize: 12, fontWeight: '600', color: '#6B7280', textTransform: 'capitalize' }
 });

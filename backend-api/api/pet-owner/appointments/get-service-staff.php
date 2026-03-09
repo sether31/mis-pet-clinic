@@ -15,7 +15,37 @@ try {
   $branch_id = $_GET['branch_id'];
   $branch_service_id = $_GET['branch_service_id'];
 
-  // Get the assigned role for the service
+  // Check if the clinic expired 
+  $checkStmt = $pdo->prepare(
+    "SELECT 
+      cb.is_maintenance, 
+      cb.status, 
+      (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
+        WHERE bs.branch_id = cb.branch_id 
+        AND LOWER(bs.status) = 'active' 
+        AND bs.end_date >= CURDATE()
+      ) as has_sub
+    FROM clinic_branches_tb cb 
+    WHERE cb.branch_id = ?"
+  );
+  $checkStmt->execute([$branch_id]);
+  $clinicCheck = $checkStmt->fetch();
+
+  // If clinic is closed, maintenance, or expired, kick them out instantly
+  if (!$clinicCheck || 
+    $clinicCheck['is_maintenance'] == 1 || 
+    strtolower($clinicCheck['status']) !== 'approved' || 
+    $clinicCheck['has_sub'] == 0
+  ) {
+    echo json_encode([
+      "success" => false, 
+      "is_unavailable" => true, 
+      "message" => "This clinic is currently under maintenance or unavailable."
+    ]);
+    exit; 
+  }
+
+  //  Fetch the assigned role for the service
   $stmtService = $pdo->prepare(
     "SELECT assigned_role 
     FROM branch_service_tb 

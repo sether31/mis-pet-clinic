@@ -10,7 +10,8 @@ export default function MedicalRecordsList({ records, petName, onRecordPress }) 
   
   // Format the text inside the badge
   const formatRecordType = (type) => {
-    if (!type) return 'MEDICAL';
+    if (!type) return 'MEDICAL RECORD';
+    if(type === "unset") return 'UNRECORDED';
     return type.replace(/_/g, ' ').toUpperCase();
   };
 

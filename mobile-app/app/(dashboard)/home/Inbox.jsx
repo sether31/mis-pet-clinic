@@ -52,7 +52,6 @@ export default function Inbox() {
       )
     );
 
-    // 4. Tell the database quietly in the background
     try {
       await authFetch(`${API_URL}/api/pet-owner/home/read-notif.php`, {
         method: 'POST',
