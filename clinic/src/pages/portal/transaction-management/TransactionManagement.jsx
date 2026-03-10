@@ -7,6 +7,7 @@ import { useUser } from '../../../hooks/useUser';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2'; // 💥 Imported LoaderV2
 // view
 import ClinicAdminView from './views/ClinicAdminView';
 import StaffView from './views/StaffView';
@@ -17,6 +18,9 @@ export default function TransactionManagement() {
   const { branchId: urlBranchId } = useParams();
   const { showLoader, hideLoader, loading } = useUI(); 
   const { user, loading: userLoading } = useUser();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [transactions, setTransactions] = useState([]); 
   const [summary, setSummary] = useState(null);
   const [branches, setBranches] = useState([]);
@@ -28,7 +32,11 @@ export default function TransactionManagement() {
   const fetchAll = useCallback(async (isManualRefresh = false) => {
     if (!currentBranch) return;
 
-    if (isManualRefresh) showLoader('Refreshing Transactions...'); 
+    if(isManualRefresh) {
+      showLoader('Refreshing Transactions...'); 
+    } else {
+      setIsLoading(true);
+    }
     
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/billing/get-transactions.php?branch_id=${currentBranch}`);
@@ -41,7 +49,11 @@ export default function TransactionManagement() {
     } catch(err) { 
       console.error("Fetch Error:", err); 
     } finally { 
-      hideLoader(); 
+      if(isManualRefresh) {
+        hideLoader();
+      } else {
+        setIsLoading(false);
+      }
     }
   }, [currentBranch, isClinicAdmin, showLoader, hideLoader]); 
 
@@ -61,8 +73,11 @@ export default function TransactionManagement() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
-      <section className="w-full px-6 my-6 container-xl">
-        {isClinicAdmin ? (
+      
+      <section className="flex-1 w-full px-6 my-6 container-xl">  
+        {isLoading ? (
+          <LoaderV2 />
+        ) : isClinicAdmin ? (
           <ClinicAdminView 
             transactions={transactions} 
             summary={summary}

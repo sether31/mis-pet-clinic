@@ -8,6 +8,7 @@ import { useUI } from '../../../hooks/useUI';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2'; 
 // sub components
 import AddStaffModal from './AddStaffModal';
 import StaffCard from './StaffCard';
@@ -21,6 +22,9 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function StaffManagement() {
   const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [activeTab, setActiveTab] = useState('staffList'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [staffData, setStaffData] = useState([]);
@@ -29,54 +33,43 @@ export default function StaffManagement() {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchBranchSettings = useCallback(async () => {
-    if (!branchId) return;
-    try {
-      const response = await authFetch(
-        `${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${branchId}`,
-        { method: 'GET' }
-      );
-      if(response.success) {
-        setBranchSchedule(response.data.schedules || []);
-      }
-    } catch(error) {
-      console.error("error:", error);
-    }
-  }, [branchId]);
-
-  const fetchStaffData = useCallback(async () => {
+  const fetchAllData = useCallback(async () => {
     if (!branchId) return; 
     
-    showLoader('Fetching staff records...');
+    setIsLoading(true); 
     
     try {
-      const response = await authFetch(
-        `${API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`,
-        { method: 'GET' }
-      );
-      if(response.success) {
-        setStaffData(response.data);
-        setCardData(response.cardData);
+      const [staffRes, scheduleRes] = await Promise.all([
+        authFetch(`${API_URL}/api/clinic/general/staff/get-staff-data.php?branch_id=${branchId}`),
+        authFetch(`${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${branchId}`)
+      ]);
+
+      if(staffRes.success) {
+        setStaffData(staffRes.data);
+        setCardData(staffRes.cardData);
+      }
+      
+      if(scheduleRes.success) {
+        setBranchSchedule(scheduleRes.data.schedules || []);
       }
     } catch(error) {
-      console.error("error:", error);
+      console.error("Fetch Error:", error);
+      toast.error("Failed to load staff data.");
     } finally {
-      hideLoader(); 
+      setIsLoading(false); 
     }
   }, [branchId]);
 
   useEffect(() => {
-    fetchStaffData();
-    fetchBranchSettings();
-  }, [fetchStaffData, fetchBranchSettings]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   const handleToggleStatus = async (staff) => {
     const isArchiving = Number(staff.status) === 1;
     const newStatus = isArchiving ? 0 : 1;
 
-    // alert
     const result = await Swal.fire({
-      title: isArchiving ? 'Archive Product?' : 'Restore Product?',
+      title: isArchiving ? 'Archive Staff?' : 'Restore Staff?',
       text: `Are you sure you want to ${isArchiving ? 'archive' : 'restore'} "${staff.fname} ${staff.lname}?"`,
       icon: isArchiving ? 'warning' : 'info',
       buttonsStyling: false,
@@ -86,19 +79,14 @@ export default function StaffManagement() {
       reverseButtons: true,
       customClass: {
         popup: '!rounded-xl border !border-gray-300 !max-w-lg',
-        title: `!text-xl !font-black !uppercase !tracking-tight
-          ${isArchiving ? '!text-red-600' : '!text-(--clr-primary)'}
-        `,
-        
-        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold 
-        ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}
-        `,
+        title: `!text-xl !font-black !uppercase !tracking-tight ${isArchiving ? '!text-red-600' : '!text-(--clr-primary)'}`,
+        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}`,
         cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold'
       }
     });
 
     if(result.isConfirmed) {
-      showLoader();
+      showLoader("Updating status...");
       try {
         const response = await authFetch(
           `${API_URL}/api/clinic/general/staff/update-staff-status.php`,
@@ -114,13 +102,11 @@ export default function StaffManagement() {
 
         if(response.success) {
           toast.success(response.message);
-          fetchStaffData(); 
+          fetchAllData(); 
         } else {
-          console.error(response.message)
           toast.error(response.message || "Something went wrong");
         }
       } catch (error) {
-        console.error("Toggle Error:", error);
         toast.error("Something went wrong");
       } finally {
         hideLoader();
@@ -136,10 +122,10 @@ export default function StaffManagement() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
       
-      <section className='px-6 my-6 container-xl'>
+      <section className='flex-1 w-full px-6 my-6 container-xl'>
         <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Staff Management</h1>
@@ -147,59 +133,64 @@ export default function StaffManagement() {
           </div>
         </div>
 
-        <StaffCard data={cardData} />
+        {isLoading ? (
+          <LoaderV2 />
+        ) : (
+          <>
+            <StaffCard data={cardData} />
 
-        <div className="mt-8">
-          {/* tabs */}
-         <div className="flex items-center w-full mb-6 border-b border-gray-200">
-            <button 
-              onClick={() => setActiveTab('staffList')} 
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all cursor-pointer border-b-2 -mb-[2px] ${
-                activeTab === 'staffList' 
-                ? 'border-(--clr-primary) text-(--clr-primary)' 
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <HiUserGroup size={20} />
-              Staff List
-            </button>
-            <button 
-              onClick={() => setActiveTab('schedule')} 
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all cursor-pointer border-b-2 -mb-[2px] ${
-                activeTab === 'schedule' 
-                ? 'border-(--clr-primary) text-(--clr-primary)' 
-                : 'border-transparent text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <HiCalendar size={20} />
-              Schedule
-            </button>
-          </div>
+            <div className="mt-8">
+             <div className="flex items-center w-full mb-6 border-b border-gray-200">
+                <button 
+                  onClick={() => setActiveTab('staffList')} 
+                  className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all cursor-pointer border-b-2 -mb-[2px] ${
+                    activeTab === 'staffList' 
+                    ? 'border-(--clr-primary) text-(--clr-primary)' 
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <HiUserGroup size={20} />
+                  Staff List
+                </button>
+                <button 
+                  onClick={() => setActiveTab('schedule')} 
+                  className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all cursor-pointer border-b-2 -mb-[2px] ${
+                    activeTab === 'schedule' 
+                    ? 'border-(--clr-primary) text-(--clr-primary)' 
+                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <HiCalendar size={20} />
+                  Schedule
+                </button>
+              </div>
 
-          {activeTab === 'staffList' ? (
-            <div key="staffList">
-              <StaffTable 
-                data={staffData} 
-                onCreate={() => {
-                  setSelectedStaff(null);
-                  setIsModalOpen(true);
-                }}
-                onEdit={(staff) => {
-                  setSelectedStaff(staff);
-                  setIsModalOpen(true);
-                }}
-                onToggleStatus={handleToggleStatus}
-              />
+              {activeTab === 'staffList' ? (
+                <div key="staffList">
+                  <StaffTable 
+                    data={staffData} 
+                    onCreate={() => {
+                      setSelectedStaff(null);
+                      setIsModalOpen(true);
+                    }}
+                    onEdit={(staff) => {
+                      setSelectedStaff(staff);
+                      setIsModalOpen(true);
+                    }}
+                    onToggleStatus={handleToggleStatus}
+                  />
+                </div>
+              ) : (
+                <StaffSchedule
+                  staffData={filteredStaff} 
+                  branchSchedule={branchSchedule}
+                  searchTerm={searchTerm}
+                  onSearch={setSearchTerm} 
+                />
+              )}
             </div>
-          ) : (
-            <StaffSchedule
-              staffData={filteredStaff} 
-              branchSchedule={branchSchedule}
-              searchTerm={searchTerm}
-              onSearch={setSearchTerm} 
-            />
-          )}
-        </div>
+          </>
+        )}
       </section>
 
       {isModalOpen && (
@@ -210,7 +201,7 @@ export default function StaffManagement() {
             setIsModalOpen(false);
             setSelectedStaff(null); 
           }} 
-          onRefresh={fetchStaffData}
+          onRefresh={fetchAllData}
           branchId={branchId}
         />
       )}

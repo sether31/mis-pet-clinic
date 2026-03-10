@@ -5,6 +5,8 @@ import { toast } from 'react-toastify';
 import { useUI } from '../../../hooks/useUI';
 // utils
 import { authFetch } from '../../../utils/authFetch';
+// components
+import LoaderV2 from '../../../components/LoaderV2';
 // icons 
 import { 
   HiOutlineClock, 
@@ -78,7 +80,13 @@ export default function ScheduleSettings() {
     }
   };
 
-  if (loading && schedule.length === 0) return null;
+  if(!schedule || schedule.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <LoaderV2 />
+      </div>
+    );
+  }
 
   return (
     <div>   

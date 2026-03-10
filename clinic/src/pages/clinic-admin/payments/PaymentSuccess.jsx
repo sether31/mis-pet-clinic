@@ -45,6 +45,7 @@ export default function PaymentSuccess() {
           
           toast.success(msg);
           await wait(2000);
+          hideLoader();
 
           // Smart Redirect
           if(fromSettings) {

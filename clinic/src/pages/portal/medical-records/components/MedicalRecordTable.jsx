@@ -116,7 +116,9 @@ export default function MedicalRecordTable({ data = [], onView }) {
               >
                 <option value="all">All Branches</option>
                 {branches.map(([branch_id, name]) => (
-                  <option key={branch_id} value={branch_id}>(ID: {branch_id}) {name}</option>
+                  <option title={name} key={branch_id} value={branch_id}>
+                    (ID: {branch_id}) {name.length > 20 ? `${name.substring(0, 20)}...` : name}
+                  </option>
                 ))}
               </select>
               <HiLocationMarker className="absolute text-gray-400 -translate-y-1/2 left-2.5 top-1/2" size={14} />

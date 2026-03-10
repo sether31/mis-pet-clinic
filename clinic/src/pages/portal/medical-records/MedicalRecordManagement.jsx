@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-// hook
-import { useUI } from '../../../hooks/useUI';
 // utils
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2';
 // sub components
 import MedicalRecordTable from './components/MedicalRecordTable';
 import MedicalRecordModal from './components/MedicalRecordModal';
@@ -15,21 +14,23 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function MedicalRecordManagement() {
   const { branchId } = useParams();
-  const { showLoader, hideLoader } = useUI();
+  
+  const [isLoading, setIsLoading] = useState(true);
+
   const [records, setRecords] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
   const fetchRecords = useCallback(async () => {
     if (!branchId || branchId === 'undefined') return;
-    showLoader('Fetching medical records...');
+    setIsLoading(true);
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/medical/get-completed-appointments.php?branch_id=${branchId}`);
       if(res.success) {
         setRecords(res.data);
       }
     } catch (error) { toast.error("Failed to load records"); }
-    finally { hideLoader(); }
+    finally { setIsLoading(false); }
   }, [branchId]);
 
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
@@ -45,15 +46,19 @@ export default function MedicalRecordManagement() {
           </div>
         </div>
         
-        <div className="mt-8">
-          <MedicalRecordTable 
-            data={records} 
-            onView={(record) => { 
-              setSelectedRecord(record); 
-              setIsModalOpen(true); 
-            }} 
-          />
-        </div>
+        {isLoading ? (
+          <LoaderV2 />
+        ) : (
+          <div className="mt-8">
+            <MedicalRecordTable 
+              data={records} 
+              onView={(record) => { 
+                setSelectedRecord(record); 
+                setIsModalOpen(true); 
+              }} 
+            />
+          </div>
+        )}
       </section>
 
       {isModalOpen && (

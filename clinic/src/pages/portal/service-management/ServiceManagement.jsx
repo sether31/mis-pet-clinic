@@ -8,6 +8,7 @@ import { useUI } from '../../../hooks/useUI';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2';
 // sub components
 import ServiceCard from './ServiceCard';
 import ServiceTable from './ServiceTable';
@@ -18,6 +19,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function ServiceManagement() {
   const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
+  const [isLoading, setIsLoading] = useState(true);
   const [services, setServices] = useState([]);
   const [cardData, setCardData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,7 +28,7 @@ export default function ServiceManagement() {
   const fetchServiceData = useCallback(async () => {
     if (!branchId || branchId === 'undefined') return;
     
-    showLoader('Fetching services...');
+    setIsLoading(true);;
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/services/get-branch-services.php?branch_id=${branchId}`);
       if(res.success) {
@@ -34,7 +36,7 @@ export default function ServiceManagement() {
         setCardData(res.cardData);
       }
     } catch (error) { toast.error("Something went wrong"); }
-    finally { hideLoader(); }
+    finally { setIsLoading(false); }
   }, [branchId]);
 
   useEffect(() => { fetchServiceData(); }, [fetchServiceData]);
@@ -83,15 +85,21 @@ export default function ServiceManagement() {
           </div>
         </div>
         
-        <ServiceCard data={cardData} />
-        <div className="mt-8">
-          <ServiceTable 
-            data={services} 
-            onToggleStatus={handleToggleStatus} 
-            onEdit={(s) => { setSelectedService(s); setIsModalOpen(true); }}
-            onCreate={() => { setSelectedService(null); setIsModalOpen(true); }}
-          />
-        </div>
+        {isLoading ? (
+          <LoaderV2 />
+        ) : (
+          <>
+            <ServiceCard data={cardData} />
+            <div className="mt-8">
+              <ServiceTable 
+                data={services} 
+                onToggleStatus={handleToggleStatus} 
+                onEdit={(s) => { setSelectedService(s); setIsModalOpen(true); }}
+                onCreate={() => { setSelectedService(null); setIsModalOpen(true); }}
+              />
+            </div>
+          </>
+        )}
       </section>
 
       {/* service modal */}

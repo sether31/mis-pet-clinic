@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'; // UseParams is key for deep routing
+import { useParams } from 'react-router-dom'; 
 import { toast } from 'react-toastify';
 import { useUI } from '../../../hooks/useUI';
 import { authFetch } from '../../../utils/authFetch'
 import Input from '../../../components/Input';
 import InputImage from '../../../components/InputImage';
-import Button from '../../../components/Button';
-import { HiMiniExclamationCircle, HiOutlineBuildingOffice2, HiOutlineClock } from "react-icons/hi2";
+import LoaderV2 from '../../../components/LoaderV2';
+import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { CiCreditCard1, CiImageOn } from "react-icons/ci";
 import { HiSave } from 'react-icons/hi';
 
@@ -34,6 +34,7 @@ const initialFormState = {
 export default function GeneralBranchSettings() {
   const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
+  const [isLoading, setIsLoading] = useState(true);
   const [form, setForm] = useState(initialFormState);
   const [existingPaths, setExistingPaths] = useState({
     logoPic: '',
@@ -63,7 +64,7 @@ export default function GeneralBranchSettings() {
   };
 
   const fetchClinicData = async () => {
-    showLoader("Loading settings...");
+    setIsLoading(true);
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/branch-settings/general-setting/get-general-branch-settings.php`, {
         method: 'POST',
@@ -97,7 +98,7 @@ export default function GeneralBranchSettings() {
     } catch(err) {
       toast.error("Failed to load clinic settings.");
     } finally {
-      hideLoader();
+      setIsLoading(false);
     }
   };
 
@@ -199,189 +200,193 @@ export default function GeneralBranchSettings() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <section className='grid gap-4'>
-          {/* logo */}
-          <div className='pb-8 mb-5 border-b border-gray-300'>
-             <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
-              <CiImageOn className='text-(--clr-text-header)' />
-              <span>Clinic Logo</span>
-            </h1>
-            <div className='grid grid-cols-1 lg:grid-cols-2'>
-              <InputImage 
-                label="Upload Logo" 
-                name="logoPic" 
-                isPreview={true}
-                required={true}
-                onChange={handleChange} 
-                error={errors.logoPic} 
-                existingImage={existingPaths.logoPic} 
-              />
-            </div>
-          </div>
-
-          {/* clinic information */}
-          <div className='pb-8 mb-5 border-b border-gray-300'>
-            <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
-              <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
-              <span>Clinic Information</span>
-            </h1>
-            
-            <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
-              <Input
-                value={form.clinicName} 
-                label="Clinic Name" 
-                name="clinicName" 
-                placeholder="Enter your clinic name"
-                isImportant={true} 
-                onChange={handleChange} 
-                error={errors.clinicName} 
-              />
-              <Input
-                value={form.completeAddress} 
-                label="Complete Address" 
-                name="completeAddress" 
-                placeholder="Street, Barangay, Building No., etc."
-                isImportant={true} 
-                onChange={handleChange} 
-                error={errors.completeAddress} 
-              />
-              <Input
-                value={form.municipality} 
-                label="City/Municipality" 
-                name="municipality" 
-                placeholder="Binangonan"
-                isImportant={true} 
-                onChange={handleChange} 
-                error={errors.municipality} 
-              />
-              <Input
-                value={form.province} 
-                label="Province" 
-                name="province" 
-                placeholder="Rizal"
-                isImportant={true} 
-                onChange={handleChange} 
-                error={errors.province} 
-              />
-              <Input
-                value={form.zipCode} 
-                label="Zip Code" 
-                name="zipCode" 
-                placeholder="1940"
-                isImportant={true} 
-                onChange={handleChange} 
-                error={errors.zipCode} 
-              />
-              <Input
-                value={form.est} 
-                label="Year Established" 
-                name="est" 
-                placeholder="2025"
-                isImportant={true} 
-                onChange={handleChange} error={errors.est} 
-              />
-
-              <div className='mb-4'>
-                <label className='ml-1 text-sm font-medium text-gray-700'>
-                  Clinic Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={form.clinicDescription} 
-                  name="clinicDescription"
-                  placeholder="Brief description of your clinic, specialization, and what makes you unique..."
-                  className={`border outline-none rounded-lg p-2 w-full min-h-[115px] ${errors.clinicDescription && errors.clinicDescription !== "valid" ? "border-red-500" : "border-gray-300"}`}
-                  onChange={handleChange} 
-                ></textarea>
-                {errors.clinicDescription && errors.clinicDescription !== "valid" && (
-                  <p className="flex items-center mt-1 text-sm text-red-500"><HiMiniExclamationCircle className="mr-1" />{errors.clinicDescription}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Input value={form.website} label="Website" name="website" placeholder="https://www.clinic.com" isOptional={true} onChange={handleChange} />
-                <Input value={form.facebook} label="Facebook" name="facebook" placeholder="https://facebook.com/" isOptional={true} onChange={handleChange} />
-              </div>
-            </div>
-          </div>
-
-          {/* business & licensing */}
-          <div className='pb-8 mb-5 border-b border-gray-300'>
-            <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
-              <CiCreditCard1 className='text-(--clr-text-header)' />
-              <span>Business & Licensing Information</span>
-            </h1>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6'>
-              <div className="flex flex-col">
+      {isLoading ? (
+        <LoaderV2 />
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <section className='grid gap-4'>
+            {/* logo */}
+            <div className='pb-8 mb-5 border-b border-gray-300'>
+              <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
+                <CiImageOn className='text-(--clr-text-header)' />
+                <span>Clinic Logo</span>
+              </h1>
+              <div className='grid grid-cols-1 lg:grid-cols-2'>
                 <InputImage 
-                  label="Tin Picture" 
-                  name="tinNumberPic" 
-                  isPreview 
+                  label="Upload Logo" 
+                  name="logoPic" 
+                  isPreview={true}
+                  required={true}
                   onChange={handleChange} 
-                  error={errors.tinNumberPic} 
-                  existingImage={existingPaths.tinNumberPic} 
+                  error={errors.logoPic} 
+                  existingImage={existingPaths.logoPic} 
                 />
-                <Input 
-                  value={form.tinNumber} 
-                  label="Tin Number" 
-                  name="tinNumber" 
-                  placeholder="123-456-789-000"
+              </div>
+            </div>
+
+            {/* clinic information */}
+            <div className='pb-8 mb-5 border-b border-gray-300'>
+              <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
+                <HiOutlineBuildingOffice2 className='text-(--clr-text-header)' />
+                <span>Clinic Information</span>
+              </h1>
+              
+              <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
+                <Input
+                  value={form.clinicName} 
+                  label="Clinic Name" 
+                  name="clinicName" 
+                  placeholder="Enter your clinic name"
                   isImportant={true} 
                   onChange={handleChange} 
-                  error={errors.tinNumber} 
+                  error={errors.clinicName} 
                 />
-              </div>
-              <div className="flex flex-col">
-                <InputImage 
-                  label="Business Permit Picture" 
-                  name="businessPermitPic" 
-                  isPreview 
-                  onChange={handleChange} 
-                  error={errors.businessPermitPic} 
-                  existingImage={existingPaths.businessPermitPic}
-                />
-                <Input 
-                  value={form.businessPermitNumber} 
-                  label="Permit Number" 
-                  name="businessPermitNumber" 
-                  placeholder="BP-2025-12345"
-                  isImportant={true} onChange={handleChange} 
-                  error={errors.businessPermitNumber} 
-                />
-              </div>
-              <div className="flex flex-col">
-                <InputImage 
-                  label="Vet License Picture" 
-                  name="vetLicensePic" 
-                  isPreview 
-                  onChange={handleChange} 
-                  error={errors.vetLicensePic} 
-                  existingImage={existingPaths.vetLicensePic} 
-                />
-                <Input 
-                  value={form.vetLicenseNumber} 
-                  label="License Number" 
-                  name="vetLicenseNumber"
-                  placeholder="12345" 
+                <Input
+                  value={form.completeAddress} 
+                  label="Complete Address" 
+                  name="completeAddress" 
+                  placeholder="Street, Barangay, Building No., etc."
                   isImportant={true} 
                   onChange={handleChange} 
-                  error={errors.vetLicenseNumber} 
+                  error={errors.completeAddress} 
                 />
+                <Input
+                  value={form.municipality} 
+                  label="City/Municipality" 
+                  name="municipality" 
+                  placeholder="Binangonan"
+                  isImportant={true} 
+                  onChange={handleChange} 
+                  error={errors.municipality} 
+                />
+                <Input
+                  value={form.province} 
+                  label="Province" 
+                  name="province" 
+                  placeholder="Rizal"
+                  isImportant={true} 
+                  onChange={handleChange} 
+                  error={errors.province} 
+                />
+                <Input
+                  value={form.zipCode} 
+                  label="Zip Code" 
+                  name="zipCode" 
+                  placeholder="1940"
+                  isImportant={true} 
+                  onChange={handleChange} 
+                  error={errors.zipCode} 
+                />
+                <Input
+                  value={form.est} 
+                  label="Year Established" 
+                  name="est" 
+                  placeholder="2025"
+                  isImportant={true} 
+                  onChange={handleChange} error={errors.est} 
+                />
+
+                <div className='mb-4'>
+                  <label className='ml-1 text-sm font-medium text-gray-700'>
+                    Clinic Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={form.clinicDescription} 
+                    name="clinicDescription"
+                    placeholder="Brief description of your clinic, specialization, and what makes you unique..."
+                    className={`border outline-none rounded-lg p-2 w-full min-h-[115px] ${errors.clinicDescription && errors.clinicDescription !== "valid" ? "border-red-500" : "border-gray-300"}`}
+                    onChange={handleChange} 
+                  ></textarea>
+                  {errors.clinicDescription && errors.clinicDescription !== "valid" && (
+                    <p className="flex items-center mt-1 text-sm text-red-500"><HiMiniExclamationCircle className="mr-1" />{errors.clinicDescription}</p>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Input value={form.website} label="Website" name="website" placeholder="https://www.clinic.com" isOptional={true} onChange={handleChange} />
+                  <Input value={form.facebook} label="Facebook" name="facebook" placeholder="https://facebook.com/" isOptional={true} onChange={handleChange} />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <div className="flex justify-end mt-8">
-          <button 
-            type="submit"
-            className="w-full md:w-auto px-10 py-3 bg-(--clr-primary) text-white rounded-xl font-bold active:scale-95 disabled:opacity-50 transition-all text-sm cursor-pointer flex items-center justify-center gap-2"
-          >
-            <HiSave size={18} />
-            Save Changes
-          </button>
-        </div>
-      </form> 
+            {/* business & licensing */}
+            <div className='pb-8 mb-5 border-b border-gray-300'>
+              <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
+                <CiCreditCard1 className='text-(--clr-text-header)' />
+                <span>Business & Licensing Information</span>
+              </h1>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6'>
+                <div className="flex flex-col">
+                  <InputImage 
+                    label="Tin Picture" 
+                    name="tinNumberPic" 
+                    isPreview 
+                    onChange={handleChange} 
+                    error={errors.tinNumberPic} 
+                    existingImage={existingPaths.tinNumberPic} 
+                  />
+                  <Input 
+                    value={form.tinNumber} 
+                    label="Tin Number" 
+                    name="tinNumber" 
+                    placeholder="123-456-789-000"
+                    isImportant={true} 
+                    onChange={handleChange} 
+                    error={errors.tinNumber} 
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <InputImage 
+                    label="Business Permit Picture" 
+                    name="businessPermitPic" 
+                    isPreview 
+                    onChange={handleChange} 
+                    error={errors.businessPermitPic} 
+                    existingImage={existingPaths.businessPermitPic}
+                  />
+                  <Input 
+                    value={form.businessPermitNumber} 
+                    label="Permit Number" 
+                    name="businessPermitNumber" 
+                    placeholder="BP-2025-12345"
+                    isImportant={true} onChange={handleChange} 
+                    error={errors.businessPermitNumber} 
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <InputImage 
+                    label="Vet License Picture" 
+                    name="vetLicensePic" 
+                    isPreview 
+                    onChange={handleChange} 
+                    error={errors.vetLicensePic} 
+                    existingImage={existingPaths.vetLicensePic} 
+                  />
+                  <Input 
+                    value={form.vetLicenseNumber} 
+                    label="License Number" 
+                    name="vetLicenseNumber"
+                    placeholder="12345" 
+                    isImportant={true} 
+                    onChange={handleChange} 
+                    error={errors.vetLicenseNumber} 
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="flex justify-end mt-8">
+            <button 
+              type="submit"
+              className="w-full md:w-auto px-10 py-3 bg-(--clr-primary) text-white rounded-xl font-bold active:scale-95 disabled:opacity-50 transition-all text-sm cursor-pointer flex items-center justify-center gap-2"
+            >
+              <HiSave size={18} />
+              Save Changes
+            </button>
+          </div>
+        </form> 
+      )}
     </div>   
   )
 }
