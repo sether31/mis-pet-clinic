@@ -56,14 +56,20 @@ export default function ClinicAdminView({
               <select 
                 value={currentBranch} 
                 onChange={(e) => setCurrentBranch(e.target.value)}
-                className="font-bold text-gray-800 bg-transparent border border-gray-300 py-2 rounded-lg px-4 outline-none cursor-pointer text-sm min-w-[160px]"
+                className="font-bold text-gray-800 bg-transparent border border-gray-300 py-2 rounded-lg px-4 outline-none cursor-pointer text-sm"
               >
                 <option value="all">All Branches</option>
-                {branches.map(b => (
-                  <option key={b.id} value={b.id}>
-                    (ID: {b.id}) {b.name}
-                  </option>
-                ))}
+                {branches.map(b => {
+                  const shortName = b.name.length > 20 
+                    ? `${b.name.substring(0, 20)}...` 
+                    : b.name;
+
+                  return (
+                    <option title={b.name} key={b.id} value={b.id}>
+                      (ID: {b.id}) {shortName}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           )}

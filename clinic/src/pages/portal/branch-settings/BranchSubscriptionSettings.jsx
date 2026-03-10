@@ -6,6 +6,8 @@ import { toast } from 'react-toastify';
 import { useUI } from '../../../hooks/useUI';
 // utils
 import { authFetch } from '../../../utils/authFetch';
+// components
+import LoaderV2 from '../../../components/LoaderV2';
 // icons
 import { HiCheck, HiXMark, HiOutlineShieldCheck, HiLockClosed } from "react-icons/hi2";
 
@@ -14,6 +16,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function BranchSubscriptionSettings() {
   const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
+  const [isLoading, setIsLoading] = useState(true);
   
   const [subscriptions, setSubscriptions] = useState([]); 
   const [currentSub, setCurrentSub] = useState(null);      
@@ -21,7 +24,7 @@ export default function BranchSubscriptionSettings() {
 
   useEffect(() => {
     const loadData = async () => {
-      showLoader("Loading plans...");
+      setIsLoading(true);
       try {
         const [resAll, resCurrent] = await Promise.all([
           authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/get-active-subscription.php`),
@@ -33,7 +36,7 @@ export default function BranchSubscriptionSettings() {
       } catch (err) {
         toast.error("Failed to load subscription data");
       } finally {
-        hideLoader();
+        setIsLoading(false);
       }
     };
     if (branchId) loadData();
@@ -81,6 +84,10 @@ export default function BranchSubscriptionSettings() {
       year: 'numeric'
     })
   : "N/A";
+
+  if(isLoading) {
+    return <LoaderV2 />;
+  }
 
   return (
     <div className="space-y-8">

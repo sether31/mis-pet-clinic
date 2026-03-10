@@ -8,6 +8,7 @@ import { useUI } from '../../../hooks/useUI';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2';
 // sub components
 import InventoryTable from './components/InventoryTable';
 import InventoryModal from './components/InventoryModal';
@@ -17,41 +18,40 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function InventoryManagement() {
   const { branchId } = useParams();
-  const { showLoader, hideLoader } = useUI();
+  const { showLoader, hideLoader } = useUI(); 
+  const [isLoading, setIsLoading] = useState(true); 
+  
   const [inventoryData, setInventoryData] = useState([]);
   const [inventoryCardData, setInventoryCardData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const fetchInventory = useCallback(async () => {
-  
-    showLoader();
+    setIsLoading(true);
     try {
       const response = await authFetch(`${API_URL}/api/clinic/general/inventory/get-inventory.php?branchId=${branchId}`);
       if(response.success) {
         setInventoryData(response.data);
         setInventoryCardData(response.cardData);
       } else {
-        toast.error(response.message || "Failed to fetch inventory");
+        toast.error("Something went wrong");
       }
     } catch(error) {
       toast.error("Something went wrong");
     } finally {
-      hideLoader();
+      setIsLoading(false); 
     }
-  }, [branchId, showLoader, hideLoader]);
+  }, [branchId]);
 
   useEffect(() => {
     fetchInventory();
   }, [fetchInventory]);
 
-   // ensure form is empty
   const handleCreate = () => {
     setSelectedProduct(null); 
     setIsModalOpen(true);
   };
 
-  // pass existing data to form
   const handleEdit = (item) => {
     setSelectedProduct(item);
     setIsModalOpen(true);
@@ -66,7 +66,6 @@ export default function InventoryManagement() {
     const isArchiving = Number(item.is_active) === 1;
     const newStatus = isArchiving ? 0 : 1;
 
-    // alert
     const result = await Swal.fire({
       title: isArchiving ? 'Archive Product?' : 'Restore Product?',
       text: `Are you sure you want to ${isArchiving ? 'archive' : 'restore'} "${item.name}?"`,
@@ -78,19 +77,14 @@ export default function InventoryManagement() {
       reverseButtons: true,
       customClass: {
         popup: '!rounded-xl border !border-gray-300 !max-w-lg',
-        title: `!text-xl !font-black !uppercase !tracking-tight
-          ${isArchiving ? '!text-red-600' : '!text-(--clr-primary)'}
-        `,
-        
-        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold 
-        ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}
-        `,
+        title: `!text-xl !font-black !uppercase !tracking-tight ${isArchiving ? '!text-red-600' : '!text-(--clr-primary)'}`,
+        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}`,
         cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold'
       }
     });
 
     if(result.isConfirmed) {
-      showLoader();
+      showLoader("Updating status..."); 
       try {
         const response = await authFetch(`${API_URL}/api/clinic/general/inventory/update-inventory-status.php`, {
           method: 'POST',
@@ -109,11 +103,10 @@ export default function InventoryManagement() {
       } catch (error) {
         toast.error("Something went wrong");
       } finally {
-        hideLoader();
+        hideLoader(); 
       }
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -127,18 +120,22 @@ export default function InventoryManagement() {
           </div>
         </div>
         
-        <InventoryCard data={inventoryCardData} />
+        {isLoading ? (
+          <LoaderV2 />
+        ) : (
+          <>
+            <InventoryCard data={inventoryCardData} />
+            <div className="mt-8">
+              <InventoryTable 
+                data={inventoryData} 
+                onCreate={handleCreate} 
+                onEdit={handleEdit}
+                onToggleStatus={handleToggleStatus}        
+              />
+            </div>
+          </>
+        )}
 
-        <div className="mt-8">
-          <InventoryTable 
-            data={inventoryData} 
-            onCreate={handleCreate} 
-            onEdit={handleEdit}
-            onToggleStatus={handleToggleStatus}        
-          />
-        </div>
-
-        {/* inventory modal */}
         {isModalOpen && (
           <InventoryModal 
             initialData={selectedProduct}

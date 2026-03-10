@@ -43,8 +43,6 @@ export default function Header() {
         <div className="flex flex-col">
           <motion.h1 
             key={pageTitle} 
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
             className="text-md sm:text-lg md:text-xl font-black uppercase tracking-tight truncate max-w-[150px] sm:max-w-none"
           >
             {pageTitle}

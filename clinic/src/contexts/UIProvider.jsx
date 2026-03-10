@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useCallback } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 // component
@@ -10,15 +10,15 @@ export default function UIProvider({children}) {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
 
-  const showLoader = (msg = 'Loading...') => {
+  const showLoader = useCallback((msg = 'Loading...') => {
     setLoadingMessage(msg);
     setLoading(true);
-  };
+  }, []); 
 
-  const hideLoader = () => {
+  const hideLoader = useCallback(() => {
     setLoading(false);
     setLoadingMessage('');
-  };
+  }, []); 
 
   return (
     <UIContext.Provider value={{showLoader, hideLoader, loading}}>
