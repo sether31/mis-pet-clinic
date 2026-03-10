@@ -24,7 +24,7 @@ try {
   }
 
   // generate temporary id
-  $tempUserId = bin2hex(random_bytes(8));
+  $tempUserId = rand(10000000, 99999999);
 
   // create otp
   $otpData = generateOtp($tempUserId, 'register', 5);
