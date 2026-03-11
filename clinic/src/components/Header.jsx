@@ -9,10 +9,11 @@ import { LuSettings } from "react-icons/lu";
 const links = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Appointment Management', path: '/appointment-management' },
+  { label: 'Shop Management', path: '/shop-management' },
   { label: 'Medical Record Management', path: '/medical-record-management' },
-  { label: 'Staff Management', path: '/staff-management' },
-  { label: 'Transaction Management', path: '/transaction-management' },
   { label: 'Inventory Management', path: '/inventory-management' },
+  { label: 'Transaction Management', path: '/transaction-management' },
+  { label: 'Staff Management', path: '/staff-management' },
   { label: 'Service Management', path: '/service-management' },
   { label: 'Branch Settings', path: '/branch-settings' },
   // other links

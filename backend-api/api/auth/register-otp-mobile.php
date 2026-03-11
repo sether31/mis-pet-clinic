@@ -1,8 +1,6 @@
 <?php
 header("Content-Type: application/json");
-header("Access-Control-Allow-Origin: *"); 
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
+// ... headers ...
 
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../service/Otp.php'; 
@@ -13,7 +11,9 @@ try {
   $data = json_decode(file_get_contents("php://input"), true);
 
   $otp = $data['otp'] ?? '';
-  $tempId = $data['temp_user_id'] ?? '';
+  
+  $tempId = isset($data['temp_user_id']) ? (int)$data['temp_user_id'] : 0; 
+  
   $userData = $data['full_data'] ?? null;
 
   if (!$userData) throw new Exception("Data missing.");
@@ -36,8 +36,8 @@ try {
   $newUserId = $pdo->lastInsertId();
 
   // clean otp
-  $stmtClean = $pdo->prepare("DELETE FROM otp_tb WHERE user_id = ? AND type = 'register'");
-  $stmtClean->execute([$tempId]);
+  $stmtClean = $pdo->prepare("DELETE FROM otp_tb WHERE user_id = ? AND purpose = 'register'");
+  $stmtClean->execute([$tempId]); 
 
   // audit
   log_audit($pdo, $newUserId, null, null, 'CREATE', 'USER', $newUserId);

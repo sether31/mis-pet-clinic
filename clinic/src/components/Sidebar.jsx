@@ -18,14 +18,16 @@ import {
 } from "react-icons/lu";
 import { FaRegCalendarAlt } from 'react-icons/fa';
 import { RiBankCard2Line } from "react-icons/ri";
+import { PiShoppingCartBold } from 'react-icons/pi';
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: LuLayoutDashboard },
   { label: 'Appointment Management', path: 'appointment-management', icon: FaRegCalendarAlt, requiredPermission: 'appointment_management' },
+  { label: 'Shop Management', path: 'shop-management', icon: PiShoppingCartBold, requiredPermission: 'shop_management', requiresShop: true },
   { label: 'Medical Management', path: 'medical-record-management', icon: LuClipboard, requiredPermission: 'medical_record_management' },
-  { label: 'Staff Management', path: 'staff-management', icon: LuUsers, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'staff_management' },
+  { label: 'Inventory Management', path: 'inventory-management', icon: LuPackage, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'inventory_management', requiresShop: true },
   { label: 'Transaction Management', path: 'transaction-management', icon: RiBankCard2Line, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'transaction_management' },
-  { label: 'Inventory Management', path: 'inventory-management', icon: LuPackage, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'inventory_management' },
+  { label: 'Staff Management', path: 'staff-management', icon: LuUsers, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'staff_management' },
   { label: 'Service Management', path: 'service-management', allowedRoles: ['clinic_admin', 'branch_admin'], icon: MdOutlineHomeRepairService, requiredPermission: 'service_management' },
   { label: 'Branch Settings', path: 'branch-settings', icon: LuSettings2, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'branch_settings' },
 ];
@@ -39,7 +41,11 @@ export default function Sidebar({ className, open, setOpen }) {
   const [selectedBranch, setSelectedBranch] = useState("");
 
   const visibleItems = sidebarItems.filter(item => {
+    if (item.requiresShop && selectedBranch?.has_shop == 0) return false;
+    if (item.requiresMedical && selectedBranch?.has_medical == 0) return false;
+    
     if (user?.role === 'clinic_admin') return true;
+
     if (item.allowedRoles && !item.allowedRoles.includes(user?.role)) return false;
     if (item.requiredPermission && !user?.permissions?.includes(item.requiredPermission)) return false;
     return true;

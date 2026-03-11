@@ -92,6 +92,12 @@ export default function DashboardLayout() {
             <Ionicons name={focused ? "paw" : "paw-outline"} size={24} color={color} />
           ),
         }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace('/(dashboard)/pets');
+          },
+        }}
       />
 
       {/* clinics */}

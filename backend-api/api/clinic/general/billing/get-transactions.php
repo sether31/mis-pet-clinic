@@ -65,7 +65,8 @@ try {
     LEFT JOIN pet_tb p ON a.pet_id = p.pet_id
     LEFT JOIN user_tb u_owner ON o.user_id = u_owner.user_id
     WHERE b.clinic_id = :clinic_id 
-    AND b.status = 'approved'"; 
+    AND b.status = 'approved'
+    AND LOWER(o.order_status) NOT IN ('cancelled', 'rejected')";
 
     $params = [':clinic_id' => $clinic_id];
 
