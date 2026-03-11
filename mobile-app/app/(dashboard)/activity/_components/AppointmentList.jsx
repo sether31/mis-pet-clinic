@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, Pressable, RefreshControl, Alert, Modal, ActivityIndicator} from 'react-native';
+import { View, StyleSheet, FlatList, Pressable, RefreshControl, Alert, Modal, ActivityIndicator, ScrollView} from 'react-native';
 import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -250,7 +250,7 @@ export default function AppointmentsList({ activeTab }) {
         visible={modalVisible}
         onRequestClose={() => {
           setModalVisible(false);
-          setShowPaymentSelector(false); // Reset on close
+          setShowPaymentSelector(false); 
         }}
         statusBarTranslucent={true} 
       >
@@ -258,7 +258,7 @@ export default function AppointmentsList({ activeTab }) {
           
           <Pressable style={styles.modalBackgroundClick} onPress={() => {
             setModalVisible(false);
-            setShowPaymentSelector(false); // Reset on click outside
+            setShowPaymentSelector(false); 
           }} />
 
           <View style={styles.modalContent}>
@@ -283,169 +283,189 @@ export default function AppointmentsList({ activeTab }) {
                   </Pressable>
                 </View>
 
-                {/* payment method */}
-                {showPaymentSelector ? (
-                  <View style={{ gap: 16, marginTop: 50 }}>
-                    {isPaying ? (
-                      <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                        <ActivityIndicator size="large" color={Colors.primary} />
-                      </View>
-                    ) : (
-                      <>
-                        <Pressable 
-                          style={({ pressed }) => [styles.walletBtn, { backgroundColor: '#005CEE' }, pressed && styles.walletBtnPressed]}
-                          onPress={() => handlePayNow(selectedAppointment.appointment_id, 'GCASH')}
-                        >
-                          <Ionicons name="wallet-outline" size={24} color="#FFF" style={{ marginRight: 10 }} />
-                          <AppText style={styles.walletBtnText}>Pay with GCash</AppText>
-                        </Pressable>
+                <ScrollView
+                  showsVerticalScrollIndicator={false} 
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  bounces={false}
+                >
+                  {/* payment method */}
+                  {showPaymentSelector ? (
+                    <View style={{ gap: 16, marginTop: 20 }}>
+                      {isPaying ? (
+                        <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                          <ActivityIndicator size="large" color={Colors.primary} />
+                        </View>
+                      ) : (
+                        <>
+                          <Pressable 
+                            style={({ pressed }) => [styles.walletBtn, { backgroundColor: '#005CEE' }, pressed && styles.walletBtnPressed]}
+                            onPress={() => handlePayNow(selectedAppointment.appointment_id, 'GCASH')}
+                          >
+                            <Ionicons name="wallet-outline" size={24} color="#FFF" style={{ marginRight: 10 }} />
+                            <AppText style={styles.walletBtnText}>Pay with GCash</AppText>
+                          </Pressable>
 
-                        <Pressable 
-                          style={({ pressed }) => [styles.walletBtn, { backgroundColor: Colors.primary }, pressed && styles.walletBtnPressed]}
-                          onPress={() => handlePayNow(selectedAppointment.appointment_id, 'PAYMAYA')}
-                        >
-                          <Ionicons name="card-outline" size={24} color="#FFF" style={{ marginRight: 10 }} />
-                          <AppText style={styles.walletBtnText}>Pay with Maya</AppText>
-                        </Pressable>
+                          <Pressable 
+                            style={({ pressed }) => [styles.walletBtn, { backgroundColor: Colors.primary }, pressed && styles.walletBtnPressed]}
+                            onPress={() => handlePayNow(selectedAppointment.appointment_id, 'PAYMAYA')}
+                          >
+                            <Ionicons name="card-outline" size={24} color="#FFF" style={{ marginRight: 10 }} />
+                            <AppText style={styles.walletBtnText}>Pay with Maya</AppText>
+                          </Pressable>
 
-                        <Pressable style={styles.backLink} onPress={() => setShowPaymentSelector(false)}>
-                          <AppText style={styles.backLinkText}>← Back to details</AppText>
-                        </Pressable>
-                      </>
-                    )}
-                  </View>
-                ) : (
-                  <View style={styles.modalBody}>
-                    <View style={styles.detailRow}>
-                      <AppText style={styles.detailLabel}>Reference ID</AppText>
-                      <AppText style={styles.detailValue}>#{selectedAppointment.appointment_id}</AppText>
-                    </View> 
-                    <View style={styles.detailRow}>
-                      <AppText style={styles.detailLabel}>Status</AppText>
-                      <View style={[styles.statusBadge, { backgroundColor: getStatusStyle(selectedAppointment.status).bg }]}>
-                        <AppText style={[styles.statusText, { color: getStatusStyle(selectedAppointment.status).text }]}>
-                          {selectedAppointment.status}
-                        </AppText>
-                      </View>
+                          <Pressable style={styles.backLink} onPress={() => setShowPaymentSelector(false)}>
+                            <AppText style={styles.backLinkText}>← Back to details</AppText>
+                          </Pressable>
+                        </>
+                      )}
                     </View>
-
-                    <View style={styles.detailRow}>
-                      <AppText style={styles.detailLabel}>Date</AppText>
-                      <AppText style={styles.detailValue}>
-                        {new Date(selectedAppointment.start_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                      </AppText>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <AppText style={styles.detailLabel}>Time</AppText>
-                      <AppText style={styles.detailValue}>
-                        {formatTimeRange(selectedAppointment.start_time, selectedAppointment.end_time)}
-                      </AppText>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <AppText style={styles.detailLabel}>Service</AppText>
-                      <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.service_name}</AppText>
-                    </View>
-
-                    {/* 💥 NEW ROW: Always show the Base Service Fee */}
-                    <View style={styles.detailRow}>
-                      <AppText style={styles.detailLabel}>Service Fee</AppText>
-                      <AppText style={[styles.detailValue, { color: Colors.primary }]}>
-                        ₱{parseFloat(selectedAppointment.service_fee || 0).toFixed(2)}
-                      </AppText>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <AppText style={styles.detailLabel}>Clinic</AppText>
-                      <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.branch_name}</AppText>
-                    </View>
-
-                    <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
-                      <AppText style={styles.detailLabel}>Pet</AppText>
-                      <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.pet_name}</AppText>
-                    </View>
-
-                    {/* 💥 DYNAMIC RECEIPT BLOCK (Only shows if there is a final bill) */}
-                    {selectedAppointment.total_amount && (
-                      <View style={styles.receiptContainer}>
-                        <AppText style={styles.receiptTitle}>Final Bill Breakdown</AppText>
-                        
-                        {(selectedAppointment.items || []).map((item, idx) => (
-                          <View key={idx} style={styles.receiptItemRow}>
-                            <View style={{flex: 1, paddingRight: 10}}>
-                              <AppText style={styles.receiptItemName}>{item.item_name}</AppText>
-                              <AppText style={styles.receiptItemQty}>
-                                {item.quantity} x ₱{parseFloat(item.price).toFixed(2)}
-                              </AppText>
-                            </View>
-                            <AppText style={styles.receiptItemSubtotal}>
-                              ₱{parseFloat(item.subtotal).toFixed(2)}
-                            </AppText>
-                          </View>
-                        ))}
-
-                        {/* Final Total Row */}
-                        <View style={styles.receiptTotalRow}>
-                          <AppText style={styles.receiptTotalLabel}>Final Total</AppText>
-                          <AppText style={styles.receiptTotalValue}>
-                            ₱{parseFloat(selectedAppointment.total_amount).toFixed(2)}
+                  ) : (
+                    <View style={styles.modalBody}>
+                      <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Reference ID</AppText>
+                        <AppText style={styles.detailValue}>#{selectedAppointment.appointment_id}</AppText>
+                      </View> 
+                      <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Status</AppText>
+                        <View style={[styles.statusBadge, { backgroundColor: getStatusStyle(selectedAppointment.status).bg }]}>
+                          <AppText style={[styles.statusText, { color: getStatusStyle(selectedAppointment.status).text }]}>
+                            {selectedAppointment.status}
                           </AppText>
                         </View>
                       </View>
-                    )}
 
-                    {(selectedAppointment.status === 'rejected' || selectedAppointment.status === 'cancelled') && selectedAppointment.feedback && (
-                      <View style={styles.feedbackBox}>
-                        <AppText style={styles.feedbackLabel}>Reason for {selectedAppointment.status}:</AppText>
-                        <AppText style={styles.feedbackText}>{selectedAppointment.feedback}</AppText>
+                      <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Date</AppText>
+                        <AppText style={styles.detailValue}>
+                          {new Date(selectedAppointment.start_time).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        </AppText>
                       </View>
-                    )}
-                  </View> 
-                )}
 
-                {/* ONLY SHOW BOTTOM BUTTONS IF NOT IN PAYMENT SELECTOR MODE */}
-                {!showPaymentSelector && (
-                  <>
-                    {selectedAppointment.status === 'billed' && (
+                      <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Time</AppText>
+                        <AppText style={styles.detailValue}>
+                          {formatTimeRange(selectedAppointment.start_time, selectedAppointment.end_time)}
+                        </AppText>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Service</AppText>
+                        <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.service_name}</AppText>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Service Fee</AppText>
+                        <AppText style={[styles.detailValue, { color: Colors.primary }]}>
+                          ₱{parseFloat(selectedAppointment.service_fee || 0).toFixed(2)}
+                        </AppText>
+                      </View>
+
+                      <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Clinic</AppText>
+                        <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.branch_name}</AppText>
+                      </View>
+
+                      <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+                        <AppText style={styles.detailLabel}>Pet</AppText>
+                        <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.pet_name}</AppText>
+                      </View>
+
+                      {selectedAppointment.total_amount && (
+                        <View style={styles.receiptContainer}>
+                          <AppText style={styles.receiptTitle}>Final Bill Breakdown</AppText>
+                          
+                          {(selectedAppointment.items || []).map((item, idx) => (
+                            <View key={idx} style={styles.receiptItemRow}>
+                              <View style={{flex: 1, paddingRight: 10}}>
+                                <AppText style={styles.receiptItemName}>{item.item_name}</AppText>
+                                <AppText style={styles.receiptItemQty}>
+                                  {item.quantity} x ₱{parseFloat(item.price).toFixed(2)}
+                                </AppText>
+                              </View>
+                              <AppText style={styles.receiptItemSubtotal}>
+                                ₱{parseFloat(item.subtotal).toFixed(2)}
+                              </AppText>
+                            </View>
+                          ))}
+
+                          {/* Total Row */}
+                          <View style={styles.receiptTotalRow}>
+                            <AppText style={styles.receiptTotalLabel}>Final Total</AppText>
+                            <AppText style={styles.receiptTotalValue}>
+                              ₱{parseFloat(selectedAppointment.total_amount).toFixed(2)}
+                            </AppText>
+                          </View>
+                        </View>
+                      )}
+
+                      {(selectedAppointment.status === 'rejected' || selectedAppointment.status === 'cancelled') && selectedAppointment.feedback && (
+                        <View style={styles.feedbackBox}>
+                          <AppText style={styles.feedbackLabel}>Reason for {selectedAppointment.status}:</AppText>
+                          <AppText style={styles.feedbackText}>{selectedAppointment.feedback}</AppText>
+                        </View>
+                      )}
+                    </View> 
+                  )}
+
+                  {/* BOTTOM BUTTONS */}
+                  {!showPaymentSelector && (
+                    <View style={{ marginTop: 10 }}>
+                      {selectedAppointment.status === 'billed' && (
+                        <Pressable 
+                          style={({ pressed }) => [styles.payBtn, pressed && styles.payBtnPressed]} 
+                          onPress={() => setShowPaymentSelector(true)}
+                        >
+                          <Ionicons name="card-outline" size={20} color="#FFFFFF" style={{marginRight: 8}}/>
+                          <AppText style={styles.payBtnText}>Pay Online</AppText>
+                        </Pressable>
+                      )}
+
+                      {selectedAppointment.record_id && selectedAppointment.status !== 'completed' && (
+                        <Pressable 
+                          style={({ pressed }) => [
+                            styles.viewClinicBtn, 
+                            { backgroundColor: '#4F46E5', marginBottom: -4 },
+                            pressed && { transform: [{ scale: 0.98 }] }
+                          ]} 
+                          onPress={() => {
+                            setModalVisible(false); 
+                            router.push(`/(dashboard)/pets/record/${selectedAppointment.record_id}?from=activity`); 
+                          }}
+                        >
+                          <Ionicons name="document-text" size={20} color="#FFFFFF" style={{marginRight: 8}}/>
+                          <AppText style={styles.viewClinicText}>Review Medical Record</AppText>
+                        </Pressable>
+                      )}
+
                       <Pressable 
-                        style={({ pressed }) => [styles.payBtn, pressed && styles.payBtnPressed]} 
-                        onPress={() => setShowPaymentSelector(true)}
+                        style={({ pressed }) => [styles.viewClinicBtn, pressed && styles.viewClinicBtnPressed]} 
+                        onPress={() => goToClinicProfile(selectedAppointment)} 
                       >
-                        <Ionicons name="card-outline" size={20} color="#FFFFFF" style={{marginRight: 8}}/>
-                        <AppText style={styles.payBtnText}>Pay Online</AppText>
+                        <Ionicons name="business" size={20} color="#FFFFFF" style={{marginRight: 8}}/>
+                        <AppText style={styles.viewClinicText}>View Clinic Profile</AppText>
                       </Pressable>
-                    )}
 
-                    <Pressable 
-                      style={({ pressed }) => [styles.viewClinicBtn, pressed && styles.viewClinicBtnPressed]} 
-                      onPress={() => goToClinicProfile(selectedAppointment)} 
-                    >
-                      <Ionicons name="business" size={20} color="#FFFFFF" style={{marginRight: 8}}/>
-                      <AppText style={styles.viewClinicText}>View Clinic Profile</AppText>
-                    </Pressable>
-
-                    {selectedAppointment.status === 'pending' && (
-                      <Pressable 
-                        style={({ pressed }) => [
-                          styles.modalCancelBtn, 
-                          pressed && styles.modalCancelBtnPressed
-                        ]} 
-                        onPress={() => handleCancel(selectedAppointment.appointment_id)}
-                      >
-                        {({ pressed }) => (
-                          <AppText style={[
-                            styles.modalCancelText, 
-                            pressed && { color: '#B91C1C' }
-                          ]}>
-                            Cancel Appointment
-                          </AppText>
-                        )}
-                      </Pressable>
-                    )}
-                  </>
-                )}
-
+                      {selectedAppointment.status === 'pending' && (
+                        <Pressable 
+                          style={({ pressed }) => [
+                            styles.modalCancelBtn, 
+                            pressed && styles.modalCancelBtnPressed
+                          ]} 
+                          onPress={() => handleCancel(selectedAppointment.appointment_id)}
+                        >
+                          {({ pressed }) => (
+                            <AppText style={[
+                              styles.modalCancelText, 
+                              pressed && { color: '#B91C1C' }
+                            ]}>
+                              Cancel Appointment
+                            </AppText>
+                          )}
+                        </Pressable>
+                      )}
+                    </View>
+                  )}
+                </ScrollView>
               </>
             )}
           </View>
@@ -479,7 +499,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackgroundClick: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   
-  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, minHeight: 400 },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40, minHeight: 400, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: '800', color: '#111827' },
   modalBody: { gap: 16 },

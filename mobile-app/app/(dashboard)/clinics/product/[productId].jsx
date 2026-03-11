@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, StyleSheet, Image, ScrollView, ActivityIndicator, TextInput, Modal, Pressable, Platform } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState, useMemo, useCallback } from 'react';
+import { View, StyleSheet, Image, ScrollView, ActivityIndicator, TextInput, Modal, Pressable } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -26,12 +26,19 @@ export default function ProductDetailScreen() {
   
   const [dateError, setDateError] = useState('');
 
-  useEffect(() => {
-    if (productId && branch_id) fetchProductDetails();
-  }, [productId, branch_id]);
+  useFocusEffect(
+    useCallback(() => {
+      if (productId && branch_id) {
+        setLoading(true);
+        fetchProductDetails();
+      }
+    }, [productId, branch_id])
+  );
 
   const fetchProductDetails = async () => {
     try {
+      setProduct(null);
+      
       const res = await authFetch(`${API_URL}/api/pet-owner/shop/get-product-details.php?product_id=${productId}&branch_id=${branch_id}`);
       if (res?.success) {
         setProduct(res.data);

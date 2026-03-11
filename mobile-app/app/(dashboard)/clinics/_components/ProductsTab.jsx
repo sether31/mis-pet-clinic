@@ -186,6 +186,7 @@ export default function ProductsTab({ branchId }) {
           <View style={styles.emptyContainer}>
             <Ionicons name="bag-remove-outline" size={40} color="#9CA3AF" />
             <AppText style={styles.emptyTitle}>No Products Found</AppText>
+            <AppText style={styles.emptySubtitle}>This clinic has not listed any services yet.</AppText>
           </View>
         ) : (
           filteredProducts.map((item, index) => (
@@ -230,4 +231,5 @@ const styles = StyleSheet.create({
   
   emptyContainer: { width: '100%', alignItems: 'center', marginTop: 40, padding: 20 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#6B7280', marginTop: 12 },
+  emptySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center' },
 });

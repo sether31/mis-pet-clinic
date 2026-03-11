@@ -83,7 +83,10 @@ try {
       AND branch_id = :branch_id 
       AND stock_level > 0 
       AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
-    ORDER BY expiry_date IS NULL ASC, expiry_date ASC 
+    ORDER BY 
+      CASE WHEN expiry_date IS NULL THEN 1 ELSE 0 END, 
+      expiry_date ASC,                                
+      inventory_id ASC                                
     LIMIT 1"
   );
   $stmtInv->execute([':product_id' => $product_id, ':branch_id' => $branch_id]);

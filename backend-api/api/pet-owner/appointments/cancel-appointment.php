@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../../middleware/auth-middleware.php'; 
 require_once __DIR__ . '/../../../config/Database.php';
 require_once __DIR__ . '/../../../service/Jwt.php'; 
+require_once __DIR__ . '/../../../helper/log_audit.php';
 
 $decoded = validate_auth(['pet_owner']); 
 $user_id = $decoded->user_id; 
@@ -28,6 +29,7 @@ try {
 
   // Check if a row was actually updated
   if($stmt->rowCount() > 0) {
+    log_audit($pdo, $user_id, null, $appointment['branch_id'], 'CANCEL', 'APPOINTMENT', $appointment_id);
     echo json_encode(["success" => true, "message" => "Appointment Cancelled."]);
   } else {
     throw new Exception("Cannot cancel. Appointment may be confirmed or already processed.");
