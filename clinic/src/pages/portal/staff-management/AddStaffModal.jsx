@@ -35,6 +35,7 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
   const availablePermissions = [
     { id: "role_dashboard", label: "Role Dashboard"},
     { id: "appointment_management", label: "Appointment Management"},
+    { id: "shop_management", label: "Shop Management"},
     { id: "staff_management", label: "Staff Management"},
     { id: "transaction_management", label: "Transaction Management"},
     { id: "inventory_management", label: "Inventory Management"},
@@ -43,10 +44,10 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
   ];
 
   const defaultRolePermissions = {
-    3: ["role_dashboard", "appointment_management", "staff_management", "transaction_management", "inventory_management", "service_management", "branch_settings"],
+    3: ["role_dashboard", "appointment_management", "shop_reservation", "staff_management", "transaction_management", "inventory_management", "service_management", "branch_settings"],
     4: ["role_dashboard", "appointment_management", "transaction_management"], 
     5: ["role_dashboard", "appointment_management", "transaction_management"], 
-    6: ["role_dashboard", "appointment_management", "transaction_management"] 
+    6: ["role_dashboard", "appointment_management", "shop_reservation", "transaction_management"] 
   };
 
   const format12h = (timeStr) => {
@@ -239,14 +240,14 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
       const endpoint = form.user_id ? 'update-staff.php' : 'create-staff.php';
       const response = await authFetch(`${API_URL}/api/clinic/general/staff/${endpoint}`, { method: 'POST', body: fd });
       if(response.success) {
-        toast.success(response.message || "Saved successfully");
+        toast.success("Saved successfully");
         onRefresh(); onClose();
       } else {
         if (response.message?.toLowerCase().includes("email")) {
           setErrors(prev => ({ ...prev, email: "This email is already registered." }));
           toast.error("Email address is already in use.");
         } else {
-          toast.error(response.message || "Something went wrong");
+          toast.error("Something went wrong");
         }
       }
     } catch(error) { toast.error("Something went wrong"); }
@@ -308,10 +309,10 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
                     key={role.id} 
                     onClick={() => { 
                       const defaultPermissions = {
-                        3: ["role_dashboard", "appointment_management", "transaction_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
+                        3: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
                         4: ["role_dashboard", "appointment_management", "transaction_management"], 
                         5: ["role_dashboard", "appointment_management", "transaction_management"], 
-                        6: ["role_dashboard", "appointment_management", "transaction_management"] 
+                        6: ["role_dashboard", "appointment_management", "shop_management", "transaction_management"] 
                       };
 
                       setForm(prev => ({ 
