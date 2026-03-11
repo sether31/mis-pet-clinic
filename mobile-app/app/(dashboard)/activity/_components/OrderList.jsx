@@ -105,7 +105,7 @@ export default function OrderList({ activeTab }) {
     if (activeTab === 'upcoming') {
       return item.order_status === 'pending' || item.order_status === 'confirmed';
     } else {
-      return item.order_status === 'completed' || item.order_status === 'cancelled';
+      return item.order_status === 'completed' || item.order_status === 'cancelled' || item.order_status === 'rejected';
     }
   });
 
@@ -118,7 +118,9 @@ export default function OrderList({ activeTab }) {
       case 'pending': 
         return { bg: '#FEF3C7', text: '#92400E', label: 'Waiting for confirmation' }; 
       case 'cancelled': 
-        return { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' }; 
+        return { bg: '#FEE2E2', text: '#991B1B', label: 'Cancelled' };
+      case 'rejected':
+        return { bg: '#FEE2E2', text: '#991B1B', label: 'Rejected by Clinic' }
       default: 
         return { bg: '#F3F4F6', text: '#374151', label: status }; 
     }
@@ -265,7 +267,7 @@ export default function OrderList({ activeTab }) {
                     <AppText style={styles.detailValue}>{selectedOrder.product_name} (x{selectedOrder.quantity})</AppText>
                   </View>
 
-                  {selectedOrder.order_status === 'cancelled' && selectedOrder.cancellation_reason && (
+                  {(selectedOrder.order_status === 'cancelled' || selectedOrder.order_status === 'rejected') && selectedOrder.cancellation_reason && (
                     <View style={styles.feedbackBox}>
                       <AppText style={styles.feedbackLabel}>Cancellation Reason:</AppText>
                       <AppText style={styles.feedbackText}>{selectedOrder.cancellation_reason}</AppText>

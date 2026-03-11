@@ -114,14 +114,16 @@ try {
 
   // Create the Order Items Record
   $stmtItem = $pdo->prepare(
-    "INSERT INTO order_items_tb (order_id, product_id, quantity, price)
-    VALUES (:oid, :pid, :qty, :price)"
+    "INSERT INTO order_items_tb (order_id, inventory_id, product_id, quantity, price, subtotal)
+    VALUES (:oid, :inv_id, :pid, :qty, :price, :subtotal)"
   );
   $stmtItem->execute([
     ':oid' => $orderId,
+    ':inv_id' => $inventoryBatch['inventory_id'],
     ':pid' => $productId,
     ':qty' => $reqQty,
-    ':price' => $unitPrice
+    ':price' => $unitPrice,
+    ':subtotal' => $totalPrice
   ]);
 
   // Create the Pending Payment Record

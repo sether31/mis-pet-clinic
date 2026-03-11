@@ -13,7 +13,7 @@ export default function ServicesTab({ services, branchId }) {
   if (!services || services.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="medical-outline" size={48} color="#D1D5DB" style={{ marginBottom: 12 }} />
+        <Ionicons name="paw-outline" size={48} color="#D1D5DB" style={{ marginBottom: 12 }} />
         <AppText style={styles.emptyTitle}>No Services Available</AppText>
         <AppText style={styles.emptySubtitle}>This clinic has not listed any services yet.</AppText>
       </View>
