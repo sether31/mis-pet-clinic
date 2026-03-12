@@ -1,25 +1,5 @@
-import { motion } from 'framer-motion';
 // icons
 import { HiInbox, HiOutlineUser, HiOutlineChevronRight, HiExclamation } from 'react-icons/hi';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1, 
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { x: 10, opacity: 0 },
-  visible: {
-    x: 0,
-    opacity: 1,
-    transition: { stiffness: 300, damping: 24 },
-  },
-};
 
 export default function PendingAppointments({ pendingAppointment = [], loading, onSelect }) {
   const now = new Date();
@@ -39,36 +19,24 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
       </div>
 
       {/* cards container */}
-      <motion.div 
-        className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        key={pendingAppointment.length} 
-      >
+      <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar">
         {loading ? (
           <div className="py-10 text-center text-[10px] font-black text-gray-300 uppercase animate-pulse tracking-widest">
             Syncing...
           </div>
         ) : pendingAppointment?.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }}
-            className="py-20 text-center opacity-20 text-[10px] font-bold text-gray-400 uppercase tracking-widest"
-          >
+          <div className="py-20 text-center opacity-20 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
             Inbox Clear
-          </motion.div>
+          </div>
         ) : (
           pendingAppointment.map((app) => {
             const isPast = new Date(app.start) < now;
 
             return (
-              <motion.div 
+              <div 
                 key={app.id} 
                 onClick={() => onSelect(app)}
-                variants={itemVariants}
-                whileHover={{ x: 5 }} 
-                className={`relative flex items-center bg-white rounded-2xl border p-2 transition-all group cursor-pointer
+                className={`relative flex items-center bg-white rounded-2xl border p-2 transition-all duration-300 group cursor-pointer hover:translate-x-1
                   ${isPast 
                     ? 'border-amber-200 bg-amber-50/30 hover:border-amber-400' 
                     : 'border-gray-300 hover:border-(--clr-primary)'
@@ -124,11 +92,11 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
                     <HiOutlineChevronRight size={10} />
                   </button>
                 </div>
-              </motion.div>
+              </div>
             )
           })
         )}
-      </motion.div>
+      </div>
     </aside>
   );
 }
