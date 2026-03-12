@@ -12,7 +12,7 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
           <h2 className="flex items-center gap-2 text-[11px] font-black uppercase">
             <HiInbox className="text-lg" /> Pending Appointments
           </h2>
-          <span className="bg-(--clr-primary) text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+          <span className="bg-(--clr-black) text-white text-[9px] font-black px-2 py-0.5 rounded-full">
             {pendingAppointment?.length || 0}
           </span>
         </div>
