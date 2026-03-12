@@ -54,7 +54,7 @@ try {
     
     echo json_encode(["success" => true, "message" => "Appointment Cancelled."]);
   } else {
-    throw new Exception("Cannot cancel. Appointment may be confirmed or already processed.");
+    throw new Exception("Oops! The clinic just updated this booking. Please refresh to see the latest status.");
   }
 
 } catch (Exception $e) {

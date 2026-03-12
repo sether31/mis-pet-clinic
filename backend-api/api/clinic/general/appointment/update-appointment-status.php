@@ -23,7 +23,7 @@ try {
   $pdo->beginTransaction();
 
   $stmtDetails = $pdo->prepare(
-    "SELECT a.branch_id, b.clinic_id, a.user_id, p.name AS pet_name, b.name AS clinic_name
+    "SELECT a.branch_id, b.clinic_id, a.user_id, p.name AS pet_name, b.name AS clinic_name, a.status AS current_status
     FROM appointments_tb a
     JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
     JOIN pet_tb p ON a.pet_id = p.pet_id           
@@ -33,8 +33,12 @@ try {
   $details = $stmtDetails->fetch();
 
   if(!$details) {
-    echo json_encode(["success" => false, "message" => "Appointment not found."]);
-    exit;
+    throw new Exception("Appointment not found.");
+  }
+
+  // Check if the appointment is already cancelled
+  if ($details['current_status'] === 'cancelled') {
+    throw new Exception("The pet owner has already cancelled this appointment. Please refresh your page");
   }
 
   $branchId = $details['branch_id'];
@@ -82,7 +86,7 @@ try {
   $title = $clinicName; 
   $notificationMessage = "Your appointment for " . $petName . " has been " . $actionResponse . ".";
   
-  if (!empty($feedback)) {
+  if(!empty($feedback)) {
     $notificationMessage .= "\n\nClinic Note: " . $feedback;
   }
 
@@ -97,6 +101,10 @@ try {
 
 } catch(Exception $e) {
   if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
-  http_response_code(500);
+  http_response_code(500); 
+  $code = strpos($e->getMessage(), 'Action denied') !== false ? 400 : 500;
+  http_response_code($code);
+  
   echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }
+?>
