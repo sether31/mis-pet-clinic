@@ -176,11 +176,13 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
       buttonsStyling: false,
       reverseButtons: true,
       customClass: {
+        container: '!z-[99999]',
+
         popup: '!rounded-xl border !border-gray-300 !max-w-lg',
         title: '!text-xl !font-black !uppercase !tracking-tight !text-red-600',
         htmlContainer: '!text-sm !font-medium !text-gray-500',
         input: '!rounded-xl !border-gray-300 !text-sm !focus:ring-(--clr-primary) !focus:border-(--clr-primary) !outline:none !m-4',
-     
+
         confirmButton: 'rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold bg-red-500 hover:bg-red-600' ,
         cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold'
       },
