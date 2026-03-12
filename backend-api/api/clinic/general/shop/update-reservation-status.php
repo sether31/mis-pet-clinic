@@ -1,8 +1,10 @@
 <?php
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
+require_once __DIR__ . '/../../../../helper/log_audit.php';
 
-validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$decoded = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
+$user_id = $decoded->user_id;
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -16,7 +18,6 @@ if (!$order_id || !$status) {
   exit;
 }
 
-// Security Check: Only allow these exact statuses
 $valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled', 'rejected'];
 if (!in_array($status, $valid_statuses)) {
   http_response_code(400);
@@ -29,15 +30,27 @@ try {
   
   $pdo->beginTransaction();
 
+  $stmtDetails = $pdo->prepare(
+    "SELECT o.branch_id, b.clinic_id 
+    FROM order_tb o 
+    JOIN clinic_branches_tb b ON o.branch_id = b.branch_id 
+    WHERE o.order_id = ?"
+  );
+  $stmtDetails->execute([$order_id]);
+  $orderDetails = $stmtDetails->fetch();
+  
+  $branch_id = $orderDetails['branch_id'] ?? null;
+  $clinic_id = $orderDetails['clinic_id'] ?? null;
+
   // UPDATE THE ORDER STATUS
-  $stmt = $pdo->prepare("
-    UPDATE order_tb 
+  $stmt = $pdo->prepare(
+    "UPDATE order_tb 
     SET 
       order_status = ?, 
       cancellation_reason = ?, 
       updated_at = CURRENT_TIMESTAMP
-    WHERE order_id = ?
-  ");
+    WHERE order_id = ?"
+  );
   
   // If it's not cancelled or rejected, ensure the reason is saved as NULL
   $final_reason = ($status === 'cancelled' || $status === 'rejected') ? $reason : null;
@@ -50,11 +63,11 @@ try {
     $itemsStmt->execute([$order_id]);
     $items = $itemsStmt->fetchAll();
 
-    $restockStmt = $pdo->prepare("
-      UPDATE inventory_tb 
+    $restockStmt = $pdo->prepare(
+      "UPDATE inventory_tb 
       SET stock_level = stock_level + ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE inventory_id = ?
-    ");
+      WHERE inventory_id = ?"
+    );
     
     foreach ($items as $item) {
       if (!empty($item['inventory_id'])) {
@@ -81,6 +94,15 @@ try {
   }
 
 
+  $action_type = 'UPDATE';
+  if ($status === 'cancelled') $action_type = 'CANCEL';
+  elseif ($status === 'rejected') $action_type = 'REJECT';
+  elseif ($status === 'completed') $action_type = 'COMPLETE';
+  elseif ($status === 'confirmed') $action_type = 'CONFIRM';
+
+  // AUDIT LOG
+  log_audit($pdo, $user_id, $clinic_id, $branch_id, $action_type, 'RESERVATION', $order_id);
+
   $pdo->commit();
 
   echo json_encode([
@@ -89,7 +111,7 @@ try {
   ]);
 
 } catch (Exception $e) {
-  if ($pdo->inTransaction()) {
+  if (isset($pdo) && $pdo->inTransaction()) {
     $pdo->rollBack();
   }
   http_response_code(500);
