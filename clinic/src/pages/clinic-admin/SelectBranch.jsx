@@ -232,17 +232,21 @@ export default function SelectBranch() {
                           NO ACTIVE SUBSCRIPTION
                         </span>
                         
-                        /* active subscription */
-                      ) : branch.days_left > 0 ? (          
+                        // days left
+                      ) : branch.days_left >= 0 ? (          
                         <span className={`text-[11px] font-bold px-2 py-1 rounded-md border ${
                           branch.days_left <= 7 
                             ? 'bg-orange-50 text-orange-600 border-orange-200' 
                             : 'bg-green-100 text-(--clr-text-header) border-green-200'
                         }`}>
-                          {branch.days_left} {branch.days_left === 1 ? 'DAY' : 'DAYS'} LEFT
+                          {/* if today then expires today */}
+                          {branch.days_left === 0 
+                            ? 'EXPIRES TODAY' 
+                            : `${branch.days_left} ${branch.days_left === 1 ? 'DAY' : 'DAYS'} LEFT`
+                          }
                         </span>
 
-                        /* expired subcription */
+                        // expired subscription (days_left is -1 or lower)
                       ) : (
                         <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-red-50 text-red-600 border border-red-200">
                           SUBSCRIPTION EXPIRED

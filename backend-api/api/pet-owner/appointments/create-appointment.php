@@ -4,6 +4,9 @@ require_once __DIR__ . '/../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../config/Database.php';
 require_once __DIR__ . '/../../../helper/log_audit.php';
 
+// Set timezone for accurate time comparisons
+date_default_timezone_set('Asia/Manila');
+
 $decoded = validate_auth(['pet_owner']); 
 $user_id = $decoded->user_id; 
 
@@ -22,6 +25,31 @@ try {
   $date = $data['appointment_date'];
   $time = $data['appointment_time'];
 
+  // CLINIC CHECK (Maintenance, Status, & Expiry)
+  $clinicStmt = $pdo->prepare(
+    "SELECT 
+      cb.is_maintenance, 
+      cb.status, 
+      (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
+        WHERE bs.branch_id = cb.branch_id 
+          AND LOWER(bs.status) = 'active' 
+          AND bs.end_date >= CURDATE()
+      ) as has_sub
+    FROM clinic_branches_tb cb 
+    WHERE cb.branch_id = ?"
+  );
+  $clinicStmt->execute([$branch_id]);
+  $clinicCheck = $clinicStmt->fetch();
+
+  if (
+    !$clinicCheck || 
+    strtolower($clinicCheck['status']) !== 'approved' || 
+    $clinicCheck['is_maintenance'] == 1 || 
+    $clinicCheck['has_sub'] == 0
+  ) {
+    throw new Exception("This clinic is currently under maintenance or unavailable.");
+  }
+
   // Convert times
   $start_timestamp = strtotime("$date $time");
   $start_datetime = date('Y-m-d H:i:s', $start_timestamp);
@@ -34,10 +62,9 @@ try {
   $end_timestamp = $start_timestamp + ($duration * 60);
   $end_datetime = date('Y-m-d H:i:s', $end_timestamp);
 
-  // start
   $pdo->beginTransaction();
 
-  // Check Branch Subscription Limit (Based on Subscription Date & Active Status)
+  // Check Branch Subscription Limit
   $limitStmt = $pdo->prepare(
     "SELECT s.appointment_limit, bs.created_at as sub_start_date
     FROM branch_subscriptions_tb bs
@@ -51,7 +78,6 @@ try {
   $limit = $subData ? (int)$subData['appointment_limit'] : 0;
   $sub_start_date = $subData ? $subData['sub_start_date'] : '2000-01-01 00:00:00';
 
-  // Only check if limit is below 1000 
   if ($limit > 0 && $limit < 1000) {
     $capStmt = $pdo->prepare(
       "SELECT COUNT(*) FROM appointments_tb 
@@ -70,15 +96,15 @@ try {
   // Safety Check for time slot conflicts
   $stmtCheck = $pdo->prepare(
     "SELECT appointment_id FROM appointments_tb 
-      WHERE staff_id = :staff_id 
-      AND status NOT IN ('cancelled', 'rejected')
-      AND (start_time < :end AND end_time > :start) 
-      LIMIT 1"
+    WHERE staff_id = :staff_id 
+    AND status NOT IN ('cancelled', 'rejected')
+    AND (start_time < :end AND end_time > :start) 
+    LIMIT 1"
   );
   $stmtCheck->execute([':staff_id' => $staff_id, ':start' => $start_datetime, ':end' => $end_datetime]);
 
   if($stmtCheck->fetch()) {
-    throw new Exception("This time slot was just booked.");
+    throw new Exception("This time slot was just booked. Please select another time.");
   }
 
   $stmtInsert = $pdo->prepare(
@@ -105,22 +131,22 @@ try {
   $stmtClinic->execute([$branch_id]);
   $clinicId = $stmtClinic->fetchColumn() ?: 0;
 
-  log_audit(
-    $pdo, 
-    $user_id, 
-    $clinicId, 
-    $branch_id, 
-    'CREATE', 
-    'APPOINTMENT', 
-    $targetId
-  );
+  log_audit($pdo, $user_id, $clinicId, $branch_id, 'CREATE', 'APPOINTMENT', $targetId);
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Appointment requested successfully!"]);
 
 } catch (Throwable $e) {
   if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
+  
+  $msg = $e->getMessage();
+  $isUnavailable = (strpos($msg, 'unavailable') !== false || strpos($msg, 'maintenance') !== false);
+  
   http_response_code(400);
-  echo json_encode(["success" => false, "message" => $e->getMessage()]);
+  echo json_encode([
+    "success" => false, 
+    "message" => $msg,
+    "is_unavailable" => $isUnavailable 
+  ]);
 }
 ?>

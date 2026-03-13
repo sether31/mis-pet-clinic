@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
+// components
+import SubscriptionGate from '../../../../components/SubscriptionGate';
 // icons
 import { HiXCircle, HiInformationCircle } from 'react-icons/hi';
 import noImage from '../../../../assets/images/no-image.jpg';
@@ -169,22 +170,27 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                 ) : (
                   <div className="flex flex-col gap-2">
                     {order.order_status === 'pending' && (
-                      <button 
-                        onClick={() => handleAction('confirmed')} 
-                        disabled={isSubmitting} 
-                        className="px-6 py-3 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        Confirm & Pack
-                      </button>
+                      <SubscriptionGate>
+                        <button 
+                          onClick={() => handleAction('confirmed')} 
+                          disabled={isSubmitting} 
+                          className="px-6 py-3 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          Confirm & Pack
+                        </button>
+                      </SubscriptionGate>
                     )}
+                    
                     {order.order_status === 'confirmed' && (
-                      <button 
-                        onClick={() => handleAction('completed')} 
-                        disabled={isSubmitting} 
-                        className="px-6 py-3 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        Mark as Paid & Done
-                      </button>
+                      <SubscriptionGate>
+                        <button 
+                          onClick={() => handleAction('completed')} 
+                          disabled={isSubmitting} 
+                          className="px-6 py-3 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          Mark as Paid & Done
+                        </button>
+                      </SubscriptionGate>
                     )}
                   </div>
                 )}

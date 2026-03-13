@@ -25,6 +25,7 @@ export default function ProductDetailScreen() {
   const [selectedDate, setSelectedDate] = useState(null);
   
   const [dateError, setDateError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -120,6 +121,10 @@ export default function ProductDetailScreen() {
       setDateError('Please select a pickup date.');
       return;
     }
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     setDateError('');
 
     try {
@@ -156,11 +161,25 @@ export default function ProductDetailScreen() {
           router.replace('/activity');
         }
       } else {
-        setDateError('Something went wrong');
+        if(res?.is_unavailable) {
+          setIsModalVisible(false);
+          Toast.show({ 
+            type: 'error', 
+            text1: 'Clinic Unavailable', 
+            text2: res.message,
+            visibilityTime: 5000 
+          });
+          router.back(); 
+          return;
+        }
+
+        setDateError(res.message || 'Something went wrong');
       }
     } catch (error) {
       setDateError('Something went wrong');
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -438,8 +457,13 @@ export default function ProductDetailScreen() {
                 pressed && styles.solidBtnPressed
               ]} 
               onPress={handleConfirmReservation}
+              disabled={isSubmitting}
             >
-              <AppText style={styles.confirmBtnText}>Confirm Reservation</AppText>
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <AppText style={styles.confirmBtnText}>Confirm Reservation</AppText>
+              )}
             </Pressable>
           </View>
         </View>
