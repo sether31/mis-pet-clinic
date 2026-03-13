@@ -3,11 +3,11 @@ import { Outlet, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 // hooks
 import { useUser } from '../hooks/useUser';
-import { useUI } from '../hooks/useUI';
 // utils
 import { authFetch } from '../utils/authFetch';
 // components
 import Sidebar from '../components/Sidebar';
+import LoaderV2 from '../components/LoaderV2';
 // pages
 import Maintenance from '../pages/portal/Maintenance';
 
@@ -17,7 +17,8 @@ export default function SidebarLayout() {
   const { branchId } = useParams();
   const { user } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { showLoader, hideLoader, loading } = useUI();
+  
+  const [isLoading, setIsLoading] = useState(true);
   const [branchData, setBranchData] = useState(null);
 
   const effectiveBranchId = branchId || user?.branch_id || user?.branch;
@@ -34,7 +35,8 @@ export default function SidebarLayout() {
   const fetchBranchData = useCallback(async (silent = false) => {
     if (!effectiveBranchId) return;
     
-    if (!silent) showLoader();
+    if (!silent) setIsLoading(true); 
+    
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/branch-settings/branch-schedule/get-branch-schedule.php?branch_id=${effectiveBranchId}`);
 
@@ -44,7 +46,7 @@ export default function SidebarLayout() {
     } catch (err) {
       console.error("Schedule Fetch Error:", err);
     } finally {
-      if (!silent) hideLoader();
+      if (!silent) setIsLoading(false); 
     }
   }, [effectiveBranchId]);
 
@@ -52,16 +54,14 @@ export default function SidebarLayout() {
     fetchBranchData();
   }, [fetchBranchData]);
 
-
-  if(!branchData) {
-    return null; 
-  }
-
-  const isMaintenance = Number(branchData?.is_maintenance) === 1;
-  const showBlock = isMaintenance && !isAdmin;
-  
-  if(showBlock) {
-    return <Maintenance onRefresh={() => window.location.reload()} />;
+  // Handle Maintenance check strictly after loading finishes
+  if (!isLoading && branchData) {
+    const isMaintenance = Number(branchData?.is_maintenance) === 1;
+    const showBlock = isMaintenance && !isAdmin;
+    
+    if(showBlock) {
+      return <Maintenance onRefresh={() => window.location.reload()} />;
+    }
   }
 
   return (
@@ -77,7 +77,11 @@ export default function SidebarLayout() {
         transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
         className="flex flex-col min-h-screen"
       >
-        <Outlet context={{ branchData, fetchBranchData }} />
+        {isLoading || !branchData ? (
+          null
+        ) : (
+          <Outlet context={{ branchData, fetchBranchData }} />
+        )}
       </motion.main>
     </div>
   );

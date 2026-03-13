@@ -7,23 +7,26 @@ import { useUser } from '../../../hooks/useUser';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2';
 import PendingAppointmentModal from './components/PendingAppointmentModal';
 
 // Specialized Views
 import AdminView from './views/AdminView';
 import StaffView from './views/StaffView';
 
+
 export default function AppointmentManagement() {
   const { branchId } = useParams();
-  const { showLoader, hideLoader, loading } = useUI(); 
+  const { loading } = useUI(); 
   const { fetchBranchData } = useOutletContext();
   const { user, loading: userLoading } = useUser();
+  const [isLoading, setIsLoading] = useState(true);
   
   const [appointments, setAppointments] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   const fetchAll = useCallback(async (refreshBranch = false) => {
-    showLoader('Syncing Schedule...'); 
+    setIsLoading(true);
     
     try {
       const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/clinic/general/appointment/get-appointments.php?branch_id=${branchId}`);
@@ -37,7 +40,7 @@ export default function AppointmentManagement() {
     } catch(err) { 
       console.error("Fetch Error:", err); 
     } finally { 
-      hideLoader(); 
+      setIsLoading(false); 
     }
   }, [branchId]); 
 
@@ -51,28 +54,26 @@ export default function AppointmentManagement() {
   // check if admin
   const isAdmin = user?.role === 'branch_admin' || user?.role === 'clinic_admin';
 
-  if (loading && appointments.length === 0) return <p>Loading...</p>;
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
       
       <section className="w-full px-6 my-6 container-xl">
-        {/* admin */}
-        {isAdmin ? (
+        {isLoading && appointments.length === 0 ? (
+          <LoaderV2 />
+        ) : isAdmin ? (
           <AdminView 
             appointments={appointments} 
-            loading={loading}
+            loading={isLoading}
             onSelect={setSelectedAppointment} 
             user={user}
             onRefresh={fetchAll}
             branchId={branchId} 
           />
         ) : (
-          // staff
           <StaffView 
             appointments={appointments} 
-            loading={loading} 
+            loading={isLoading} 
             onSelect={setSelectedAppointment} 
             user={user} 
             onRefresh={fetchAll} 

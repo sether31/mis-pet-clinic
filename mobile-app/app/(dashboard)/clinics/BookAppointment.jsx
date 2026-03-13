@@ -126,7 +126,7 @@ export default function BookAppointment() {
 
   const handleBookAppointment = async () => {
     if (!selectedPet || !selectedStaff || !selectedTime) {
-        return Toast.show({ type: 'error', text1: 'Please complete all steps' });
+      return Toast.show({ type: 'error', text1: 'Please complete all steps' });
     }
 
     setIsSubmitting(true);
@@ -151,11 +151,23 @@ export default function BookAppointment() {
         setSelectedTime('');
         fetchAvailableTimes(selectedDate, selectedStaff);
       } else {
+        //  If clinic is expired/maintenance kick them 
+        if (res?.is_unavailable) {
+          Toast.show({ 
+            type: 'error', 
+            text1: 'Clinic Unavailable', 
+            text2: res.message, 
+            text2NumberOfLines: 0,
+            visibilityTime: 5000 
+          });
+          router.back();
+          return;
+        }
+
         Toast.show({ type: 'error', text1: res?.message || 'Failed to book' });
       }
     } catch (error) {
       Toast.show({ type: 'error', text1: 'Something went wrong' });
-      console.log(error)
     } finally {
       setIsSubmitting(false);
     }

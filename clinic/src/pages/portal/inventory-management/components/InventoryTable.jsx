@@ -318,14 +318,11 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
 
       {/* pagination */}
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
-        <div className="flex flex-col">
-          <span className="text-[10px] text-gray-500 font-black uppercase tracking-tighter">Results: {filteredAndSorted.length}</span>
-          <p className="text-[9px] text-gray-400 font-bold uppercase">Page {currentPage} of {totalPages || 1}</p>
-        </div>
+        <span className="text-[11px] text-gray-500 font-black uppercase">Total: {filteredAndSorted.length}</span>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer disabled:opacity-20 hover:bg-gray-50"><HiChevronLeft/></button>
-          <span className="px-4 text-[10px] font-black">{currentPage} / {totalPages || 1}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer disabled:opacity-20 hover:bg-gray-50"><HiChevronRight/></button>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20"><HiChevronLeft/></button>
+          <span className="px-4 text-xs font-black">{currentPage} / {totalPages || 1}</span>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20"><HiChevronRight/></button>
         </div>
       </div>
     </div>

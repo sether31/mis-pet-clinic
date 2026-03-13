@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, StyleSheet, Image, ScrollView, ActivityIndicator, TextInput, Modal, Pressable, Platform } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState, useMemo, useCallback } from 'react';
+import { View, StyleSheet, Image, ScrollView, ActivityIndicator, TextInput, Modal, Pressable } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
@@ -25,13 +25,21 @@ export default function ProductDetailScreen() {
   const [selectedDate, setSelectedDate] = useState(null);
   
   const [dateError, setDateError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (productId && branch_id) fetchProductDetails();
-  }, [productId, branch_id]);
+  useFocusEffect(
+    useCallback(() => {
+      if (productId && branch_id) {
+        setLoading(true);
+        fetchProductDetails();
+      }
+    }, [productId, branch_id])
+  );
 
   const fetchProductDetails = async () => {
     try {
+      setProduct(null);
+      
       const res = await authFetch(`${API_URL}/api/pet-owner/shop/get-product-details.php?product_id=${productId}&branch_id=${branch_id}`);
       if (res?.success) {
         setProduct(res.data);
@@ -113,6 +121,10 @@ export default function ProductDetailScreen() {
       setDateError('Please select a pickup date.');
       return;
     }
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     setDateError('');
 
     try {
@@ -149,11 +161,25 @@ export default function ProductDetailScreen() {
           router.replace('/activity');
         }
       } else {
-        setDateError('Something went wrong');
+        if(res?.is_unavailable) {
+          setIsModalVisible(false);
+          Toast.show({ 
+            type: 'error', 
+            text1: 'Clinic Unavailable', 
+            text2: res.message,
+            visibilityTime: 5000 
+          });
+          router.back(); 
+          return;
+        }
+
+        setDateError(res.message || 'Something went wrong');
       }
     } catch (error) {
       setDateError('Something went wrong');
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -431,8 +457,13 @@ export default function ProductDetailScreen() {
                 pressed && styles.solidBtnPressed
               ]} 
               onPress={handleConfirmReservation}
+              disabled={isSubmitting}
             >
-              <AppText style={styles.confirmBtnText}>Confirm Reservation</AppText>
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <AppText style={styles.confirmBtnText}>Confirm Reservation</AppText>
+              )}
             </Pressable>
           </View>
         </View>

@@ -35,6 +35,7 @@ import BranchSubscriptionSettings from "../pages/portal/branch-settings/BranchSu
 import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import Settings from "../pages/navigation/settings/Settings";
+import ShopManagement from "../pages/portal/shop-reservation/ShopManagement";
 
 
 export const routes = createBrowserRouter([
@@ -100,6 +101,14 @@ export const routes = createBrowserRouter([
                     element: (
                       <ProtectedRoute requiredPermission="appointment_management">
                         <AppointmentManagement />
+                      </ProtectedRoute>
+                    )
+                  },
+                  { 
+                    path: "shop-management", 
+                    element: (
+                      <ProtectedRoute requiredPermission="shop_management">
+                        <ShopManagement />
                       </ProtectedRoute>
                     )
                   },

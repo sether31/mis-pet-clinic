@@ -168,7 +168,7 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
 
       {/* table footer */}
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
-        <span className="text-[11px] text-gray-500 font-black uppercase">Total Services: {filtered.length}</span>
+        <span className="text-[11px] text-gray-500 font-black uppercase">Total: {filtered.length}</span>
         <div className="flex items-center gap-2">
           <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20"><HiChevronLeft/></button>
           <span className="px-4 text-xs font-black">{currentPage} / {totalPages || 1}</span>

@@ -44,7 +44,7 @@ try {
   ");
   $updateStmt->execute([':oid' => $orderId]);
 
-  // 3. Update the Payment Status
+  // Update the Payment Status
   $payStmt = $pdo->prepare("
     UPDATE payments_tb 
     SET payment_status = 'cancelled' 
@@ -54,7 +54,7 @@ try {
 
   // Get items from the order
   $itemStmt = $pdo->prepare("
-    SELECT product_id, quantity 
+    SELECT inventory_id, quantity 
     FROM order_items_tb 
     WHERE order_id = :oid
   ");
@@ -65,15 +65,16 @@ try {
   $stockStmt = $pdo->prepare("
     UPDATE inventory_tb 
     SET stock_level = stock_level + :qty 
-    WHERE product_id = :pid AND branch_id = :bid
+    WHERE inventory_id = :inv_id
   ");
 
   foreach ($items as $item) {
-    $stockStmt->execute([
-      ':qty' => $item['quantity'],
-      ':pid' => $item['product_id'],
-      ':bid' => $order['branch_id']
-    ]);
+    if (!empty($item['inventory_id'])) {
+      $stockStmt->execute([
+        ':qty' => $item['quantity'],
+        ':inv_id' => $item['inventory_id']
+      ]);
+    }
   }
 
   // Audit Log
