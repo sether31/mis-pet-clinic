@@ -122,7 +122,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 font-sans text-left z-100 bg-black/60 backdrop-blur-sm">
-      <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white shadow-2xl rounded-2xl">
+      <div className="flex flex-col w-full max-w-lg overflow-hidden bg-white rounded-2xl">
         
         {/* header */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50">
@@ -139,7 +139,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-8 py-4 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-8 space-y-4 max-h-[80vh] overflow-y-auto">
           
           {/* dropdown service */}
           {!initialData && (
@@ -234,7 +234,6 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
             >
               <option value="veterinarian">Veterinarian</option>
               <option value="groomer">Groomer</option>
-              <option value="staff">Support Staff</option>
             </select>
           </div>
 

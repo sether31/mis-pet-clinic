@@ -36,18 +36,24 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     { id: "role_dashboard", label: "Role Dashboard"},
     { id: "appointment_management", label: "Appointment Management"},
     { id: "shop_management", label: "Shop Management"},
-    { id: "staff_management", label: "Staff Management"},
-    { id: "transaction_management", label: "Transaction Management"},
+    { id: "medical_record_management", label: "Medical Management"},
     { id: "inventory_management", label: "Inventory Management"},
+    { id: "transaction_management", label: "Transaction Management"},
+    { id: "staff_management", label: "Staff Management"},
     { id: "service_management", label: "Service Management"},
     { id: "branch_settings", label: "Branch Settings"},
   ];
 
   const defaultRolePermissions = {
-    3: ["role_dashboard", "appointment_management", "shop_reservation", "staff_management", "transaction_management", "inventory_management", "service_management", "branch_settings"],
-    4: ["role_dashboard", "appointment_management", "transaction_management"], 
-    5: ["role_dashboard", "appointment_management", "transaction_management"], 
-    6: ["role_dashboard", "appointment_management", "shop_reservation", "transaction_management"] 
+    // Branch Manager
+    3: ["role_dashboard", "appointment_management", "shop_management", "staff_management", "transaction_management", "inventory_management", "service_management", "branch_settings"],
+    
+    // Veterinarian
+    4: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management", "inventory_management"], 
+    
+    // Groomer & Support
+    5: ["role_dashboard", "appointment_management", "shop_management", "transaction_management"], 
+    6: ["role_dashboard", "appointment_management", "shop_management", "transaction_management"] 
   };
 
   const format12h = (timeStr) => {
@@ -308,18 +314,11 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
                   <div 
                     key={role.id} 
                     onClick={() => { 
-                      const defaultPermissions = {
-                        3: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "staff_management", "inventory_management", "service_management", "branch_settings"],
-                        4: ["role_dashboard", "appointment_management", "transaction_management"], 
-                        5: ["role_dashboard", "appointment_management", "transaction_management"], 
-                        6: ["role_dashboard", "appointment_management", "shop_management", "transaction_management"] 
-                      };
-
                       setForm(prev => ({ 
                         ...prev, 
                         role_id: role.id,
                         // apply the default permissions for the selected role
-                        permissions: defaultPermissions[role.id] || [] 
+                        permissions: defaultRolePermissions[role.id] || [] 
                       }));  
 
                       // clear permission errors since we just filled them
@@ -356,11 +355,11 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
                 <HiMiniExclamationCircle size={16} /> {errors.permissions}
               </p>
             )}
+            
             {showPermissions && (
-              <div className="absolute left-0 right-0 z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 top-full max-h-60 rounded-xl shadow-xl">
+              <div className="absolute left-0 right-0 z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 shadow-xl top-full max-h-60 rounded-xl">
                 {availablePermissions
                   .filter(perm => {
-                    // list of permissions only available for admins
                     const isAdminPermission = [
                       "staff_management", 
                       "inventory_management",
@@ -368,14 +367,17 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
                       "branch_settings"
                     ].includes(perm.id);
                     
-                    const isBranchAdmin = Number(form.role_id) === 3;
+                    const roleId = Number(form.role_id);
 
-                    // block admin only permissions
-                    if(isAdminPermission) {
-                      return isBranchAdmin;
+                    if (roleId === 3 || roleId === 4) return true;
+
+                    // Groomer & Staff 
+                    // They ONLY see: Dashboard, Appointments, Shop, Transactions, Medical.
+                    if (isAdminPermission) {
+                      return false;
                     }
                     
-                    return true; 
+                    return true;
                   })
                   .map(perm => (
                     <div 
