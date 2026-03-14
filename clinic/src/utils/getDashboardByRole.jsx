@@ -1,11 +1,11 @@
 export const getDashboardByRole = (role, branchId = null) => {
-  const routes = {
-    'clinic_admin': '/clinic/select-branch',
-    'branch_admin': branchId ? `/clinic/${branchId}/portal/dashboard` : '/clinic/login',
-    'veterinarian': branchId ? `/clinic/${branchId}/portal/dashboard` : '/clinic/login',
-    'groomer': branchId ? `/clinic/${branchId}/portal/dashboard` : '/clinic/login',
-    'staff': branchId ? `/clinic/${branchId}/portal/dashboard` : '/clinic/login',
-  };
+  if (role === 'clinic_admin') {
+    return '/clinic/select-branch';
+  }
 
-  return routes[role] || '/clinic/login';
+  if (branchId) {
+    return `/clinic/${branchId}/portal/dashboard`;
+  }
+
+  return '/clinic/login';
 };

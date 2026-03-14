@@ -22,6 +22,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.10.1",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.8.0",
     "sweetalert2": "^11.26.18",
     "tailwindcss": "^4.1.17"
   },

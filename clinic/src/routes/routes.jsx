@@ -21,7 +21,7 @@ import SelectPlans from "../pages/clinic-admin/SelectPlans";
 import PaymentSuccess from "../pages/clinic-admin/payments/PaymentSuccess";
 import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
   // portal
-import { DashboardSwitch } from "../pages/portal/dashboard/DashboardSwitch";
+import DashboardController from "../pages/portal/dashboard/DashboardController";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
 import AppointmentManagement from "../pages/portal/appointment-management/AppointmentManagement";
@@ -95,7 +95,7 @@ export const routes = createBrowserRouter([
                 ),
                 children: [
                   { index: true, element: <Navigate to="dashboard" replace /> },
-                  { path: "dashboard", element: <DashboardSwitch /> },
+                  { path: "dashboard", element: <DashboardController /> },
                   { 
                     path: "appointment-management", 
                     element: (
