@@ -46,14 +46,14 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
 
   const defaultRolePermissions = {
     // Branch Manager
-    3: ["role_dashboard", "appointment_management", "shop_management", "staff_management", "transaction_management", "inventory_management", "service_management", "branch_settings"],
+    3: ["role_dashboard", "appointment_management", "shop_management", "staff_management", "transaction_management", "medical_record_management", "inventory_management", "service_management", "branch_settings"],
     
     // Veterinarian
     4: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management", "inventory_management"], 
     
     // Groomer & Support
-    5: ["role_dashboard", "appointment_management", "shop_management", "transaction_management"], 
-    6: ["role_dashboard", "appointment_management", "shop_management", "transaction_management"] 
+    5: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management"], 
+    6: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management"] 
   };
 
   const format12h = (timeStr) => {
@@ -360,20 +360,24 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
               <div className="absolute left-0 right-0 z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 shadow-xl top-full max-h-60 rounded-xl">
                 {availablePermissions
                   .filter(perm => {
-                    const isAdminPermission = [
+                    const strictlyAdminPermissions = [
                       "staff_management", 
-                      "inventory_management",
                       "service_management",
                       "branch_settings"
-                    ].includes(perm.id);
+                    ]; 
                     
                     const roleId = Number(form.role_id);
 
-                    if (roleId === 3 || roleId === 4) return true;
+                    // allow everything to branch admin
+                    if(roleId === 3) return true;
 
-                    // Groomer & Staff 
-                    // They ONLY see: Dashboard, Appointments, Shop, Transactions, Medical.
-                    if (isAdminPermission) {
+                    // Hide admin perm to othher
+                    if(strictlyAdminPermissions.includes(perm.id)) {
+                      return false; 
+                    }
+
+                    // Groomers shouldn't touch inventory or medical records
+                    if(roleId === 5 && ["inventory_management"].includes(perm.id)) {
                       return false;
                     }
                     

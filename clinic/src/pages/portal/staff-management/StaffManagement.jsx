@@ -69,12 +69,12 @@ export default function StaffManagement() {
     const newStatus = isArchiving ? 0 : 1;
 
     const result = await Swal.fire({
-      title: isArchiving ? 'Archive Staff?' : 'Restore Staff?',
-      text: `Are you sure you want to ${isArchiving ? 'archive' : 'restore'} "${staff.fname} ${staff.lname}?"`,
+      title: isArchiving ? 'Archive Staff?' : 'Activate Staff?',
+      text: `Are you sure you want to ${isArchiving ? 'archive' : 'activate'} "${staff.fname} ${staff.lname}?"`,
       icon: isArchiving ? 'warning' : 'info',
       buttonsStyling: false,
       showCancelButton: true,
-      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Restore',
+      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Activate',
       cancelButtonText: 'Cancel',
       reverseButtons: true,
       customClass: {

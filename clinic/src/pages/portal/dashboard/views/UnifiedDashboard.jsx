@@ -15,7 +15,7 @@ import { FiShoppingCart } from 'react-icons/fi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function VetDashboard() {
+export default function UnifiedDashboard() {
   const { user } = useUser();
   const { branchId } = useParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -24,35 +24,38 @@ export default function VetDashboard() {
   const [weeklyData, setWeeklyData] = useState([]);
   const [upcomingReservations, setUpcomingReservations] = useState([]);
 
-  // Check permissions for dynamic cards
+  // Check permissions 
   const hasInventoryPermission = user?.permissions?.includes('inventory_management'); 
   const hasShopPermission = user?.permissions?.includes('shop_management');
 
-  const fetchVetData = useCallback(async () => {
+  const isDoctor = user?.role === 'veterinarian' || user?.role === 'branch_admin';
+  const greetingName = isDoctor ? `Dr. ${user?.fname + ' ' + user?.lname || 'Name'}` : `${user?.fname + ' ' + user?.lname || 'Name'}`;
+
+  const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await authFetch(`${API_URL}/api/clinic/general/dashboard/get-vet-summary.php`);
+      const response = await authFetch(`${API_URL}/api/clinic/general/dashboard/get-staff-stat.php`);
       if (response.success) {
         setStats(response.data.stats);
         setUpcomingAppointments(response.data.appointments);
         setWeeklyData(response.data.weekly_trend); 
         setUpcomingReservations(response.data.upcoming_reservations || []);
       } else {
-        toast.error("Failed to fetch dashboard data");
+        toast.error("Something went wrong");
       }
     } catch (error) {
-      toast.error("Connection error");
+      toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchVetData();
-  }, [fetchVetData]);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   // cards
-  const vetCards = [
+  const dashboardCards = [
     {
       title: "Today's Visits",
       data: stats?.today_appointments || "0",
@@ -74,11 +77,11 @@ export default function VetDashboard() {
   ];
 
   if(hasInventoryPermission) {
-    vetCards.push({ title: "Stock Alerts", data: stats?.stock_alerts || "0", icon: TbAlertTriangle, iconColor: "text-red-500" });
+    dashboardCards.push({ title: "Stock Alerts", data: stats?.stock_alerts || "0", icon: TbAlertTriangle, iconColor: "text-red-500" });
   }
 
   if(hasShopPermission) {
-    vetCards.push({ title: "Pending Orders", data: stats?.pending_reservations || "0", icon: FiShoppingCart, iconColor: "text-purple-600" });
+    dashboardCards.push({ title: "Pending Orders", data: stats?.pending_reservations || "0", icon: FiShoppingCart, iconColor: "text-purple-600" });
   }
 
   return (
@@ -89,10 +92,10 @@ export default function VetDashboard() {
         <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {user ? `Welcome, Dr. ${user?.lname || user?.fname}!` : "Welcome to the Portal"}
+              {user ? `Welcome, ${greetingName}!` : "Welcome to the Portal"}
             </h1>
             <p className="text-sm font-medium text-gray-500">
-              Monitor clinic performance and manage today's patient visits
+              Monitor clinic performance and manage today's schedule
             </p>
           </div>
         </div>
@@ -104,7 +107,7 @@ export default function VetDashboard() {
             
             {/* Stats Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {vetCards.map((stat, index) => (
+              {dashboardCards.map((stat, index) => (
                 <DashboardCard key={index} {...stat} />
               ))}
             </div>

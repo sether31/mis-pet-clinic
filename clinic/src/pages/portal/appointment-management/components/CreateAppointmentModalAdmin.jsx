@@ -76,11 +76,27 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
     return addMinutes(formData.start_time, selectedService.duration);
   }, [formData.start_time, selectedService]);
 
+  const parseRoles = (rolesData) => {
+    if (!rolesData) return [];
+    if (Array.isArray(rolesData)) return rolesData;
+    if (typeof rolesData === 'string') {
+      try { return JSON.parse(rolesData); } 
+      catch { return [rolesData]; } 
+    }
+    return [];
+  };
+
   const filteredStaffList = useMemo(() => {
-    if (!selectedService || !selectedService.assigned_role) return staffList;
-    return staffList.filter(staff => 
-      String(staff.role_name || "").toLowerCase() === String(selectedService.assigned_role).toLowerCase()
-    );
+    if (!selectedService) return staffList;
+
+    const allowedRoles = parseRoles(selectedService.assigned_roles || selectedService.assigned_role).map(r => r.toLowerCase());
+    
+    if (allowedRoles.length === 0) return staffList;
+
+    return staffList.filter(staff => {
+      const staffRoleName = String(staff.role_name || "").toLowerCase();
+      return allowedRoles.includes(staffRoleName);
+    });
   }, [selectedService, staffList]);
 
   const workingHours = useMemo(() => {

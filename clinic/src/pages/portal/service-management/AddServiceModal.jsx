@@ -4,7 +4,7 @@ import { useUI } from '../../../hooks/useUI';
 import { authFetch } from '../../../utils/authFetch';
 import Input from '../../../components/Input'; 
 import { HiXCircle, HiSave } from 'react-icons/hi';
-import { HiExclamationCircle, HiMiniExclamationCircle, HiOutlineSparkles } from 'react-icons/hi2';
+import { HiMiniExclamationCircle } from 'react-icons/hi2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -14,6 +14,21 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
   const [errors, setErrors] = useState({});
   const [serviceTemplates, setServiceTemplates] = useState([]);
 
+  const getInitialRoles = () => {
+    if (initialData?.assigned_roles) {
+      return Array.isArray(initialData.assigned_roles) 
+        ? initialData.assigned_roles 
+        : JSON.parse(initialData.assigned_roles || '[]');
+    }
+    if (initialData?.assigned_role) {
+      if (initialData.assigned_role.startsWith('[')) {
+        return JSON.parse(initialData.assigned_role);
+      }
+      return [initialData.assigned_role];
+    }
+    return ['veterinarian']; 
+  };
+
   const [form, setForm] = useState({
     branch_service_id: initialData?.branch_service_id || null,
     service_id: initialData?.service_id || '', 
@@ -21,7 +36,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
     custom_description: initialData?.custom_description || '', 
     price: initialData?.price || '',
     duration: initialData?.duration || '',
-    assigned_role: initialData?.assigned_role || 'veterinarian'
+    assigned_roles: getInitialRoles()
   });
 
   // get service templates
@@ -77,6 +92,20 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
     }
   };
 
+  const handleRoleToggle = (role) => {
+    const updatedRoles = form.assigned_roles.includes(role)
+      ? form.assigned_roles.filter(r => r !== role)
+      : [...form.assigned_roles, role];
+      
+    setForm(prev => ({ ...prev, assigned_roles: updatedRoles }));
+    
+    if (updatedRoles.length === 0) {
+      setErrors(prev => ({ ...prev, assigned_roles: "Select at least one role." }));
+    } else {
+      setErrors(prev => ({ ...prev, assigned_roles: "valid" }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -85,6 +114,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
     if (!form.custom_description.trim()) newErrors.custom_description = "Description is required.";
     if (!form.price) newErrors.price = "Price is required.";
     if (!form.duration) newErrors.duration = "Duration is required.";
+    if (form.assigned_roles.length === 0) newErrors.assigned_roles = "Select at least one role.";
 
     if(Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -101,7 +131,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
     try {
       const response = await authFetch(`${API_URL}${endpoint}`, {
         method: 'POST',
-        body: JSON.stringify({ ...form, branch_id: branchId })
+        body: JSON.stringify({ ...form, branch_id: branchId }) 
       });
 
       if(response.success) {
@@ -121,7 +151,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 font-sans text-left z-100 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 font-sans text-left bg-black/60 backdrop-blur-sm">
       <div className="flex flex-col w-full max-w-lg overflow-hidden bg-white rounded-2xl">
         
         {/* header */}
@@ -224,17 +254,34 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="ml-1 text-sm font-medium text-gray-700">Assigned Staff Role</label>
-            <select 
-              name="assigned_role"
-              className="w-full p-3 transition-all border border-green-500 outline-none cursor-pointer rounded-xl"
-              value={form.assigned_role}
-              onChange={handleChange}
-            >
-              <option value="veterinarian">Veterinarian</option>
-              <option value="groomer">Groomer</option>
-            </select>
+          {/* assigned roles */}
+          <div className="flex flex-col gap-1">
+            <label className="ml-1 text-sm font-medium text-gray-700">
+              Who can perform this? <span className="text-red-500">*</span>
+            </label>
+            <div className={`flex flex-wrap gap-4 p-4 border rounded-xl transition-all ${
+              errors.assigned_roles && errors.assigned_roles !== 'valid' 
+                ? 'border-red-500 bg-red-50' 
+                : 'border-gray-300 bg-gray-50'
+            }`}>
+              {['branch_admin', 'veterinarian', 'groomer'].map(role => (
+                <label key={role} className="flex items-center gap-2 text-sm font-medium text-gray-700 capitalize cursor-pointer">
+                  <input 
+                    type="checkbox"
+                    className="w-4 h-4 rounded cursor-pointer text-(--clr-primary) focus:ring-(--clr-primary)"
+                    checked={form.assigned_roles.includes(role)}
+                    onChange={() => handleRoleToggle(role)}
+                  />
+                  {role.replace('_', ' ')}
+                </label>
+              ))}
+            </div>
+            {errors.assigned_roles && errors.assigned_roles !== 'valid' && (
+              <p className="flex items-center gap-0.5 text-xs text-red-500 mt-1 ml-1">
+                <HiMiniExclamationCircle size={16} />
+                {errors.assigned_roles}
+              </p>
+            )}
           </div>
 
           <button 

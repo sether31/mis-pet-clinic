@@ -10,6 +10,16 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10); 
 
+  const parseRoles = (rolesData) => {
+    if (!rolesData) return [];
+    if (Array.isArray(rolesData)) return rolesData;
+    if (typeof rolesData === 'string') {
+      try { return JSON.parse(rolesData); } 
+      catch { return [rolesData]; } 
+    }
+    return [];
+  };
+
   const filtered = useMemo(() => {
     let result = data
       .filter(s => {
@@ -17,12 +27,18 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
         const status = Number(s.status);
         return activeTab === "active" ? status === 1 : status === 0;
       })
-      .filter(s => 
-        !search || 
-        s.custom_name?.toLowerCase().includes(search.toLowerCase()) || 
-        s.master_name?.toLowerCase().includes(search.toLowerCase()) ||
-        s.assigned_role?.toLowerCase().includes(search.toLowerCase())
-      );
+      .filter(s => {
+        if (!search) return true;
+        
+        const searchLower = search.toLowerCase();
+        const nameMatch = s.custom_name?.toLowerCase().includes(searchLower) || s.master_name?.toLowerCase().includes(searchLower);
+        
+        // Use the parser to correctly search within arrays
+        const roles = parseRoles(s.assigned_roles || s.assigned_role);
+        const roleMatch = roles.some(role => role.toLowerCase().includes(searchLower) || role.replace('_', ' ').includes(searchLower));
+
+        return nameMatch || roleMatch;
+      });
     return result; 
   }, [data, activeTab, search]);
 
@@ -87,57 +103,64 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
           </thead>
 
           <tbody className="divide-y divide-gray-200">
-            {paginated.length > 0 ? paginated.map(service => (
-              <tr key={service.branch_service_id} className="hover:bg-gray-200/50 even:bg-gray-200/50">
-                <td className="px-6 py-4 border-r border-gray-300">
-                  <div className="flex flex-col">
-                    <span className="font-black text-gray-800 uppercase text-[11px]">{service.custom_name || service.master_name}</span>
-                    <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic line-clamp-1">{service.custom_description || service.description || 'No description available'}</span>
-                  </div>
-                </td>
-                
-                <td className="px-6 py-4 text-center border-r border-gray-300">
-                 <span className={`px-2 py-1 text-[9px] font-black rounded uppercase border ${                    
-                      service.assigned_role?.toLowerCase() === 'veterinarian'
-                      ? 'bg-blue-50 text-blue-600 border-blue-100'
-                      : service.assigned_role?.toLowerCase() === 'groomer'
-                      ? 'bg-green-50 text-(--clr-primary) border-green-100'
-                      : 'bg-gray-100 text-gray-500 border-gray-200'
-                  }`}>
-                    {
-                       service.assigned_role === 'branch_admin' 
-                      ? 'Branch Manager'
-                      : service.assigned_role === 'staff' 
-                      ? 'Support Staff'
-                      : (service.assigned_role || 'error')
-                    }
-                  </span>
-                </td>
+            {paginated.length > 0 ? paginated.map(service => {
+              // Parse roles safely using the helper function
+              const roles = parseRoles(service.assigned_roles || service.assigned_role);
 
-                <td className="px-6 py-4 font-black text-center text-gray-700 border-r border-gray-300">
-                  ₱{Number(service.price).toLocaleString(undefined, {minimumFractionDigits: 2})}
-                </td>
+              return (
+                <tr key={service.branch_service_id} className="hover:bg-gray-200/50 even:bg-gray-200/50">
+                  <td className="px-6 py-4 border-r border-gray-300">
+                    <div className="flex flex-col">
+                      <span className="font-black text-gray-800 uppercase text-[11px]">{service.custom_name || service.master_name}</span>
+                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter italic line-clamp-1">{service.custom_description || service.description || 'No description available'}</span>
+                    </div>
+                  </td>
+                  
+                  <td className="px-6 py-4 text-center border-r border-gray-300">
+                    <div className="flex flex-wrap justify-center gap-1">
+                      {roles.map((role, idx) => (
+                        <span key={idx} className={`px-2 py-1 text-[9px] font-black rounded uppercase border ${                    
+                            role.toLowerCase() === 'veterinarian' ? 'bg-blue-50 text-blue-600 border-blue-100'
+                          : role.toLowerCase() === 'groomer' ? 'bg-green-50 text-(--clr-primary) border-green-100'
+                          : role.toLowerCase() === 'branch_admin' ? 'bg-purple-50 text-purple-600 border-purple-100'
+                          : 'bg-gray-100 text-gray-500 border-gray-200'
+                        }`}>
+                          {role === 'branch_admin' ? 'Branch Manager' : role.replace('_', ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
 
-                <td className="px-6 py-4 text-xs font-bold text-center text-gray-500 uppercase border-r border-gray-300">
-                  {service.duration} Mins
-                </td>
+                  <td className="px-6 py-4 font-black text-center text-gray-700 border-r border-gray-300">
+                    ₱{Number(service.price).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                  </td>
 
-                <td className="px-6 py-4 border-r border-gray-300 text-center uppercase font-black text-[9px]">
-                  <span className={`px-2 py-1 rounded border ${Number(service.status) === 1 ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                    {Number(service.status) === 1 ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
+                  <td className="px-6 py-4 text-xs font-bold text-center text-gray-500 uppercase border-r border-gray-300">
+                    {service.duration} Mins
+                  </td>
 
-                <td className="px-6 py-4 text-center">
-                  <div className="flex justify-center gap-2">
-                    <button onClick={() => onEdit(service)} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-black"><HiPencilAlt size={16}/></button>
-                    <button onClick={() => onToggleStatus(service)} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-red-600">
-                      {Number(service.status) === 1 ? <HiArchive size={16}/> : <HiRefresh size={16}/>}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            )) : (
+                  <td className="px-6 py-4 border-r border-gray-300 text-center uppercase font-black text-[9px]">
+                    <span className={`px-2 py-1 rounded border ${Number(service.status) === 1 ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                      {Number(service.status) === 1 ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center gap-2">
+                      <button onClick={() => onEdit(service)} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-black"><HiPencilAlt size={16}/></button>
+                      <button 
+                        onClick={() => onToggleStatus(service)} 
+                        className={`p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer ${
+                          Number(service.status) === 1 ? 'hover:border-red-600 text-gray-700 hover:text-red-600' : 'hover:border-green-600 text-gray-700 hover:text-green-600'
+                        }`}
+                      >
+                        {Number(service.status) === 1 ? <HiArchive size={16}/> : <HiRefresh size={16}/>}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            }) : (
               <tr>
                 <td colSpan="6" className="py-24 text-center bg-white border-gray-200 border-dashed rounded-b-3xl">
                   <div className="flex flex-col items-center max-w-xs mx-auto">
