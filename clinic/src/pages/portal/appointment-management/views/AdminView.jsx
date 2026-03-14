@@ -57,7 +57,9 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
             const isActive = Number(staff.status) === 1;
             const hasPermission = Array.isArray(staff.permissions) && 
                                   staff.permissions.includes('appointment_management');
-            return isActive && hasPermission;
+            const isAssignableRole = ['veterinarian', 'groomer', 'branch_admin'].includes(staff.role_name);
+
+            return isActive && hasPermission && isAssignableRole;
           });
           setStaffList(activePractitioners);
         }

@@ -6,7 +6,7 @@ import {
 // image
 import NoImage from '../../../../assets/images/no-image.jpg';
 // icons
-import { TbCalendarTime, TbClockHour4 } from "react-icons/tb";
+import { TbCalendarTime, TbClockHour4, TbShoppingCartOff } from "react-icons/tb";
 import { LuChevronRight, LuTrendingUp } from "react-icons/lu";
 import { FiShoppingCart } from 'react-icons/fi';
 

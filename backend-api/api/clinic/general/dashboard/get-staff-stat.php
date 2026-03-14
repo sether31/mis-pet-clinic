@@ -9,25 +9,34 @@ try {
   $branchId = $user->branch_id;
   $userId = $user->user_id;
 
-  // FETCH PERMISSIONS DIRECTLY FROM DATABASE
-  $stmtPerms = $pdo->prepare("SELECT permissions FROM branch_staff_tb WHERE user_id = ? AND branch_id = ? AND status = 1");
+  // 1. FETCH STAFF ID & PERMISSIONS DIRECTLY FROM DATABASE
+  // We need the staff_id to link their user account to their specific appointments
+  $stmtPerms = $pdo->prepare("SELECT staff_id, permissions FROM branch_staff_tb WHERE user_id = ? AND branch_id = ? AND status = 1");
   $stmtPerms->execute([$userId, $branchId]);
   $staffRow = $stmtPerms->fetch();
   
+  $actualStaffId = $staffRow ? $staffRow['staff_id'] : null;
   $permissions = $staffRow ? json_decode($staffRow['permissions'], true) : [];
   if (!is_array($permissions)) $permissions = [];
+
+  // --- THE EAGLE EYE LOGIC ---
+  // Admins and Staff see everything. Vets/Groomers only see their own (unless they have a special permission).
+  $hasEagleEye = in_array($user->role, ['branch_admin', 'staff']) || in_array('eagle_eye_calendar', $permissions);
 
   // Today's boundaries
   $todayStart = date('Y-m-d 00:00:00');
   $todayEnd   = date('Y-m-d 23:59:59');
 
-  // FETCH DASHBOARD STATS
+  // --- 2. FETCH DASHBOARD STATS ---
+  // We filter today_appointments based on Eagle Eye using staff_id
+  $apptCountQuery = "SELECT COUNT(*) FROM appointments_tb WHERE branch_id = ? AND start_time BETWEEN ? AND ? AND status IN ('confirmed', 'completed')";
+  if (!$hasEagleEye && $actualStaffId) {
+      $apptCountQuery .= " AND staff_id = " . $pdo->quote($actualStaffId);
+  }
+
   $stmtStats = $pdo->prepare(
     "SELECT 
-      (SELECT COUNT(*) FROM appointments_tb 
-        WHERE branch_id = ? 
-        AND start_time BETWEEN ? AND ? 
-        AND status IN ('confirmed', 'completed')) AS today_appointments,
+      ($apptCountQuery) AS today_appointments,
 
       (SELECT COUNT(DISTINCT pet_id) FROM appointments_tb 
         WHERE branch_id = ?) AS total_patients,
@@ -46,18 +55,19 @@ try {
         WHERE branch_id = ? 
         AND order_status = 'pending') AS pending_reservations"
   );
+  
   $stmtStats->execute([
-    $branchId, $todayStart, $todayEnd, 
-    $branchId,                         
-    $branchId, $todayStart, $todayEnd, 
-    $branchId,                         
-    $branchId                          
+    $branchId, $todayStart, $todayEnd, // Appt Count params
+    $branchId,                         // Total Patients param
+    $branchId, $todayStart, $todayEnd, // Billings params
+    $branchId,                         // Inventory params
+    $branchId                          // Pending reservations param
   ]);
   $statsData = $stmtStats->fetch();
 
-  // FETCH UPCOMING APPOINTMENTS LIST
-  $stmtAppt = $pdo->prepare(
-    "SELECT 
+  // --- 3. FETCH UPCOMING APPOINTMENTS LIST ---
+  $queryAppt = "
+    SELECT 
       a.appointment_id,
       a.status AS appointment_status,
       a.start_time,
@@ -75,20 +85,28 @@ try {
     WHERE a.branch_id = ?
     AND a.start_time BETWEEN ? AND ?
     AND a.status IN ('confirmed', 'pending')
-    ORDER BY a.start_time ASC
-    LIMIT 8"
-  );
-  $stmtAppt->execute([$branchId, $todayStart, $todayEnd]);
+  ";
+
+  if ($hasEagleEye) {
+      $queryAppt .= " ORDER BY a.start_time ASC LIMIT 8";
+      $stmtAppt = $pdo->prepare($queryAppt);
+      $stmtAppt->execute([$branchId, $todayStart, $todayEnd]);
+  } else {
+      // Filter by the actual staff_id pulled from branch_staff_tb
+      $queryAppt .= " AND a.staff_id = ? ORDER BY a.start_time ASC LIMIT 8";
+      $stmtAppt = $pdo->prepare($queryAppt);
+      $stmtAppt->execute([$branchId, $todayStart, $todayEnd, $actualStaffId]);
+  }
   $appointmentsData = $stmtAppt->fetchAll();
 
-  // FETCH TOP 3 RESERVATIONS (IF PERMISSION ALLOWS)
+  // --- 4. FETCH TOP 3 RESERVATIONS (IF PERMISSION ALLOWS) ---
   $upcomingReservations = [];
   if(in_array('shop_management', $permissions)) {
     $stmtRes = $pdo->prepare(
       "SELECT 
         o.order_id,
         o.order_status as status,
-        o.pickup_date, -- Use the actual pickup date column
+        o.pickup_date,
         CONCAT(u.first_name, ' ', u.last_name) as customer_name,
         (SELECT p.prod_pic FROM order_items_tb oi 
           JOIN products_tb p ON oi.product_id = p.product_id 
@@ -104,22 +122,21 @@ try {
     );
     $stmtRes->execute([$branchId]);
     $upcomingReservations = $stmtRes->fetchAll();
-}
+  }
 
-  // FETCH WEEKLY WORKLOAD
+  // --- 5. FETCH WEEKLY WORKLOAD ---
   $weekStart = date('Y-m-d 00:00:00', strtotime('monday this week'));
   $weekEnd   = date('Y-m-d 23:59:59', strtotime('sunday this week'));
 
-  $stmtWeekly = $pdo->prepare(
-    "SELECT 
-      DATE(start_time) as appt_date, 
-      COUNT(*) as daily_count
-    FROM appointments_tb 
-    WHERE branch_id = ? 
-    AND start_time BETWEEN ? AND ? 
-    AND status IN ('confirmed', 'checked_in', 'completed')
-    GROUP BY DATE(start_time)"
-  );
+  $weeklyQuery = "SELECT DATE(start_time) as appt_date, COUNT(*) as daily_count FROM appointments_tb WHERE branch_id = ? AND start_time BETWEEN ? AND ? AND status IN ('confirmed', 'checked_in', 'completed')";
+  
+  if (!$hasEagleEye && $actualStaffId) {
+      // Filter by staff_id for the weekly graph
+      $weeklyQuery .= " AND staff_id = " . $pdo->quote($actualStaffId);
+  }
+  $weeklyQuery .= " GROUP BY DATE(start_time)";
+
+  $stmtWeekly = $pdo->prepare($weeklyQuery);
   $stmtWeekly->execute([$branchId, $weekStart, $weekEnd]);
   $weeklyResults = $stmtWeekly->fetchAll();
 
