@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 // utils
 import { authFetch } from '../../../../utils/authFetch';
 // components
@@ -15,11 +15,36 @@ import { IoLockClosedOutline } from "react-icons/io5";
 
 export default function StaffView({ appointments, loading, onSelect, user, onRefresh, branchId }) {
   const { branchData } = useOutletContext();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTask, setActiveTask] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [staffSchedule, setStaffSchedule] = useState(null);
   const [fullStaffList, setFullStaffList] = useState([]); 
   const branchSchedules = branchData?.schedules || [];
+
+  // trigger modal
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+
+    if (viewId && appointments.length > 0) {
+      const target = appointments.find(a => 
+        String(a.appointment_id) === String(viewId) || String(a.id) === String(viewId)
+      );
+
+      if (target) {
+        if (target.status === 'pending') {
+          // open the Pending Modal
+          onSelect(target); 
+        } else {
+          // open the Payment Modal
+          setActiveTask(target); 
+        }
+        
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, appointments, onSelect, setSearchParams]);
+  
 
   useEffect(() => {
     const fetchStaffData = async () => {
@@ -109,29 +134,25 @@ export default function StaffView({ appointments, loading, onSelect, user, onRef
 
         {/* calendar */}
         <main className="relative flex-1 p-6 overflow-hidden bg-white border border-gray-300 rounded-xl">
-          {isTodayClosed ? (
-            <div className="flex flex-col items-center justify-center h-full space-y-4 border border-gray-300 border-dashed bg-gray-50 rounded-xl">
-              <div className="p-6 text-blue-600 bg-blue-100 rounded-full">
-                <IoLockClosedOutline size={48} />
-              </div>
-              <div className="text-center">
-                <h2 className="text-2xl font-black tracking-tight text-gray-800 uppercase">Branch is Closed</h2>
-                <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1 max-w-[250px] mx-auto">
-                  No operating hours scheduled for {getTodayName}.
-                </p>
+          {isTodayClosed && (
+            <div className="flex items-center gap-3 p-4 mb-4 border rounded-xl bg-amber-50 border-amber-100 text-amber-600">
+              <IoLockClosedOutline size={20} className="shrink-0" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest">Branch is Closed Today</p>
+                <p className="text-[10px] font-medium">You can still view past or future schedules.</p>
               </div>
             </div>
-          ) : (
-            <CalendarComponent 
-              events={mySchedule} 
-              viewMode="staff" 
-              onEventClick={(task) => setActiveTask(task)} 
-              fullSchedules={branchSchedules}
-              staffSchedule={staffSchedule}
-              openingTime={masterRange.min}
-              closingTime={masterRange.max}
-            />
           )}
+
+          <CalendarComponent 
+            events={mySchedule} 
+            viewMode="staff" 
+            onEventClick={(task) => setActiveTask(task)} 
+            fullSchedules={branchSchedules}
+            staffSchedule={staffSchedule}
+            openingTime={masterRange.min}
+            closingTime={masterRange.max}
+          />
 
           {/* Modals */}
           {showCreateModal && (

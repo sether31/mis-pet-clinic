@@ -25,11 +25,11 @@ const sidebarItems = [
   { label: 'Appointment Management', path: 'appointment-management', icon: FaRegCalendarAlt, requiredPermission: 'appointment_management' },
   { label: 'Shop Management', path: 'shop-management', icon: PiShoppingCartBold, requiredPermission: 'shop_management', requiresShop: true },
   { label: 'Medical Management', path: 'medical-record-management', icon: LuClipboard, requiredPermission: 'medical_record_management' },
-  { label: 'Inventory Management', path: 'inventory-management', icon: LuPackage, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'inventory_management', requiresShop: true },
-  { label: 'Transaction Management', path: 'transaction-management', icon: RiBankCard2Line, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'transaction_management' },
-  { label: 'Staff Management', path: 'staff-management', icon: LuUsers, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'staff_management' },
-  { label: 'Service Management', path: 'service-management', allowedRoles: ['clinic_admin', 'branch_admin'], icon: MdOutlineHomeRepairService, requiredPermission: 'service_management' },
-  { label: 'Branch Settings', path: 'branch-settings', icon: LuSettings2, allowedRoles: ['clinic_admin', 'branch_admin'], requiredPermission: 'branch_settings' },
+  { label: 'Inventory Management', path: 'inventory-management', icon: LuPackage, requiredPermission: 'inventory_management', requiresShop: true },
+  { label: 'Transaction Management', path: 'transaction-management', icon: RiBankCard2Line, requiredPermission: 'transaction_management' },
+  { label: 'Staff Management', path: 'staff-management', icon: LuUsers, requiredPermission: 'staff_management' },
+  { label: 'Service Management', path: 'service-management', icon: MdOutlineHomeRepairService, requiredPermission: 'service_management' },
+  { label: 'Branch Settings', path: 'branch-settings', icon: LuSettings2, requiredPermission: 'branch_settings' },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -46,7 +46,6 @@ export default function Sidebar({ className, open, setOpen }) {
     
     if (user?.role === 'clinic_admin') return true;
 
-    if (item.allowedRoles && !item.allowedRoles.includes(user?.role)) return false;
     if (item.requiredPermission && !user?.permissions?.includes(item.requiredPermission)) return false;
     return true;
   });
@@ -65,7 +64,10 @@ export default function Sidebar({ className, open, setOpen }) {
     <>
       <div 
         className={`fixed top-0 left-0 z-80 flex items-center justify-center transition-all duration-500 ease-in-out
-        ${open ? 'w-64 bg-(--clr-black) px-4 justify-between border-b-0' : 'w-18 bg-gray-100 border-b border-r border-black'}`}
+        ${open 
+          ? 'w-64 bg-(--clr-black) px-4 justify-between border-b-0' 
+          : 'w-18 bg-gray-100 border-b border-r border-black justify-center' 
+        }`}
         style={{ height: '81px' }}
       >
         <motion.div

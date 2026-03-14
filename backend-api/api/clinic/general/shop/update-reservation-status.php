@@ -27,46 +27,57 @@ if (!in_array($status, $valid_statuses)) {
 
 try {
   $pdo = (new Database)->pdo;
-  
   $pdo->beginTransaction();
 
-  $stmtDetails = $pdo->prepare(
-    "SELECT o.branch_id, b.clinic_id 
+  $stmtCheck = $pdo->prepare(
+    "SELECT o.order_status, o.pickup_date, o.branch_id, b.clinic_id 
     FROM order_tb o 
     JOIN clinic_branches_tb b ON o.branch_id = b.branch_id 
     WHERE o.order_id = ?"
   );
-  $stmtDetails->execute([$order_id]);
-  $orderDetails = $stmtDetails->fetch();
-  
-  $branch_id = $orderDetails['branch_id'] ?? null;
-  $clinic_id = $orderDetails['clinic_id'] ?? null;
+  $stmtCheck->execute([$order_id]);
+  $currentOrder = $stmtCheck->fetch();
+
+  if (!$currentOrder) {
+    throw new Exception("Order not found.");
+  }
+
+  //  Prevent confirming if overdue
+  $today = date('Y-m-d');
+  $isOverdue = $currentOrder['pickup_date'] < $today;
+
+  if ($status === 'confirmed' && $isOverdue) {
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Cannot approve an expired reservation."]);
+    exit;
+  }
+
+  // Prevent redundant updates
+  if ($currentOrder['order_status'] === $status) {
+    $pdo->rollBack();
+    echo json_encode(["success" => true, "message" => "Order is already {$status}."]);
+    exit;
+  }
+
+  $branch_id = $currentOrder['branch_id'];
+  $clinic_id = $currentOrder['clinic_id'];
 
   // UPDATE THE ORDER STATUS
   $stmt = $pdo->prepare(
-    "UPDATE order_tb 
-    SET 
-      order_status = ?, 
-      cancellation_reason = ?, 
-      updated_at = CURRENT_TIMESTAMP
-    WHERE order_id = ?"
+    "UPDATE order_tb SET order_status = ?, cancellation_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?"
   );
-  
-  // If it's not cancelled or rejected, ensure the reason is saved as NULL
   $final_reason = ($status === 'cancelled' || $status === 'rejected') ? $reason : null;
   $stmt->execute([$status, $final_reason, $order_id]);
 
-
   // INVENTORY RESTOCK
-  if ($status === 'cancelled' || $status === 'rejected') {
+  $active_statuses = ['pending', 'confirmed'];
+  if (($status === 'cancelled' || $status === 'rejected') && in_array($currentOrder['order_status'], $active_statuses)) {
     $itemsStmt = $pdo->prepare("SELECT inventory_id, quantity FROM order_items_tb WHERE order_id = ?");
     $itemsStmt->execute([$order_id]);
     $items = $itemsStmt->fetchAll();
 
     $restockStmt = $pdo->prepare(
-      "UPDATE inventory_tb 
-      SET stock_level = stock_level + ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE inventory_id = ?"
+      "UPDATE inventory_tb SET stock_level = stock_level + ?, updated_at = CURRENT_TIMESTAMP WHERE inventory_id = ?"
     );
     
     foreach ($items as $item) {
@@ -76,45 +87,26 @@ try {
     }
   }
 
-  // PAYMENT IF COMPLETED
+  // PAYMENT STATUS 
   if($status === 'completed') {
-    $paymentStmt = $pdo->prepare(
-      "UPDATE payments_tb 
-      SET payment_status = 'paid' 
-      WHERE order_id = ?"
-    );
+    $paymentStmt = $pdo->prepare("UPDATE payments_tb SET payment_status = 'paid' WHERE order_id = ?");
     $paymentStmt->execute([$order_id]);
-  } else if ($status === 'cancelled' || $status === 'rejected') {
-    $paymentStmt = $pdo->prepare("
-      UPDATE payments_tb 
-      SET payment_status = 'cancelled' 
-      WHERE order_id = ?
-    ");
+  } elseif ($status === 'cancelled' || $status === 'rejected') {
+    $paymentStmt = $pdo->prepare("UPDATE payments_tb SET payment_status = 'cancelled' WHERE order_id = ?");
     $paymentStmt->execute([$order_id]);
   }
 
-
-  $action_type = 'UPDATE';
-  if ($status === 'cancelled') $action_type = 'CANCEL';
-  elseif ($status === 'rejected') $action_type = 'REJECT';
-  elseif ($status === 'completed') $action_type = 'COMPLETE';
-  elseif ($status === 'confirmed') $action_type = 'CONFIRM';
-
   // AUDIT LOG
+  $action_map = ['cancelled' => 'CANCEL', 'rejected' => 'REJECT', 'completed' => 'COMPLETE', 'confirmed' => 'CONFIRM'];
+  $action_type = $action_map[$status] ?? 'UPDATE';
+
   log_audit($pdo, $user_id, $clinic_id, $branch_id, $action_type, 'RESERVATION', $order_id);
 
   $pdo->commit();
-
-  echo json_encode([
-    "success" => true,
-    "message" => "Order marked as {$status} successfully!"
-  ]);
+  echo json_encode(["success" => true, "message" => "Order marked as {$status}!"]);
 
 } catch (Exception $e) {
-  if (isset($pdo) && $pdo->inTransaction()) {
-    $pdo->rollBack();
-  }
+  if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
   http_response_code(500);
   echo json_encode(["success" => false, "message" => "Server error: " . $e->getMessage()]);
 }
-?>

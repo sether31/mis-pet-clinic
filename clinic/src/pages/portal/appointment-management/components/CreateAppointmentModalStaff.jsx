@@ -185,7 +185,7 @@ export default function CreateAppointmentModalStaff({ branchId, staffUser, onClo
           <div>
             <h2 className="text-xl font-black tracking-tight text-gray-800 uppercase">Create Appointment</h2>
             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
-              Assigning to: {staffUser?.fname} {staffUser?.lname} ({staffUser?.role})
+              Create your appointment
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 transition-all cursor-pointer hover:text-red-500">
