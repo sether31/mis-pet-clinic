@@ -43,7 +43,7 @@ try {
   $params = [':branch_id' => $branch_id];
   
 
-  $adminRoles = ['clinic_admin', 'branch_admin'];
+  $adminRoles = ['clinic_admin', 'branch_admin', 'staff'];
 
   if(!in_array($role, $adminRoles)) {
     // staff can only see their appointments

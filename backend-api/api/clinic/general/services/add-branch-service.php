@@ -8,6 +8,7 @@ $user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer'
 try {
   $pdo = (new Database())->pdo;
   $data = json_decode(file_get_contents('php://input'), true);
+  $assigned_roles = json_encode($data['assigned_roles']);
 
   if(empty($data['branch_id']) || empty($data['custom_name']) || empty($data['custom_description'])) {
     throw new Exception("Missing required service data.");
@@ -56,7 +57,7 @@ try {
     ':desc' => $data['custom_description'],
     ':price' => $data['price'],
     ':duration' => $data['duration'],
-    ':role' => $data['assigned_role']
+    ':role' => $assigned_roles
   ]);
   $branchServiceId = $pdo->lastInsertId();
 
