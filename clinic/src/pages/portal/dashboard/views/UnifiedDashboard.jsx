@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // ADDED useNavigate
 import { useUser } from '../../../../hooks/useUser';
 import { authFetch } from '../../../../utils/authFetch';
 import { toast } from 'react-toastify';
@@ -12,17 +12,21 @@ import { UpcomingReservations, TodaysSchedule, WeeklyAppointment } from '../comp
 import { TbAlertTriangle, TbCalendarTime, TbPaw } from 'react-icons/tb';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
 import { FiShoppingCart } from 'react-icons/fi';
+import { HiOutlineInformationCircle } from "react-icons/hi2"; // ADDED ICON
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function UnifiedDashboard() {
   const { user } = useUser();
   const { branchId } = useParams();
+  const navigate = useNavigate(); // ADDED navigate
+  
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [weeklyData, setWeeklyData] = useState([]);
   const [upcomingReservations, setUpcomingReservations] = useState([]);
+  const [isMaintenance, setIsMaintenance] = useState(false); // ADDED state
 
   // Check permissions 
   const hasInventoryPermission = user?.permissions?.includes('inventory_management'); 
@@ -40,6 +44,7 @@ export default function UnifiedDashboard() {
         setUpcomingAppointments(response.data.appointments);
         setWeeklyData(response.data.weekly_trend); 
         setUpcomingReservations(response.data.upcoming_reservations || []);
+        setIsMaintenance(response.data.is_maintenance === 1); // ADDED maintenance check
       } else {
         toast.error("Something went wrong");
       }
@@ -89,6 +94,35 @@ export default function UnifiedDashboard() {
       <Header />
 
       <section className='px-6 my-8 container-xl'>
+        
+        {/* ADDED MAINTENANCE BANNER */}
+        {isMaintenance && (
+          <div className="flex flex-col items-center justify-between p-3 mb-6 border md:flex-row bg-amber-50 border-amber-200 rounded-xl">
+            <div className="flex items-center gap-3 mb-3 md:mb-0">
+              <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
+                <HiOutlineInformationCircle size={20} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-black tracking-tight uppercase text-amber-900">
+                  Branch Offline
+                </span>
+                <span className="text-[11px] text-amber-700 font-medium">
+                  Maintenance mode is active. Your branch is hidden from the public booking page.
+                </span>
+              </div>
+            </div>
+            {/* BUTTON GATED FOR BRANCH ADMIN ONLY */}
+            {user?.role === 'branch_admin' && (
+              <button 
+                onClick={() => navigate(`/clinic/${branchId}/portal/branch-settings/schedule`)}
+                className="w-full md:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all active:scale-95 cursor-pointer"
+              >
+                Configure Now
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">

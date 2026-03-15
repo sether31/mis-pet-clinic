@@ -6,12 +6,13 @@ import Header from '../../../../components/Header';
 import DashboardCard from '../../../../components/DashboardCard';
 import BranchPerformanceTable from '../components/BranchPerformanceTable'; 
 import { BranchTopEarnersChart } from '../components/DashboardComponents';
+import LoaderV2 from '../../../../components/LoaderV2';
 // icons
-import { TbUsers, TbCalendarTime } from 'react-icons/tb';
+import { TbUsers, TbCalendarTime, TbAlertTriangle } from 'react-icons/tb';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
 import { FiShoppingCart } from 'react-icons/fi';
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
-
+import { HiOutlineInformationCircle } from 'react-icons/hi2'; // ADDED ICON
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -49,6 +50,10 @@ export default function ClinicAdminDashboard() {
 
     fetchClinicStats();
   }, [timeFilter]);
+
+  // ADDED: Check if any branches are in maintenance mode
+  const maintenanceBranches = branchPerformance.filter(b => b.status === 'Maintenance');
+  const isMaintenance = maintenanceBranches.length > 0;
 
   const dashboardCards = [
     {
@@ -88,6 +93,26 @@ export default function ClinicAdminDashboard() {
       <Header />
 
       <section className='px-6 my-8 container-xl'>
+        
+        {/* ADDED MAINTENANCE BANNER FOR HQ */}
+        {isMaintenance && (
+          <div className="flex flex-col items-center justify-between p-3 mb-6 border md:flex-row bg-amber-50 border-amber-200 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
+                <HiOutlineInformationCircle size={20} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-black tracking-tight uppercase text-amber-900">
+                  Branch(es) Offline
+                </span>
+                <span className="text-[11px] text-amber-700 font-medium">
+                  Maintenance mode is active for <strong>{maintenanceBranches.length}</strong> branch(es). They are currently hidden from the public booking page.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-end">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
@@ -131,7 +156,6 @@ export default function ClinicAdminDashboard() {
               data={branchPerformance} 
               isLoading={isLoading} 
               timeFilter={timeFilter} 
-              onFilterChange={setTimeFilter} 
             />
           </div>
 

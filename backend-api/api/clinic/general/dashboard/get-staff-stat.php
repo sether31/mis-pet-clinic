@@ -31,29 +31,29 @@ try {
   // We filter today_appointments based on Eagle Eye using staff_id
   $apptCountQuery = "SELECT COUNT(*) FROM appointments_tb WHERE branch_id = ? AND start_time BETWEEN ? AND ? AND status IN ('confirmed', 'completed')";
   if (!$hasEagleEye && $actualStaffId) {
-      $apptCountQuery .= " AND staff_id = " . $pdo->quote($actualStaffId);
+    $apptCountQuery .= " AND staff_id = " . $pdo->quote($actualStaffId);
   }
 
   $stmtStats = $pdo->prepare(
     "SELECT 
-      ($apptCountQuery) AS today_appointments,
+    ($apptCountQuery) AS today_appointments,
 
-      (SELECT COUNT(DISTINCT pet_id) FROM appointments_tb 
-        WHERE branch_id = ?) AS total_patients,
+    (SELECT COUNT(DISTINCT pet_id) FROM appointments_tb 
+      WHERE branch_id = ?) AS total_patients,
 
-      (SELECT COALESCE(SUM(amount), 0) FROM payments_tb 
-        WHERE branch_id = ? 
-        AND payment_status = 'paid' 
-        AND created_at BETWEEN ? AND ?) AS today_billings,
-        
-      (SELECT COUNT(*) FROM inventory_tb 
-        WHERE branch_id = ? 
-        AND is_active = 1
-        AND (stock_level <= min_stock_level OR expiry_date < CURDATE())) AS stock_alerts,
+    (SELECT COALESCE(SUM(amount), 0) FROM payments_tb 
+      WHERE branch_id = ? 
+      AND payment_status = 'paid' 
+      AND created_at BETWEEN ? AND ?) AS today_billings,
+      
+    (SELECT COUNT(*) FROM inventory_tb 
+      WHERE branch_id = ? 
+      AND is_active = 1
+      AND (stock_level <= min_stock_level OR expiry_date < CURDATE())) AS stock_alerts,
 
-      (SELECT COUNT(*) FROM order_tb 
-        WHERE branch_id = ? 
-        AND order_status = 'pending') AS pending_reservations"
+    (SELECT COUNT(*) FROM order_tb 
+      WHERE branch_id = ? 
+      AND order_status = 'pending') AS pending_reservations"
   );
   
   $stmtStats->execute([
@@ -66,8 +66,8 @@ try {
   $statsData = $stmtStats->fetch();
 
   // --- 3. FETCH UPCOMING APPOINTMENTS LIST ---
-  $queryAppt = "
-    SELECT 
+  $queryAppt = 
+    "SELECT 
       a.appointment_id,
       a.status AS appointment_status,
       a.start_time,
@@ -84,8 +84,8 @@ try {
     LEFT JOIN branch_service_tb bs ON a.service_id = bs.branch_service_id
     WHERE a.branch_id = ?
     AND a.start_time BETWEEN ? AND ?
-    AND a.status IN ('confirmed', 'pending')
-  ";
+    AND a.status IN ('confirmed', 'pending')"
+  ;
 
   if ($hasEagleEye) {
       $queryAppt .= " ORDER BY a.start_time ASC LIMIT 8";
@@ -131,8 +131,8 @@ try {
   $weeklyQuery = "SELECT DATE(start_time) as appt_date, COUNT(*) as daily_count FROM appointments_tb WHERE branch_id = ? AND start_time BETWEEN ? AND ? AND status IN ('confirmed', 'checked_in', 'completed')";
   
   if (!$hasEagleEye && $actualStaffId) {
-      // Filter by staff_id for the weekly graph
-      $weeklyQuery .= " AND staff_id = " . $pdo->quote($actualStaffId);
+    // Filter by staff_id for the weekly graph
+    $weeklyQuery .= " AND staff_id = " . $pdo->quote($actualStaffId);
   }
   $weeklyQuery .= " GROUP BY DATE(start_time)";
 
@@ -161,9 +161,16 @@ try {
     $currentDateObj->modify('+1 day');
   }
 
+  // --- 6. ADDED: CHECK MAINTENANCE STATUS ---
+  $stmtBranch = $pdo->prepare("SELECT is_maintenance FROM clinic_branches_tb WHERE branch_id = ?");
+  $stmtBranch->execute([$branchId]);
+  $branchRow = $stmtBranch->fetch();
+  $isMaintenance = $branchRow ? (int)$branchRow['is_maintenance'] : 0;
+
   echo json_encode([
     "success" => true,
     "data" => [
+      "is_maintenance" => $isMaintenance, 
       "stats" => [
         "today_appointments" => (int)$statsData['today_appointments'],
         "total_patients" => (int)$statsData['total_patients'],
@@ -181,3 +188,4 @@ try {
   http_response_code(500);
   echo json_encode(["success" => false, "message" => "Database error: " . $e->getMessage()]);
 }
+?>
