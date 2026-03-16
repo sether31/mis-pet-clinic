@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../../middleware/auth-middleware.php'; 
 require_once __DIR__ . '/../../../config/Database.php';
 require_once __DIR__ . '/../../../helper/log_audit.php';
+require_once __DIR__ . '/../../../helper/send_notification.php';
 
 $decoded = validate_auth(['pet_owner']); 
 
@@ -169,6 +170,40 @@ try {
   
   // audit
   log_audit($pdo, $userId, null, $branchId, 'CREATE', 'RESERVATION', $orderId);
+
+  // --- SAFE NOTIFICATION LOGIC ---
+  // Get Product Name
+  $prodStmt = $pdo->prepare("SELECT name FROM products_tb WHERE product_id = ? LIMIT 1");
+  $prodStmt->execute([$productId]);
+  $prodName = $prodStmt->fetchColumn() ?: 'items';
+
+  // Format Pickup Date
+  $formattedDate = date('M j, Y', strtotime($pickupDate));
+  
+  $notifTitle = "New Shop Reservation";
+  $notifMessage = "A new reservation for {$reqQty}x {$prodName} has been placed. Scheduled pickup: {$formattedDate}.";
+
+  $staffStmt = $pdo->prepare("
+    SELECT bs.user_id 
+    FROM branch_staff_tb bs
+    JOIN user_tb u ON bs.user_id = u.user_id
+    JOIN roles_tb r ON u.role_id = r.role_id
+    WHERE bs.branch_id = ? 
+    AND r.role_name IN ('branch_admin', 'staff') 
+    AND bs.status = 1
+  ");
+  $staffStmt->execute([$branchId]);
+  
+  // Fetch as a standard associative array
+  $targetUsers = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+
+  // Loop and explicitly pull the user_id out of the array
+  foreach ($targetUsers as $row) {
+    if (!empty($row['user_id'])) {
+        send_notification($pdo, $row['user_id'], 'reservation', $notifTitle, $notifMessage);
+    }
+  }
+  // ------------------------------------
 
   $pdo->commit();
 

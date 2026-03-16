@@ -36,6 +36,7 @@ import TransactionManagement from "../pages/portal/transaction-management/Transa
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import Settings from "../pages/navigation/settings/Settings";
 import ShopManagement from "../pages/portal/shop-reservation/ShopManagement";
+import Notifications from "../pages/navigation/notifications/Notifications";
 
 
 export const routes = createBrowserRouter([
@@ -179,6 +180,10 @@ export const routes = createBrowserRouter([
                       { path: "schedule", element: <BranchScheduleSettings /> },
                       { path: "subscription", element: <BranchSubscriptionSettings /> },
                     ]
+                  },
+                  { 
+                    path: "notifications", 
+                    element: <Notifications />
                   },
                   { 
                     path: "settings", 

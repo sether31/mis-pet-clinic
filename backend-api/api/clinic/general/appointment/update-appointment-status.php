@@ -22,8 +22,9 @@ try {
   $pdo = (new Database())->pdo;
   $pdo->beginTransaction();
 
+  // Added a.staff_id to fetch the assigned vet/groomer
   $stmtDetails = $pdo->prepare(
-    "SELECT a.branch_id, b.clinic_id, a.user_id, p.name AS pet_name, b.name AS clinic_name, a.status AS current_status
+    "SELECT a.branch_id, b.clinic_id, a.user_id, a.staff_id, p.name AS pet_name, b.name AS clinic_name, a.status AS current_status
     FROM appointments_tb a
     JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
     JOIN pet_tb p ON a.pet_id = p.pet_id           
@@ -44,6 +45,7 @@ try {
   $branchId = $details['branch_id'];
   $clinicId = $details['clinic_id'];
   $petOwnerId = $details['user_id'];
+  $staffId = $details['staff_id'];
   $clinicName = $details['clinic_name'] ?? 'Veterinary Clinic';
   $petName = $details['pet_name'] ?? 'your pet';
 
@@ -82,7 +84,7 @@ try {
 
   $actionResponse = $readable_status[$status] ?? $status;
 
-  // notif
+  // 1. Notify Pet Owner
   $title = $clinicName; 
   $notificationMessage = "Your appointment for " . $petName . " has been " . $actionResponse . ".";
   
@@ -91,6 +93,38 @@ try {
   }
 
   send_notification($pdo, $petOwnerId, 'appointment', $title, $notificationMessage);
+
+  // --- 🔔 NEW: NOTIFY ASSIGNED VET/GROOMER ---
+  if(in_array(strtolower($status), ['confirmed', 'cancelled', 'rejected'])) {
+    
+    // Check if a specific staff member is assigned to this appointment
+    if(!empty($staffId)) {
+      
+      // Get the user_id of this specific staff member
+      $vetStmt = $pdo->prepare("SELECT user_id FROM branch_staff_tb WHERE staff_id = ? AND status = 1 LIMIT 1");
+      $vetStmt->execute([$staffId]);
+      $assignedUserId = $vetStmt->fetchColumn();
+
+      // Notify them ONLY IF they exist AND they aren't the person who just clicked the button
+      if ($assignedUserId && $assignedUserId != $adminId) {
+        
+        // 1. Fetch the name of the person who clicked the button
+        $actorStmt = $pdo->prepare("SELECT first_name, last_name FROM user_tb WHERE user_id = ? LIMIT 1");
+        $actorStmt->execute([$adminId]);
+        $actor = $actorStmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Fallback to 'Staff' just in case the name is empty
+        $actorName = $actor ? trim($actor['first_name'] . ' ' . $actor['last_name']) : 'Staff';
+
+        // 2. Add their name to the notification string
+        $staffNotifTitle = "Appointment " . ucfirst($actionResponse);
+        $staffNotifMsg = "The appointment for {$petName} has been {$actionResponse} by {$actorName}.";
+        
+        send_notification($pdo, $assignedUserId, 'appointment', $staffNotifTitle, $staffNotifMsg);
+      }
+    }
+  }
+  // ----
 
   $pdo->commit();
 
