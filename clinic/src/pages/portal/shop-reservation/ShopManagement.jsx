@@ -92,7 +92,14 @@ export default function ShopManagement() {
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
       
-      <section className="flex-1 w-full px-6 my-6 container-xl">       
+      <section className="flex-1 w-full px-6 my-6 container-xl">      
+        <div className="flex flex-col justify-between mb-6 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Product Reservations</h1>
+            <p className="text-gray-500">Manage incoming orders, track status, and process customer pickups.</p>
+          </div>
+        </div>
+
         {isLoading ? (
           <LoaderV2 />
         ) : (

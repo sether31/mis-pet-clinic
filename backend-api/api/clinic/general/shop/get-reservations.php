@@ -41,18 +41,25 @@ try {
       o.pickup_date, 
       o.total_amount, 
       o.cancellation_reason,
-      u.first_name,         
+      u.first_name,        
       u.last_name, 
       u.profile_picture,            
       SUM(oi.quantity) AS quantity,
       MAX(p.name) AS product_name,
       MAX(p.prod_pic) AS prod_pic,  
-      MAX(oi.price) AS unit_price
+      MAX(oi.price) AS unit_price,
+      -- Audit
+      o.updated_at,
+      CONCAT(u_updater.first_name, ' ', u_updater.last_name) AS updated_by_name
     FROM order_tb o
     JOIN user_tb u ON o.user_id = u.user_id  
     LEFT JOIN order_items_tb oi ON o.order_id = oi.order_id 
-    LEFT JOIN products_tb p ON oi.product_id = p.product_id  
+    LEFT JOIN products_tb p ON oi.product_id = p.product_id 
+    LEFT JOIN appointments_tb a ON o.order_id = a.order_id 
+
+    LEFT JOIN user_tb u_updater ON o.last_updated_by = u_updater.user_id
     WHERE o.branch_id = ?
+    AND a.appointment_id IS NULL
     GROUP BY 
       o.order_id, 
       o.order_status, 
@@ -62,7 +69,12 @@ try {
       u.first_name,
       u.last_name,
       u.profile_picture,            
-      o.created_at
+      o.created_at,
+      -- audit data
+      o.updated_at,
+      o.last_updated_by,
+      u_updater.first_name,
+      u_updater.last_name
     ORDER BY 
       CASE WHEN o.order_status = 'pending' THEN 1 ELSE 2 END,
       o.pickup_date ASC, 
