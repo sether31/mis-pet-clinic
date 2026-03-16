@@ -96,7 +96,7 @@ export default function CalendarComponent({
 
 
   return (
-    <div className="h-[550px] calendar-modern-wrapper">
+    <div className="h-[550px] overflow-y-auto custom-scrollbar calendar-modern-wrapper pr-2">
       <FullCalendar
         key={`${viewMode}-${selectedStaffId}`} 
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -109,6 +109,7 @@ export default function CalendarComponent({
         eventDisplay="block"
         events={finalEvents}
         height="100%"
+        slotEventOverlap={false}
         nowIndicator={true}
         businessHours={false}
         slotMinTime={openingTime}
@@ -121,7 +122,7 @@ export default function CalendarComponent({
           meridiem: 'short'
         }}
         // custom event design
-       eventContent={(eventInfo) => {
+        eventContent={(eventInfo) => {
           if(eventInfo.event.display === 'background') {
             return null; 
           }
@@ -155,9 +156,16 @@ export default function CalendarComponent({
                 <span className="text-[10px] font-black uppercase truncate">
                   {eventInfo.event.title}
                 </span>
-                <span className="text-[8px] font-bold opacity-80 truncate">
+                <span className="text-[8px] font-bold uppercase truncate">
                   {eventInfo.event.extendedProps.service_name}
                 </span>
+
+              
+                {eventInfo.event.extendedProps && (
+                  <span className="text-[7px] font-bold text-white uppercase truncate mt-0.5">
+                    STAFF: {eventInfo.event.extendedProps.staff_fname} {eventInfo.event.extendedProps.staff_lname}
+                  </span>
+                )}
               </div>
             </div>
           );
