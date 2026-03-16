@@ -120,12 +120,14 @@ try {
     $updateStmt = $pdo->prepare(
       "UPDATE appointments_tb SET 
         user_id = ?, pet_id = ?, service_id = ?, staff_id = ?, 
-        branch_id = ?, start_time = ?, end_time = ?, status = 'confirmed'
+        branch_id = ?, start_time = ?, end_time = ?, status = 'confirmed',
+        last_updated_by = ?
       WHERE appointment_id = ?"
     );
     $updateStmt->execute([
       $user_id, $pet_id, $service_id, $staff_id, 
-      $branch_id, $start_time, $end_time, $appointment_id
+      $branch_id, $start_time, $end_time, $user->user_id, 
+      $appointment_id
     ]);
     $msg = "Appointment updated and confirmed.";
     $targetId = $appointment_id;
@@ -134,12 +136,12 @@ try {
     $insertStmt = $pdo->prepare(
       "INSERT INTO appointments_tb (
         user_id, pet_id, service_id, staff_id, branch_id, 
-        start_time, end_time, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', NOW())"
+        start_time, end_time, status, created_at, last_updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', NOW(), ?)"
     );
     $insertStmt->execute([
       $user_id, $pet_id, $service_id, $staff_id, 
-      $branch_id, $start_time, $end_time
+      $branch_id, $start_time, $end_time, $user->user_id
     ]);
     $targetId = $pdo->lastInsertId();
     $msg = "Appointment successfully scheduled.";

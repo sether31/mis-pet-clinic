@@ -52,13 +52,15 @@ try {
   // UPDATE appointment status
   $stmt = $pdo->prepare(
     "UPDATE appointments_tb 
-    SET status = :status, feedback = :feedback
+    SET status = :status, feedback = :feedback,
+    last_updated_by = :last_updated_by
     WHERE appointment_id = :id"
   );
 
   $stmt->execute([
     ':status' => $status,
     ':feedback' => $feedback,
+    ':last_updated_by' => $adminId,
     ':id' => $appointment_id
   ]);
 

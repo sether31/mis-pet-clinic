@@ -87,8 +87,13 @@ try {
   $medRecordId = $pdo->lastInsertId();
 
   // update appointment status
-  $pdo->prepare("UPDATE appointments_tb SET status = ?, order_id = ? WHERE appointment_id = ?")
-    ->execute([$appointmentStatus, $order_id, $data->appointment_id]);
+  $pdo->prepare(
+    "UPDATE appointments_tb 
+    SET status = ?, 
+      order_id = ?, 
+      last_updated_by = ? 
+    WHERE appointment_id = ?"
+  )->execute([$appointmentStatus, $order_id, $actorId, $data->appointment_id]);
 
   // get clinic for audit
   $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
