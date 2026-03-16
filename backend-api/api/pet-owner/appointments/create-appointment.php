@@ -3,9 +3,8 @@ ob_clean();
 require_once __DIR__ . '/../../../middleware/auth-middleware.php'; 
 require_once __DIR__ . '/../../../config/Database.php';
 require_once __DIR__ . '/../../../helper/log_audit.php';
+require_once __DIR__ . '/../../../helper/send_notification.php';
 
-// Set timezone for accurate time comparisons
-date_default_timezone_set('Asia/Manila');
 
 $decoded = validate_auth(['pet_owner']); 
 $user_id = $decoded->user_id; 
@@ -132,6 +131,27 @@ try {
   $clinicId = $stmtClinic->fetchColumn() ?: 0;
 
   log_audit($pdo, $user_id, $clinicId, $branch_id, 'CREATE', 'APPOINTMENT', $targetId);
+
+
+  // --- ADDED: SEND NOTIFICATION TO THE ASSIGNED STAFF ---
+  // Get Pet Name for the message
+  $petStmt = $pdo->prepare("SELECT name FROM pet_tb WHERE pet_id = ?");
+  $petStmt->execute([$pet_id]);
+  $petName = $petStmt->fetchColumn() ?: 'A pet';
+  
+  $formattedTime = date('M j \a\t g:i A', $start_timestamp);
+  $notifTitle = "New Appointment Request";
+  $notifMessage = "A new booking request for {$petName} on {$formattedTime}.";
+
+  // Get the user_id of the assigned staff member
+  $staffUserStmt = $pdo->prepare("SELECT user_id FROM branch_staff_tb WHERE staff_id = ? LIMIT 1");
+  $staffUserStmt->execute([$staff_id]);
+  $assignedUserId = $staffUserStmt->fetchColumn();
+
+  if ($assignedUserId) {
+    send_notification($pdo, $assignedUserId, 'appointment', $notifTitle, $notifMessage);
+  }
+  
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Appointment requested successfully!"]);

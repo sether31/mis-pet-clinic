@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../../../helper/log_audit.php';
 require_once __DIR__ . '/../../../../helper/send_notification.php';
 
 $user = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
+$actorId = $user->user_id;
 
 try {
   $pdo = (new Database())->pdo;
@@ -51,21 +52,10 @@ try {
   // create payment
   $payStmt = $pdo->prepare(
     "INSERT INTO payments_tb (
-      branch_id, 
-      order_id, 
-      amount, 
-      payment_method, 
-      payment_status, 
-      payment_type
+      branch_id, order_id, amount, payment_method, payment_status, payment_type
     ) VALUES (?, ?, ?, ?, ?, 'appointment')"
   );
-  $payStmt->execute([
-    $data->branch_id, 
-    $order_id, 
-    $data->total, 
-    $finalMethod, 
-    $paymentStatus
-  ]);
+  $payStmt->execute([$data->branch_id, $order_id, $data->total, $finalMethod, $paymentStatus]);
 
   // process order items
   $itemStmt = $pdo->prepare("INSERT INTO order_items_tb (order_id, product_id, service_id, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?, ?)");
@@ -79,7 +69,6 @@ try {
 
     $itemStmt->execute([$order_id, $p_id, $s_id, $item->qty, $item->price, $subtotal]);
 
-    // update product stock
     if($item->type === 'product' && !empty($p_id)) {
       $invUpdate->execute([$item->qty, $p_id, $data->branch_id]);
     }
@@ -88,24 +77,12 @@ try {
   // initialize medical record
   $medStmt = $pdo->prepare(
     "INSERT INTO medrecord_tb (
-      pet_id, 
-      appointment_id, 
-      branch_id, 
-      vet_id, 
-      record_date, 
-      service_name_at_time, 
-      service_price_at_time
+      pet_id, appointment_id, branch_id, vet_id, record_date, service_name_at_time, service_price_at_time
     ) VALUES (?, ?, ?, ?, ?, ?, ?)"
   );
-  
   $medStmt->execute([
-    $appt['pet_id'],
-    $data->appointment_id,
-    $data->branch_id,
-    $appt['assigned_staff_id'],        
-    $appt['start_time'],   
-    $appt['custom_name'],  
-    $appt['service_price']  
+    $appt['pet_id'], $data->appointment_id, $data->branch_id, $appt['assigned_staff_id'],        
+    $appt['start_time'], $appt['custom_name'], $appt['service_price']  
   ]);
   $medRecordId = $pdo->lastInsertId();
 
@@ -119,43 +96,93 @@ try {
   $clinicId = $stmtClinic->fetchColumn() ?: 0;
 
   // audit create order bill
-  log_audit(
-    $pdo, 
-    $user->user_id, 
-    $clinicId, 
-    $data->branch_id, 
-    'CREATE', 
-    'BILLING_TRANSACTION', 
-    $order_id
-  );
-
+  log_audit($pdo, $actorId, $clinicId, $data->branch_id, 'CREATE', 'BILLING_TRANSACTION', $order_id);
   // audit medical record create
-  log_audit(
-    $pdo, 
-    $user->user_id, 
-    $clinicId, 
-    $data->branch_id, 
-    'CREATE', 
-    'MEDICAL_RECORD', 
-    $medRecordId
-  );
+  log_audit($pdo, $actorId, $clinicId, $data->branch_id, 'CREATE', 'MEDICAL_RECORD', $medRecordId);
 
-
-  $petName = ucwords($appt['pet_name'] ?? 'pet name');
-  $clinicName = ucwords($appt['clinic_name'] ?? 'the clinic');
+  // --- 🔔 SMART NOTIFICATION LOGIC ---
+  $petName = ucwords($appt['pet_name'] ?? 'your pet');
   $formattedTotal = number_format($data->total, 2);
+  $serviceName = $appt['custom_name'] ?? 'service';
+  $notifiedUsers = []; 
+
+  // Fetch the Actor's Name (Who clicked the button)
+  $actorStmt = $pdo->prepare("SELECT first_name, last_name FROM user_tb WHERE user_id = ? LIMIT 1");
+  $actorStmt->execute([$actorId]);
+  $actor = $actorStmt->fetch(PDO::FETCH_ASSOC);
+  $actorName = $actor ? trim($actor['first_name'] . ' ' . $actor['last_name']) : 'Staff';
 
   if($is_card) {
-    // Notification for online Payment
-    $notifTitle = "Action Required: Pay Bill";
-    $notifMessage = "Your bill of ₱{$formattedTotal} for {$petName}'s appointment at {$clinicName} is ready. Please go to activity to complete your payment.";
-  } else {
-    // Notification for Cash Payment
-    $notifTitle = "Payment Received";
-    $notifMessage = "Your cash payment of ₱{$formattedTotal} for {$petName}'s appointment at {$clinicName} has been successfully processed. Thank you!";
-  }
+      // --- CASE: CARD ---
+      $custTitle = "Action Required: Pay Bill";
+      $custMsg = "Your bill of ₱{$formattedTotal} for {$petName} is ready. Please pay via the app activity.";
+      send_notification($pdo, $appt['user_id'], 'billing', $custTitle, $custMsg);
 
-  send_notification($pdo, $appt['user_id'], 'billing', $notifTitle, $notifMessage);
+      $sharedInternalMsg = "Bill for {$petName}'s {$serviceName} (₱{$formattedTotal}) has been sent by {$actorName}.";
+
+      // 1. Notify Staff ONLY (Branch Admin is excluded here)
+      $staffStmt = $pdo->prepare("
+          SELECT bs.user_id FROM branch_staff_tb bs
+          JOIN user_tb u ON bs.user_id = u.user_id
+          JOIN roles_tb r ON u.role_id = r.role_id
+          WHERE bs.branch_id = ? AND r.role_name = 'staff' AND bs.status = 1
+      ");
+      $staffStmt->execute([$data->branch_id]);
+      foreach ($staffStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+          $uid = $row['user_id'];
+          if (!empty($uid)) {
+              send_notification($pdo, $uid, 'billing', "Patient Ready", $sharedInternalMsg);
+              $notifiedUsers[] = $uid;
+          }
+      }
+
+      // 2. Notify Specific Vet
+      if (!empty($appt['assigned_staff_id'])) {
+          $vetStmt = $pdo->prepare("SELECT user_id FROM branch_staff_tb WHERE staff_id = ? AND status = 1 LIMIT 1");
+          $vetStmt->execute([$appt['assigned_staff_id']]);
+          $vetUserId = $vetStmt->fetchColumn();
+
+          if ($vetUserId && !in_array($vetUserId, $notifiedUsers)) {
+              send_notification($pdo, $vetUserId, 'billing', "Bill Generated", $sharedInternalMsg);
+              $notifiedUsers[] = $vetUserId;
+          }
+      }
+
+  } else {
+      // --- CASE: CASH ---
+      $custTitle = "Payment Received";
+      $custMsg = "Your cash payment of ₱{$formattedTotal} for {$petName} has been processed. Thank you!";
+      send_notification($pdo, $appt['user_id'], 'billing', $custTitle, $custMsg);
+
+      $sharedInternalMsg = "Cash payment of ₱{$formattedTotal} for {$petName}'s {$serviceName} received by {$actorName}.";
+
+      // 1. Notify Staff AND Branch Admin
+      $staffStmt = $pdo->prepare("
+          SELECT bs.user_id FROM branch_staff_tb bs
+          JOIN user_tb u ON bs.user_id = u.user_id
+          JOIN roles_tb r ON u.role_id = r.role_id
+          WHERE bs.branch_id = ? AND r.role_name IN ('staff', 'branch_admin') AND bs.status = 1
+      ");
+      $staffStmt->execute([$data->branch_id]);
+      foreach ($staffStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+          $uid = $row['user_id'];
+          if (!empty($uid)) {
+              send_notification($pdo, $uid, 'billing', "Cash Payment Settled", $sharedInternalMsg);
+              $notifiedUsers[] = $uid;
+          }
+      }
+
+      // 2. Notify Specific Vet
+      if (!empty($appt['assigned_staff_id'])) {
+          $vetStmt = $pdo->prepare("SELECT user_id FROM branch_staff_tb WHERE staff_id = ? AND status = 1 LIMIT 1");
+          $vetStmt->execute([$appt['assigned_staff_id']]);
+          $vetUserId = $vetStmt->fetchColumn();
+
+          if ($vetUserId && !in_array($vetUserId, $notifiedUsers)) {
+              send_notification($pdo, $vetUserId, 'billing', "Appointment Completed", $sharedInternalMsg);
+          }
+      }
+  }
 
   $pdo->commit();
 
@@ -164,8 +191,10 @@ try {
     "message" => $is_card ? "Billing generated! User can now pay in app." : "Cash payment processed successfully.", 
     "order_id" => $order_id
   ]);
+
 } catch(Exception $e) {
   if(isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
   http_response_code(500);
   echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }
+?>
