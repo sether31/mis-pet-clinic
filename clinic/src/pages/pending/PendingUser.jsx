@@ -35,11 +35,9 @@ const initialFormState = {
   lastName: '',
   tinNumber: '',
   businessPermitNumber: '',
-  vetLicenseNumber: '',
   agreeTerms: false,
   tinNumberPic: null,
-  businessPermitPic: null,
-  vetLicensePic: null
+  businessPermitPic: null
 }
 
 export default function PendingUser() {
@@ -49,8 +47,7 @@ export default function PendingUser() {
   const [form, setForm] = useState(initialFormState);
   const [existingPaths, setExistingPaths] = useState({
     tinNumberPic: '',
-    businessPermitPic: '',
-    vetLicensePic: ''
+    businessPermitPic: ''
   });
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState('');
@@ -70,11 +67,9 @@ export default function PendingUser() {
     lastName: "Last Name",
     tinNumber: "Tin Number",
     businessPermitNumber: "Business Permit Number",
-    vetLicenseNumber: "Veterinarian License Number",
     agreeTerms: "Terms & Conditions",
     tinNumberPic: "Tin Picture",
-    businessPermitPic: "Business Permit Picture",
-    vetLicensePic: "Veterinarian License Picture"
+    businessPermitPic: "Business Permit Picture"
   };
 
   const checkAccess = async (isManualRefresh = false) => {
@@ -161,16 +156,13 @@ export default function PendingUser() {
             lastName: user.last_name || '',
             tinNumber: clinic.license.tin_id_number || '',
             businessPermitNumber: clinic.license.business_permit_number || '',
-            vetLicenseNumber: clinic.license.vet_license_number || '',
             agreeTerms: true,
             tinNumberPic: null,
-            businessPermitPic: null,
-            vetLicensePic: null
+            businessPermitPic: null
           });
           setExistingPaths({
             tinNumberPic: clinic.license.tin_id_pic || '',
-            businessPermitPic: clinic.license.business_permit_pic || '',
-            vetLicensePic: clinic.license.vet_license_pic || ''
+            businessPermitPic: clinic.license.business_permit_pic || ''
           });
         }
       }
@@ -242,7 +234,6 @@ export default function PendingUser() {
       "lastName",
       "tinNumber",
       "businessPermitNumber",
-      "vetLicenseNumber",
       "agreeTerms"
     ];
 
@@ -253,7 +244,7 @@ export default function PendingUser() {
     });
 
     // check image
-    ["tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
+    ["tinNumberPic", "businessPermitPic"].forEach(field => {
       const hasNewFile = form[field] instanceof File;
       const hasExistingFile = existingPaths[field] && existingPaths[field] !== '';
 
@@ -600,7 +591,7 @@ export default function PendingUser() {
                 </div>
 
                 {/* vet license */}
-                <div className="flex flex-col">
+                {/* <div className="flex flex-col">
                   <InputImage
                     className="mt-4"
                     label="Veterinarian License Picture"
@@ -621,7 +612,7 @@ export default function PendingUser() {
                     onChange={handleChange}
                     error={errors.vetLicenseNumber}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 

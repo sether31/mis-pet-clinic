@@ -204,7 +204,7 @@ export default function Register() {
       "confirmPassword",
       "tinNumber",
       "businessPermitNumber",
-      "vetLicenseNumber",
+      // "vetLicenseNumber",
       "agreeTerms"
     ];
 
@@ -220,7 +220,7 @@ export default function Register() {
     }
   
     // check image
-    ["tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
+    ["tinNumberPic", "businessPermitPic"].forEach(field => {
       if(!form[field]) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
@@ -620,7 +620,7 @@ export default function Register() {
                 </div>
 
                 {/* vet license */}
-                <div className="flex flex-col">
+                {/* <div className="flex flex-col">
                   <InputImage
                     className="mt-4"
                     label="Veterinarian License Picture"
@@ -640,7 +640,7 @@ export default function Register() {
                     onChange={handleChange}
                     error={errors.vetLicenseNumber}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
               

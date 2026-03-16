@@ -39,8 +39,7 @@ try {
       website,
       facebook,
       tin_id_number,
-      business_permit_number,
-      vet_license_number
+      business_permit_number
     ) VALUES (
       :clinicId,
       :name,
@@ -53,8 +52,7 @@ try {
       :website,
       :facebook,
       :tinNumber,
-      :businessPermitNumber,
-      :vetLicenseNumber
+      :businessPermitNumber
     )"
   );
 
@@ -70,8 +68,7 @@ try {
     ':website' => $_POST['website'] ?: null,
     ':facebook' => $_POST['facebook'] ?: null,
     ':tinNumber' => $_POST['tinNumber'],
-    ':businessPermitNumber' => $_POST['businessPermitNumber'],
-    ':vetLicenseNumber' => $_POST['vetLicenseNumber']
+    ':businessPermitNumber' => $_POST['businessPermitNumber']
   ]);
 
   $branchId = $pdo->lastInsertId();
@@ -135,9 +132,8 @@ try {
 
   $tinPicPath = uploadPermit($_FILES['tinNumberPic'] ?? null, $branchId, 'tin_id');
   $businessPermitPath = uploadPermit($_FILES['businessPermitPic'] ?? null, $branchId, 'business_permit');
-  $vetLicensePath = uploadPermit($_FILES['vetLicensePic'] ?? null, $branchId, 'vet_license');
 
-  if(!$tinPicPath || !$businessPermitPath || !$vetLicensePath) {
+  if(!$tinPicPath || !$businessPermitPath) {
     throw new Exception("Failed to upload required documents. Please check file sizes and formats.");
   }
 
@@ -146,15 +142,13 @@ try {
     "UPDATE clinic_branches_tb
     SET
       tin_id_picture = ?,
-      business_permit_picture = ?,
-      vet_license_picture = ?
+      business_permit_picture = ?
     WHERE branch_id = ?"
   );
 
   $stmtUpdate->execute([
     $tinPicPath,
     $businessPermitPath,
-    $vetLicensePath,
     $branchId
   ]);
 

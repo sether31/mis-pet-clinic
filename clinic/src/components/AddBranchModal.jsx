@@ -155,7 +155,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
       "clinicDescription",
       "tinNumber",
       "businessPermitNumber",
-      "vetLicenseNumber",
+      // "vetLicenseNumber",
       "agreeTerms"
     ];
 
@@ -166,7 +166,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
     });
   
     // check image
-    ["tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
+    ["tinNumberPic", "businessPermitPic"].forEach(field => {
       if(!form[field]) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
@@ -454,7 +454,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                   </div>
 
                   {/* vet license */}
-                  <div className="flex flex-col">
+                  {/* <div className="flex flex-col">
                     <InputImage
                       className="mt-4"
                       label="Veterinarian License Picture"
@@ -475,7 +475,7 @@ export default function AddBranchModal({ isOpen, onClose, onSuccess }) {
                       onChange={handleChange}
                       error={errors.vetLicenseNumber}
                     />
-                  </div>
+                  </div> */}
                 </div>
               </div>
                 
