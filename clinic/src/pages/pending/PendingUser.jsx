@@ -28,6 +28,7 @@ const initialFormState = {
   province: '',
   zipCode: '',
   est: '',
+  contactNumber: '',
   clinicDescription: '',
   website: '',
   facebook: '',
@@ -56,10 +57,11 @@ export default function PendingUser() {
   const inputLabels = {
     clinicName: "Clinic Name",
     completeAddress: "Complete Address",
-    municipality: "City/Municipality",
+    municipality: "Municipality",
     province: "Province",
     zipCode: "Zip Code",
     est: "Year Established",
+    contactNumber: "Clinic Contact Number",
     clinicDescription: "Clinic Description",
     website: "Website",
     facebook: "Facebook",
@@ -135,7 +137,6 @@ export default function PendingUser() {
             toast.success(`Status updated to ${newStatus}!`);
           }
         }
-     
         setStatus(newStatus || '');
         setFeedback(clinic.feedback || '');    
 
@@ -149,6 +150,7 @@ export default function PendingUser() {
             province: clinic.location.province || '',
             zipCode: clinic.location.zip_code || '',
             est: clinic.established || '',
+            contactNumber: clinic.contact_number || '',
             clinicDescription: clinic.description || '',
             website: clinic.contact_info.website || '',
             facebook: clinic.contact_info.facebook || '',
@@ -229,6 +231,7 @@ export default function PendingUser() {
       "province",
       "zipCode",
       "est",
+      "contactNumber",
       "clinicDescription",
       "firstName",
       "lastName",
@@ -313,7 +316,7 @@ export default function PendingUser() {
       <div className='mb-20 container-xl'>
         {/* header */}
         <div className='flex items-center justify-between gap-4 my-5'>
-           <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {platformData?.platform_logo && (
               <img 
                 src={`${API_URL}/${platformData.platform_logo}`} 
@@ -435,7 +438,7 @@ export default function PendingUser() {
 
                 <Input
                   value={form.municipality}
-                  label="City/Municipality"
+                  label="Municipality"
                   labelStyle="mb-1 ml-1"
                   id="municipality"
                   name="municipality"
@@ -491,7 +494,7 @@ export default function PendingUser() {
                     value={form.clinicDescription} 
                     id="clinicDescription"
                     name="clinicDescription"
-                    className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
+                    className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[220px] mt-2 
                       ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
                       ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
                     `}
@@ -506,7 +509,19 @@ export default function PendingUser() {
                   )}
                 </div>
 
-                <div>
+                <div className='grid gap-1'>
+                  <Input
+                    value={form.contactNumber}
+                    label="Clinic Contact Number"
+                    labelStyle="mb-2 ml-1"
+                    id="contactNumber"
+                    name="contactNumber"
+                    isImportant={true}
+                    placeholder="09123456789 or (02) 8123-4567"
+                    onChange={handleChange}
+                    error={errors.contactNumber}
+                  />
+
                   <Input
                     value={form.website}
                     label="Website"

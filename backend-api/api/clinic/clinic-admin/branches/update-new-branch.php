@@ -77,7 +77,7 @@ try {
   // update branch table
   $sql = "UPDATE clinic_branches_tb SET 
     name = ?, description = ?, address = ?, municipality = ?, 
-    province = ?, zip_code = ?, est = ?, website = ?, facebook = ?, 
+    province = ?, zip_code = ?, est = ?, contact_number = ?, website = ?, facebook = ?, 
     tin_id_number = ?, business_permit_number = ?,
     status = 'pending', feedback = NULL";
 
@@ -89,6 +89,7 @@ try {
     $_POST['province'], 
     $_POST['zipCode'],
     $_POST['est'], 
+    $_POST['contactNumber'] ?? null,
     $_POST['website'], 
     $_POST['facebook'],
     $_POST['tinNumber'], 
