@@ -9,6 +9,7 @@ import LoaderV2 from '../../../components/LoaderV2';
 // sub components
 import MedicalRecordTable from './components/MedicalRecordTable';
 import MedicalRecordModal from './components/MedicalRecordModal';
+import MedicalRecordCard from './components/MedicalRecordCard'; // 👈 IMPORT CARD
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -18,6 +19,7 @@ export default function MedicalRecordManagement() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [records, setRecords] = useState([]);
+  const [cardData, setCardData] = useState(null); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
@@ -28,8 +30,9 @@ export default function MedicalRecordManagement() {
       const res = await authFetch(`${API_URL}/api/clinic/general/medical/get-completed-appointments.php?branch_id=${branchId}`);
       if(res.success) {
         setRecords(res.data);
+        setCardData(res.cardData);
       }
-    } catch (error) { toast.error("Failed to load records"); }
+    } catch (error) { toast.error("Something went wrong"); }
     finally { setIsLoading(false); }
   }, [branchId]);
 
@@ -49,7 +52,10 @@ export default function MedicalRecordManagement() {
         {isLoading ? (
           <LoaderV2 />
         ) : (
-          <div className="mt-8">
+          <div className="space-y-6 mt-8">
+            {/* 👇 RENDER CARD 👇 */}
+            <MedicalRecordCard data={cardData} />
+
             <MedicalRecordTable 
               data={records} 
               onView={(record) => { 
