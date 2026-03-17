@@ -28,7 +28,7 @@ export default function StaffView({
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col items-start justify-between gap-4 pb-2 border-b border-gray-100 md:flex-row">
         <div>
-          <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight">
             Transaction Management Overview
           </h1>
           <p className="text-sm font-medium text-gray-500">
