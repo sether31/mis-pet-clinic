@@ -73,6 +73,9 @@ try {
   $checkStmt = $pdo->prepare(
     "SELECT 
     (SELECT COUNT(*) FROM user_tb WHERE user_id = :uid) as user_exists,
+    (SELECT status FROM pet_tb WHERE pet_id = :pid AND owner_id = :uid LIMIT 1) as pet_status,
+    (SELECT is_deceased FROM pet_tb WHERE pet_id = :pid AND owner_id = :uid LIMIT 1) as pet_deceased,
+    (SELECT name FROM pet_tb WHERE pet_id = :pid AND owner_id = :uid LIMIT 1) as pet_name,
     (SELECT COUNT(*) FROM pet_tb WHERE pet_id = :pid AND owner_id = :uid) as pet_belongs"
   );
   
@@ -86,6 +89,18 @@ try {
 
   if((int)$validation['pet_belongs'] === 0) {
     echo json_encode(["success" => false, "message" => "Ownership Error: Pet ID #$pet_id does not belong to User #$user_id."]);
+    exit;
+  }
+
+  // 👇 NEW: Block Archived/Removed Pets
+  if ((int)$validation['pet_status'] === 0) {
+    echo json_encode(["success" => false, "message" => "Cannot book: {$validation['pet_name']} has been archived by the owner."]);
+    exit;
+  }
+
+  // 👇 NEW: Block Deceased Pets
+  if ((int)$validation['pet_deceased'] === 1) {
+    echo json_encode(["success" => false, "message" => "Cannot book: {$validation['pet_name']} has passed away."]);
     exit;
   }
 

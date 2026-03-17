@@ -5,6 +5,7 @@ export default function PetsLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="Create" />
+      <Stack.Screen name="Archive" />
       <Stack.Screen name="[id]" />
     </Stack>
   );
