@@ -22,7 +22,7 @@ try {
 
   // Fetch the pet data. 
   $stmt = $pdo->prepare(
-    "SELECT pet_id, name, species, breed, birthdate, sex, weight, medical_conditions, pet_picture 
+    "SELECT pet_id, name, species, breed, birthdate, sex, weight, medical_conditions, pet_picture, is_deceased, status, deceased_date 
     FROM pet_tb 
     WHERE pet_id = :pet_id AND owner_id = :owner_id 
     LIMIT 1"

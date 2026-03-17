@@ -54,7 +54,17 @@ export default function BookAppointment() {
   const fetchMyPets = async () => {
     try {
       const res = await authFetch(`${API_URL}/api/pet-owner/pet/get-pets.php`);
-      if (res?.success) setMyPets(res.data || []);
+      if (res?.success) {
+        const eligiblePets = (res.data || []).filter(pet => {
+          const isDeceased = Number(pet.is_deceased) === 1;
+          const isActive = Number(pet.status) === 0; 
+          
+          // Only return pets that are NOT deceased AND NOT removed
+          return !isDeceased && !isActive;
+        });
+        
+        setMyPets(eligiblePets);
+      }
     } catch (error) {
       console.error("Failed to load pets", error);
     }

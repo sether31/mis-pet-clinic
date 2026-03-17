@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useState, useCallback } from 'react'; // 👈 Added useCallback
+import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'; // 👈 Added useFocusEffect
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import * as ImagePicker from 'expo-image-picker'; 
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/Color';
 import { authFetch } from '../../../utils/auth';
 
@@ -12,6 +13,7 @@ import ProfileHeader from './_components/ProfileHeader';
 import PetAvatarSection from './_components/PetAvatarSection';
 import ProfileForm from './_components/ProfileForm';
 import MedicalRecordsList from './_components/MedicalRecordsList';
+import AppText from '../../../components/AppText';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -19,26 +21,28 @@ export default function PetProfile() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   
-  // UI & Tab State
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false); 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
-  // Data State
   const [pet, setPet] = useState(null); 
   const [form, setForm] = useState({}); 
   const [newImage, setNewImage] = useState(null); 
   const [errors, setErrors] = useState({}); 
   const [medicalRecords, setMedicalRecords] = useState([]); 
 
-  useEffect(() => {
-    if (id) {
-      fetchPetDetails();
-      fetchMedicalRecords(); 
-    }
-  }, [id]);
+  // 👇 FIX: Replaced useEffect with useFocusEffect so it ALWAYS fetches fresh data
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        setIsEditing(false); // Force editing mode off when entering screen
+        fetchPetDetails();
+        fetchMedicalRecords(); 
+      }
+    }, [id])
+  );
 
   const fetchPetDetails = async () => {
     try {
@@ -70,7 +74,6 @@ export default function PetProfile() {
 
   const toggleEdit = () => {
     if (isEditing) {
-      // Revert form back to original pet data if canceled
       setForm(pet);
       setNewImage(null);
       setErrors({}); 
@@ -92,41 +95,95 @@ export default function PetProfile() {
     return error;
   };
 
-  const pickImage = async () => {
-    if (!isEditing) return;
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], 
-      allowsEditing: true, 
-      aspect: [1, 1], 
-      quality: 0.5,
-    });
-    if (!result.canceled) {
-      setNewImage(result.assets[0].uri);
+  const updatePetStatus = async (action) => {
+    setSaving(true);
+    try {
+      const res = await authFetch(`${API_URL}/api/pet-owner/pet/update-pet-status.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pet_id: id, action: action }) 
+      });
+      return res;
+    } catch (err) {
+      console.error(err);
+      return { success: false };
+    } finally {
+      setSaving(false);
     }
   };
 
-  const onDateChange = (event, selectedDate) => {
-    if (Platform.OS === 'android') setShowDatePicker(false); 
-    if (selectedDate) {
-      const formattedDate = selectedDate.toISOString().split('T')[0]; 
-      setForm({ ...form, birthdate: formattedDate });
-      validateField('birthdate', formattedDate);
-    }
+  const handleMarkDeceased = () => {
+    Alert.alert(
+      "Report Pet as Passed Away",
+      `Are you sure? This will stop all future clinic reminders for ${pet?.name}.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Confirm", style: "destructive",
+          onPress: async () => {
+            const res = await updatePetStatus('deceased');
+            if (res?.success) {
+              setPet(prev => ({ ...prev, is_deceased: 1 }));
+              setForm(prev => ({ ...prev, is_deceased: 1 }));
+              setIsEditing(false);
+              Toast.show({ type: 'info', text1: 'Status Updated', text2: 'We are truly sorry for your loss.' });
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleRestoreLiving = () => {
+    Alert.alert(
+      "Restore Pet?",
+      `This will set ${pet?.name}'s status back to living and re-enable clinic reminders.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Confirm", 
+          onPress: async () => {
+            const res = await updatePetStatus('restore');
+            if (res?.success) {
+              setPet(prev => ({ ...prev, is_deceased: 0 }));
+              setForm(prev => ({ ...prev, is_deceased: 0 }));
+              Toast.show({
+                type: 'success',
+                text1: 'Pet Restored Successfully!',
+                text2: `${pet?.name} is back! Clinic reminders have been re-enabled.`
+              });
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeletePet = () => {
+    Alert.alert(
+      "Remove Pet?",
+      `This will hide ${pet?.name} from your list. You can restore this pet later from your archives.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", style: "destructive",
+          onPress: async () => {
+            const res = await updatePetStatus('delete');
+            if (res?.success) {
+              Toast.show({
+                type: 'success',
+                text1: 'Pet Removed Successfully!',
+                text2: 'The pet has been moved to your archives and hidden from this list.'
+              });
+              router.replace('/pets'); 
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleUpdate = async () => {
-    // Run full validation before saving
-    const nError = validateField('name', form.name);
-    const sError = validateField('species', form.species);
-    const bError = validateField('breed', form.breed);
-    const sexError = validateField('sex', form.sex);
-    const birthdateError = validateField('birthdate', form.birthdate);
-    
-    if (nError || sError || bError || sexError || birthdateError) {
-      Toast.show({ type: 'error', text1: 'Missing Information', text2: 'Please fill in all required fields.' });
-      return;
-    }
-
     setSaving(true);
     try {
       const formData = new FormData();
@@ -152,23 +209,15 @@ export default function PetProfile() {
       });
 
       if (data?.success) {
-        Toast.show({ type: 'success', text1: 'Updated!', text2: 'Pet profile saved successfully.' });
-        // Update local state with new image path if returned
+        Toast.show({ type: 'success', text1: 'Updated Successfully!' });
         setPet({ ...form, pet_picture: data.new_image_path || pet.pet_picture }); 
         setIsEditing(false); 
-        setNewImage(null);
-      } else {
-        Toast.show({ type: 'error', text1: 'Something went wrong' });
       }
     } catch(error) {
       Toast.show({ type: 'error', text1: 'Something went wrong' });
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleRecordPress = (recordId) => {
-    router.push(`/pets/record/${recordId}`);
   };
 
   if (loading) {
@@ -179,52 +228,106 @@ export default function PetProfile() {
     );
   }
 
+  // 👇 FIX: Bulletproof boolean check to ensure it reads DB data perfectly
+  const isDeceased = Number(pet?.is_deceased) === 1 || pet?.is_deceased === true;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ProfileHeader 
         isEditing={isEditing} 
         petName={pet?.name} 
         activeTab={activeTab} 
-        onToggleEdit={toggleEdit} 
+        // 👇 FIX: Use undefined instead of null so the component completely ignores the prop
+        onToggleEdit={!isDeceased ? toggleEdit : undefined} 
         onBack={() => router.back()} 
       />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
-          showsVerticalScrollIndicator={false} 
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          
+          {isDeceased && (
+            <View style={styles.deceasedBanner}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="cloud" size={20} color="#6B7280" />
+                <AppText style={styles.deceasedBannerText}>Rest in peace, {pet?.name} 🌈</AppText>
+              </View>
+              <Pressable 
+                onPress={handleRestoreLiving} 
+                style={({ pressed }) => [
+                  styles.undoButton,
+                  pressed && styles.buttonPressed
+                ]}
+              >
+                <AppText style={styles.undoButtonText}>Undo</AppText>
+              </Pressable>
+            </View>
+          )}
+
           <PetAvatarSection 
             pet={pet} 
             newImage={newImage} 
             isEditing={isEditing} 
             activeTab={activeTab} 
             onTabChange={setActiveTab} 
-            onPickImage={pickImage} 
+            onPickImage={() => !isDeceased && isEditing && pickImage()} 
           />
 
-          {/* Conditional Tab Rendering */}
           {activeTab === 'profile' && (
-            <ProfileForm 
-              form={form} 
-              setForm={setForm} 
-              isEditing={isEditing} 
-              errors={errors} 
-              validateField={validateField} 
-              showDatePicker={showDatePicker} 
-              setShowDatePicker={setShowDatePicker} 
-              onDateChange={onDateChange} 
-              onSave={handleUpdate} 
-              saving={saving} 
-            />
+            <View>
+              <ProfileForm 
+                form={form} 
+                setForm={setForm} 
+                isEditing={isEditing} 
+                errors={errors} 
+                validateField={validateField} 
+                showDatePicker={showDatePicker} 
+                setShowDatePicker={setShowDatePicker} 
+                onDateChange={(e, d) => onDateChange(e, d)} 
+                onSave={handleUpdate} 
+                saving={saving} 
+              />
+              
+              {!isDeceased && isEditing && (
+                <View style={styles.dangerZone}>
+                  <AppText style={styles.dangerZoneTitle}>Danger Zone</AppText>
+                  
+                  <Pressable 
+                    onPress={handleMarkDeceased}
+                    style={({ pressed }) => [
+                      styles.deceasedButton,
+                      pressed && styles.buttonPressed
+                    ]}
+                  >
+                    <Ionicons name="heart-dislike-outline" size={18} color="#4B5563" style={{ marginRight: 8 }} />
+                    <AppText style={styles.deceasedButtonText}>Report as Passed Away</AppText>
+                  </Pressable>
+
+                  <View style={{ height: 16 }} />
+
+                  <Pressable 
+                    onPress={handleDeletePet}
+                    style={({ pressed }) => [
+                      styles.deleteButton,
+                      pressed && styles.buttonPressed
+                    ]}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#EF4444" style={{ marginRight: 8 }} />
+                    <AppText style={styles.deleteButtonText}>Delete Pet Profile</AppText>
+                  </Pressable>
+                  
+                  <AppText style={styles.dangerZoneDesc}>
+                    Use delete for mistakes or duplicates. Use deceased for pets that have passed away.
+                  </AppText>
+                </View>
+              )}
+            </View>
           )}
 
           {activeTab === 'records' && (
             <MedicalRecordsList 
               records={medicalRecords} 
               petName={pet?.name} 
-              onRecordPress={handleRecordPress}
+              onRecordPress={(rid) => router.push(`/pets/record/${rid}`)}
             />
           )}
         </ScrollView>
@@ -234,16 +337,23 @@ export default function PetProfile() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { 
-    flex: 1, 
-    backgroundColor: Colors.bg50 
+  safeArea: { flex: 1, backgroundColor: Colors.bg50 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollContent: { paddingBottom: 40 },
+  deceasedBanner: {
+    backgroundColor: '#F3F4F6', marginHorizontal: 20, marginTop: 10, paddingVertical: 12,
+    paddingHorizontal: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', borderWidth: 1, borderColor: '#E5E7EB',
   },
-  centerContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  scrollContent: { 
-    paddingBottom: 40 
-  },
+  deceasedBannerText: { color: '#4B5563', fontWeight: '800', fontSize: 13, marginLeft: 8 },
+  undoButton: { backgroundColor: Colors.white, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#D1D5DB' },
+  undoButtonText: { color: Colors.primary, fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
+  dangerZone: { marginHorizontal: 24, marginTop: 40, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#FCA5A5' },
+  dangerZoneTitle: { fontSize: 11, fontWeight: '900', color: '#EF4444', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+  deceasedButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#D1D5DB', paddingVertical: 14, borderRadius: 12 },
+  deceasedButtonText: { color: '#4B5563', fontWeight: '800', fontSize: 14 },
+  deleteButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', paddingVertical: 14, borderRadius: 12 },
+  deleteButtonText: { color: '#EF4444', fontWeight: '800', fontSize: 14 },
+  dangerZoneDesc: { fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginTop: 12, lineHeight: 15 },
+  buttonPressed: { opacity: 0.9, transform: [{ scale: 0.97 }] }
 });
