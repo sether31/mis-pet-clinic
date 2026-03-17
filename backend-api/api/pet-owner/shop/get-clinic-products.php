@@ -25,19 +25,21 @@ try {
       COALESCE(SUM(i.stock_level), 0) as total_stock,
       COALESCE((
         SELECT price 
-        FROM Inventory_tb 
+        FROM inventory_tb 
         WHERE product_id = p.product_id 
           AND branch_id = p.branch_id 
           AND stock_level > 0 
+          AND is_active = 1 
           AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
         ORDER BY expiry_date ASC 
         LIMIT 1
       ), 0.00) as price
     FROM products_tb p
-    LEFT JOIN Inventory_tb i 
+    INNER JOIN inventory_tb i 
       ON p.product_id = i.product_id 
       AND i.branch_id = p.branch_id
-      AND i.stock_level > 0 
+      -- AND i.stock_level > 0 
+      AND i.is_active = 1 
       AND (i.expiry_date >= CURDATE() OR i.expiry_date IS NULL)
     WHERE p.branch_id = :branch_id
     GROUP BY p.product_id, p.name, p.description, p.category, p.prod_pic

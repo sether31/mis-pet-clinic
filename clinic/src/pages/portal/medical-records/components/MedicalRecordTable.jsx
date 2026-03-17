@@ -31,14 +31,23 @@ export default function MedicalRecordTable({ data = [], onView }) {
   const filteredAndSorted = useMemo(() => {
     let result = data
       .filter(r => {
-        const status = r.status?.toLowerCase() || "pending";
-        if (activeTab === "pending") return status === "pending";
-        if (activeTab === "recorded") return status === "recorded";
+        const rawStatus = r.status?.toLowerCase() || "unrecorded";
+        const normalizedStatus = rawStatus === "pending" ? "unrecorded" : rawStatus;
+        
+        if (activeTab === "unrecorded") return normalizedStatus === "unrecorded";
+        if (activeTab === "recorded") return normalizedStatus === "recorded";
         return true;
       })
       .filter(r => {
         if (recordTypeFilter === "all") return true;
-        return r.record_type?.toLowerCase() === recordTypeFilter.toLowerCase();
+        
+        const rType = r.record_type?.toLowerCase().trim() || "";
+        
+        if (recordTypeFilter === "unrecorded") {
+          return rType === "" || rType === "unset";
+        }
+        
+        return rType === recordTypeFilter;
       })
       .filter(r => {
         if (branchFilter === "all") return true;
@@ -80,7 +89,7 @@ export default function MedicalRecordTable({ data = [], onView }) {
       {/* tabs */}
       <div className="flex flex-col justify-between gap-4 p-4 bg-white border-b border-gray-300 xl:flex-row">
         <div className="flex justify-center w-full p-1 bg-gray-100 rounded-lg xl:w-fit">
-          {["all", "pending", "recorded"].map(tab => (
+          {["all", "unrecorded", "recorded"].map(tab => (
             <button 
               key={tab} 
               onClick={() => setActiveTab(tab)} 
@@ -134,6 +143,7 @@ export default function MedicalRecordTable({ data = [], onView }) {
                 <option value="all">All Types</option>
                 <option value="medical">Medical</option>
                 <option value="non_medical">Non-Medical</option>
+                <option value="unrecorded">Unrecorded</option> 
               </select>
               <HiFilter className="absolute text-gray-400 -translate-y-1/2 left-2.5 top-1/2" size={14} />
             </div>
@@ -202,7 +212,7 @@ export default function MedicalRecordTable({ data = [], onView }) {
                 </td>
                 <td className="p-4 text-center border-r border-gray-300">
                   <span className={`px-2 py-1 rounded text-[9px] font-black uppercase border ${record.status?.toLowerCase() === 'recorded' ? 'bg-green-50 text-(--clr-primary) border-green-100' : 'bg-amber-50 text-amber-600 border-amber-200'}`}>
-                    {record.status || 'Pending'}
+                    {record.status?.toLowerCase() === 'recorded' ? 'Recorded' : 'Unrecorded'}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">

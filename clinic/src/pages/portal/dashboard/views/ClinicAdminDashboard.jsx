@@ -6,13 +6,12 @@ import Header from '../../../../components/Header';
 import DashboardCard from '../../../../components/DashboardCard';
 import BranchPerformanceTable from '../components/BranchPerformanceTable'; 
 import { BranchTopEarnersChart } from '../components/DashboardComponents';
-import LoaderV2 from '../../../../components/LoaderV2';
 // icons
 import { TbUsers, TbCalendarTime, TbAlertTriangle } from 'react-icons/tb';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
 import { FiShoppingCart } from 'react-icons/fi';
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
-import { HiOutlineInformationCircle } from 'react-icons/hi2'; // ADDED ICON
+import { HiOutlineInformationCircle } from 'react-icons/hi2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -50,6 +49,20 @@ export default function ClinicAdminDashboard() {
 
     fetchClinicStats();
   }, [timeFilter]);
+
+  useEffect(() => {
+    const checkSubs = async () => {
+      try {
+        await authFetch(`${API_URL}/api/clinic/general/notifications/check-expiring-subs.php`);
+      } catch(error) {
+        console.error("Failed to check subscription statuses", error);
+      }
+    };
+    
+    if (user) {
+      checkSubs();
+    }
+  }, [user]);
 
   // ADDED: Check if any branches are in maintenance mode
   const maintenanceBranches = branchPerformance.filter(b => b.status === 'Maintenance');

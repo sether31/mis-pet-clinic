@@ -23,7 +23,7 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
   const [showConfirm, setShowConfirm] = useState(false); 
   const [errors, setErrors] = useState({});
   const [petImgError, setPetImgError] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState(record.category || 'medical');
+  const [currentCategory, setCurrentCategory] = useState(record.record_type || 'medical');
 
   const [form, setForm] = useState({
     appointment_id: record.appointment_id,
@@ -32,7 +32,7 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
     diagnosis: record.diagnosis || '',
     treatment: record.treatment || '',
     notes: record.notes || '',
-    category: record.category || 'medical',
+    category: record.record_type || 'medical',
     status: record.status || 'recorded',
     image_1: null,
     image_2: null,
@@ -402,12 +402,12 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
                       />
                       {hasFile && (
                         <div className="flex items-center gap-2 mt-3">
-                           <a href={`${API_URL}/${hasFile}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 px-3 py-1 bg-white border border-gray-300 rounded-lg text-[9px] font-bold text-gray-600">
+                          <a href={`${API_URL}/${hasFile}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 px-3 py-1 bg-white border border-gray-300 rounded-lg text-[9px] font-bold text-gray-600">
                             <HiEye size={12}/> VIEW
-                           </a>
-                           <button type="button" onClick={() => handleDownload(hasFile)} className="flex items-center gap-1 px-3 py-1 cursor-pointer active:scale-95 bg-black rounded-lg text-[9px] font-bold text-white">
+                          </a>
+                          <button type="button" onClick={() => handleDownload(hasFile)} className="flex items-center gap-1 px-3 py-1 cursor-pointer active:scale-95 bg-black rounded-lg text-[9px] font-bold text-white">
                             <HiDownload size={12}/> DOWNLOAD
-                           </button>
+                          </button>
                         </div>
                       )}
                     </div>

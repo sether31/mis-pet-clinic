@@ -80,20 +80,65 @@ try {
   $stmt->execute([':clinic_id' => $clinic_id]);
   $records = $stmt->fetchAll();
 
-  $formattedRecords = array_map(function($row) {
-    $row['owner_name'] = $row['owner_fname'] . ' ' . $row['owner_lname'];
-    $row['staff_name'] = $row['staff_fname'] ? ($row['staff_fname'] . ' ' . $row['staff_lname']) : 'Unassigned';
+  // 👇 Added 'unrecorded' to the array 👇
+  $cardData = [
+    "total" => count($records),
+    "unrecorded" => 0,
+    "medical" => 0,
+    "nonMedical" => 0,
+    "thisMonth" => 0,
+    "addedToday" => 0 
+  ];
+
+  $currentMonth = date('m');
+  $currentYear = date('Y');
+  $currentDate = date('Y-m-d'); 
+
+  $formattedRecords = array_map(function($row) use (&$cardData, $currentMonth, $currentYear, $currentDate) {
+    // Formatting
+    $row['owner_name'] = trim(($row['owner_fname'] ?? '') . ' ' . ($row['owner_lname'] ?? ''));
+    $row['staff_name'] = $row['staff_fname'] ? trim($row['staff_fname'] . ' ' . $row['staff_lname']) : 'Unassigned';
     $row['staff_role_display'] = str_replace('_', ' ', $row['staff_role'] ?? '');
     $row['updated_by_staff_name'] = ($row['updater_fname'] || $row['updater_lname']) 
-      ? trim($row['updater_fname'] . ' ' . $row['updater_lname']) 
+      ? trim(($row['updater_fname'] ?? '') . ' ' . ($row['updater_lname'] ?? '')) 
       : null;
+
+    // 👇 NEW LOGIC: Separate Unset, Medical, and Non-Medical 👇
+    $recordType = strtolower(trim($row['record_type'] ?? ''));
+    
+    if ($recordType === 'medical') {
+        $cardData['medical']++;
+    } elseif (in_array($recordType, ['non-medical', 'non_medical', 'nonmedical'])) {
+        $cardData['nonMedical']++;
+    } else {
+        // If it is blank, null, or literally says "unset"
+        $cardData['unrecorded']++;
+    }
+
+    // Card Logic: Count "Added This Month" & "Added Today"
+    $dateString = $row['record_date'] ?: $row['start_time'];
+    if ($dateString) {
+      $recordMonth = date('m', strtotime($dateString));
+      $recordYear = date('Y', strtotime($dateString));
+      $recordDay = date('Y-m-d', strtotime($dateString)); 
+
+      if ($recordMonth === $currentMonth && $recordYear === $currentYear) {
+        $cardData['thisMonth']++;
+      }
+      
+      if ($recordDay === $currentDate) {
+        $cardData['addedToday']++;
+      }
+    }
+
     return $row;
   }, $records);
 
   echo json_encode([
     "success" => true,
     "count" => count($formattedRecords),
-    "data" => $formattedRecords
+    "data" => $formattedRecords,
+    "cardData" => $cardData // 👈 Send card data to React
   ]);
 
 } catch (Exception $e) {

@@ -36,8 +36,7 @@ try {
   $dbBaseDir = "uploads/clinic/" . $branchId . "/";
   $fileMapping = [
     'tinNumberPic' => ['col' => 'tin_id_picture', 'folder' => 'tin_id'],
-    'businessPermitPic' => ['col' => 'business_permit_picture', 'folder' => 'business_permit'],
-    'vetLicensePic' => ['col' => 'vet_license_picture', 'folder' => 'vet_license']
+    'businessPermitPic' => ['col' => 'business_permit_picture', 'folder' => 'business_permit']
   ];
 
   $imageUpdates = [];
@@ -78,8 +77,8 @@ try {
   // update branch table
   $sql = "UPDATE clinic_branches_tb SET 
     name = ?, description = ?, address = ?, municipality = ?, 
-    province = ?, zip_code = ?, est = ?, website = ?, facebook = ?, 
-    tin_id_number = ?, business_permit_number = ?, vet_license_number = ?, 
+    province = ?, zip_code = ?, est = ?, contact_number = ?, website = ?, facebook = ?, 
+    tin_id_number = ?, business_permit_number = ?,
     status = 'pending', feedback = NULL";
 
   $mainParams = [
@@ -90,11 +89,11 @@ try {
     $_POST['province'], 
     $_POST['zipCode'],
     $_POST['est'], 
+    $_POST['contactNumber'] ?? null,
     $_POST['website'], 
     $_POST['facebook'],
     $_POST['tinNumber'], 
-    $_POST['businessPermitNumber'], 
-    $_POST['vetLicenseNumber'],
+    $_POST['businessPermitNumber']
   ];
 
   if(!empty($imageUpdates)) {

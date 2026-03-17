@@ -21,19 +21,21 @@ try {
       oi.quantity AS qty,
       pay.payment_method,
       pay.payment_status,
-      -- Fetching these from the inventory table
       inv.expiry_date,
       inv.supplier_name,
       inv.stock_level,
-      -- Use product_id as the fallback for inventory_id if missing
-      COALESCE(inv.inventory_id, oi.product_id) as inventory_id
+      COALESCE(inv.inventory_id, oi.product_id) as inventory_id,
+
+      a.updated_at,
+      CONCAT(u.first_name, ' ', u.last_name) as updated_by_name
     FROM appointments_tb a
-    INNER JOIN order_tb o ON a.order_id = o.order_id
-    INNER JOIN order_items_tb oi ON o.order_id = oi.order_id
+    LEFT JOIN order_tb o ON a.order_id = o.order_id
+    LEFT JOIN order_items_tb oi ON o.order_id = oi.order_id
     LEFT JOIN payments_tb pay ON o.order_id = pay.order_id
     LEFT JOIN products_tb p ON oi.product_id = p.product_id
-    -- Join inventory based on product_id
     LEFT JOIN inventory_tb inv ON oi.product_id = inv.product_id
+    -- Join user_tb to get the name of the last updater
+    LEFT JOIN user_tb u ON a.last_updated_by = u.user_id
     WHERE a.appointment_id = ?"
   );
   $stmt->execute([$appointment_id]);
@@ -45,10 +47,8 @@ try {
       "message" => "No billing records found for this appointment."
     ]);
     exit;
-}  
+  }  
 
-  // Handle payment method labeling
-  // get null value from the db if null then it is card
   $rawMethod = $items[0]['payment_method'];
   $paymentMethod = ($rawMethod === null) ? 'card' : strtolower($rawMethod);
 
@@ -56,7 +56,10 @@ try {
     "success" => true,
     "data" => $items,
     "payment_method" => $paymentMethod,
-    "payment_status" => $items[0]['payment_status']
+    "payment_status" => $items[0]['payment_status'],
+    
+    "updated_at" => $items[0]['updated_at'],
+    "updated_by_name" => $items[0]['updated_by_name']
   ]);
 
 } catch (Exception $e) {

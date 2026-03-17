@@ -58,8 +58,7 @@ export const routes = createBrowserRouter([
       { path: "register", element: <Register /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "pending-user", element: <PendingUser /> },
-      { path: "payment-success", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentSuccess /></ProtectedRoute> },
-      { path: "payment-failed", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentFailed /></ProtectedRoute> },
+      { path: "payment-success", element: <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin']}><PaymentSuccess /></ProtectedRoute> },
 
       // clinic
       {
@@ -136,7 +135,6 @@ export const routes = createBrowserRouter([
                     path: "transaction-management", 
                     element: (
                     <ProtectedRoute 
-                      allowedRoles={['clinic_admin', 'branch_admin']}
                       requiredPermission="transaction_management"
                     >
                       <TransactionManagement />
@@ -147,7 +145,6 @@ export const routes = createBrowserRouter([
                     path: "inventory-management", 
                     element: (
                     <ProtectedRoute 
-                      allowedRoles={['clinic_admin', 'branch_admin']}
                       requiredPermission="inventory_management"
                     >
                       <InventoryManagement />

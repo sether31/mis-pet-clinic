@@ -55,7 +55,7 @@ export default function ScheduleSettings() {
   };
 
   const handleSave = async () => {
-    showLoader("Saving changes...");
+    showLoader();
     try {
       const formData = new FormData();
       formData.append('branch_id', branchId);
@@ -68,13 +68,17 @@ export default function ScheduleSettings() {
       });
 
       if(res.success) {
-        toast.success("Branch settings updated successfully!");
+        if(res.no_changes) {
+          toast.info(res.message);
+        } else {
+          toast.success("Branch settings updated successfully!");
+        }
         fetchBranchData();
       } else {
-        toast.error("Failed to update settings.");
+        toast.error("Something went wrong");
       }
     } catch(error) {
-      toast.error("Something went wrong.");
+      toast.error("Something went wrong");
     } finally {
       hideLoader();
     }

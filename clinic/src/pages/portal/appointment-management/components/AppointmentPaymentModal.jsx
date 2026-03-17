@@ -26,6 +26,9 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentStatus, setPaymentStatus] = useState('unpaid');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [auditData, setAuditData] = useState({ updated_at: null, updated_by_name: null });
+
+  const [isFetchingData, setIsFetchingData] = useState(true);
 
   // search and dropdown state
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,8 +79,9 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   }, [branchId]);
 
   useEffect(() => {
-    if(isLocked && activeTask?.id) {
+    if(activeTask?.id) {
       const fetchBilledDetails = async () => {
+        setIsFetchingData(true);
         try {
           const res = await authFetch(`${API_URL}/api/clinic/general/appointment/get-billing-details.php?appointment_id=${activeTask.id}`);
           if(res?.success) {
@@ -96,14 +100,18 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
             setBilledItems(productsOnly);
             if(res.payment_method) setPaymentMethod(res.payment_method.toLowerCase());
             if(res.payment_status) setPaymentStatus(res.payment_status.toLowerCase());
+
+            setAuditData({ updated_at: res.updated_at, updated_by_name: res.updated_by_name });
           }
         } catch(err) {
-          toast.error("Could not retrieve billing history.");
+          toast.error("Something went wrong.");
+        } finally {
+          setIsFetchingData(false); 
         }
       };
       fetchBilledDetails();
     }
-  }, [activeTask?.id, isLocked]);
+  }, [activeTask?.id]);
 
   const handleQtyChange = (inventoryId, value) => {
     if(isLocked) return; 
@@ -263,6 +271,8 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                           p.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase());
     return isActive && matchesSearch;
   });
+
+console.log(auditData, activeTask)  
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-10000 bg-black/70 backdrop-blur-sm">
@@ -461,14 +471,14 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                   </div>
                 </div>
               </div>
-            )}
+            )} 
           </div>
 
           {/* buttons */}
           <div className="pt-6 mt-auto border-t border-gray-100">
             {activeTab === 'overview' ? (
               <div className="flex gap-3">
-               {!isLocked && (
+              {!isLocked && (
                   <button 
                     onClick={handleCancel}
                     className="flex-none px-6 py-5 text-[10px] font-black text-red-500 uppercase tracking-widest border-2 border-red-50 rounded-xl hover:bg-red-50 transition-all cursor-pointer"
@@ -530,6 +540,38 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                 </div>
               </div>
             )}
+
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div className="flex flex-col">
+                {isFetchingData ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase italic tracking-widest">
+                      Loading...
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {/* date */}
+                    <p className="text-[10px] font-bold text-gray-700 uppercase italic">
+                      Last Updated: {(auditData.updated_at || activeTask?.updated_at) 
+                      ? new Date(auditData.updated_at || activeTask.updated_at).toLocaleString('en-US', { 
+                          month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                        }) 
+                      : '---'}
+                    </p>
+                    
+                    <span className="text-gray-300">|</span>
+                    
+                    {/* staff */}
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[10px] font-black uppercase ${!(auditData.updated_by_name || activeTask?.updated_by_name) ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
+                        Updated By: {(auditData.updated_by_name || activeTask?.updated_by_name) || 'No record yet'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

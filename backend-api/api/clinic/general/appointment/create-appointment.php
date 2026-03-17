@@ -120,12 +120,14 @@ try {
     $updateStmt = $pdo->prepare(
       "UPDATE appointments_tb SET 
         user_id = ?, pet_id = ?, service_id = ?, staff_id = ?, 
-        branch_id = ?, start_time = ?, end_time = ?, status = 'confirmed'
+        branch_id = ?, start_time = ?, end_time = ?, status = 'confirmed',
+        last_updated_by = ?
       WHERE appointment_id = ?"
     );
     $updateStmt->execute([
       $user_id, $pet_id, $service_id, $staff_id, 
-      $branch_id, $start_time, $end_time, $appointment_id
+      $branch_id, $start_time, $end_time, $user->user_id, 
+      $appointment_id
     ]);
     $msg = "Appointment updated and confirmed.";
     $targetId = $appointment_id;
@@ -134,12 +136,12 @@ try {
     $insertStmt = $pdo->prepare(
       "INSERT INTO appointments_tb (
         user_id, pet_id, service_id, staff_id, branch_id, 
-        start_time, end_time, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', NOW())"
+        start_time, end_time, status, created_at, last_updated_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'confirmed', NOW(), ?)"
     );
     $insertStmt->execute([
       $user_id, $pet_id, $service_id, $staff_id, 
-      $branch_id, $start_time, $end_time
+      $branch_id, $start_time, $end_time, $user->user_id
     ]);
     $targetId = $pdo->lastInsertId();
     $msg = "Appointment successfully scheduled.";
@@ -184,12 +186,20 @@ try {
   $staffRole = strtolower($staffData['role_name'] ?? '');
 
   // Fetch the CREATOR'S name (The person logged in making the appointment)
+  // Fetch the CREATOR'S name (The person logged in making the appointment)
   $stmtCreator = $pdo->prepare("SELECT first_name, last_name FROM user_tb WHERE user_id = ?");
   $stmtCreator->execute([$user->user_id]);
   $creatorData = $stmtCreator->fetch();
-  $creatorName = $creatorData ? trim($creatorData['first_name'] . ' ' . $creatorData['last_name']) : 'Our staff';
+  
+  // 👇 1. Plain name for the Pet Owner 👇
+  $creatorNameOnly = $creatorData ? ucwords(trim($creatorData['first_name'] . ' ' . $creatorData['last_name'])) : 'Our staff';
 
-  // 2. Format variables
+  // 👇 2. Name + Role for the Internal Staff 👇
+  $creatorRoleRaw = $user->role ?? 'staff';
+  $creatorRoleFormatted = ucwords(str_replace('_', ' ', $creatorRoleRaw)); 
+  $creatorNameWithRole = "{$creatorRoleFormatted} ({$creatorNameOnly})";
+
+  // Format variables
   $prefix = ($staffRole === 'veterinarian') ? 'Dr. ' : '';
   $formattedDate = date('F j, Y', strtotime($start_time));
   $formattedTime = date('g:i A', strtotime($start_time));
@@ -197,22 +207,23 @@ try {
   
   $ownerMsg = "";
 
-  // 3. Create the Custom Message based on WHO is making the appointment
+  // 3. Create the Custom Message for the PET OWNER (Uses plain name)
   if ($assignedStaffUserId == $user->user_id) {
-    // SCENARIO A: The staff member (Vet/Groomer) created it for themselves
+    // Vet/Groomer created it for themselves
     $ownerMsg = "{$prefix}{$staffName} has scheduled {$petName}'s {$serviceName} on {$formattedDate} at {$formattedTime}.";
   } else {
-    // SCENARIO B: Someone else (Manager, Receptionist, Admin) created it for the Vet/Groomer
-    $ownerMsg = "{$creatorName} has scheduled an appointment for {$petName}'s {$serviceName} on {$formattedDate} at {$formattedTime} with {$prefix}{$staffName}.";
+    // Receptionist/Admin created it
+    $ownerMsg = "{$creatorNameOnly} has scheduled an appointment for {$petName}'s {$serviceName} on {$formattedDate} at {$formattedTime} with {$prefix}{$staffName}.";
   }
 
   // Send to Pet Owner
   send_notification($pdo, $user_id, 'appointment', $notifTitle, $ownerMsg);
 
-  // 4. Notify the Staff Member ONLY IF someone else assigned this to them!
+  // 4. Notify the Staff Member (Uses Name + Role!)
   if ($assignedStaffUserId && $assignedStaffUserId != $user->user_id) {
     $staffTitle = "New Appointment Assigned";
-    $staffMsg = "You have been assigned a new {$serviceName} appointment for {$petName} on {$formattedDate} at {$formattedTime}. Assigned by: {$creatorName}.";
+    $staffMsg = "You have been assigned a new {$serviceName} appointment for {$petName} on {$formattedDate} at {$formattedTime}. Assigned by: {$creatorNameWithRole}.";
+    
     send_notification($pdo, $assignedStaffUserId, 'appointment', $staffTitle, $staffMsg);
   }
 

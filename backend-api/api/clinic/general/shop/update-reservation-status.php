@@ -63,11 +63,17 @@ try {
   $clinic_id = $currentOrder['clinic_id'];
 
   // UPDATE THE ORDER STATUS
+  // UPDATE THE ORDER STATUS
   $stmt = $pdo->prepare(
-    "UPDATE order_tb SET order_status = ?, cancellation_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?"
+    "UPDATE order_tb 
+    SET order_status = ?, 
+      cancellation_reason = ?, 
+      last_updated_by = ?, 
+      updated_at = CURRENT_TIMESTAMP 
+    WHERE order_id = ?"
   );
   $final_reason = ($status === 'cancelled' || $status === 'rejected') ? $reason : null;
-  $stmt->execute([$status, $final_reason, $order_id]);
+  $stmt->execute([$status, $final_reason, $user_id, $order_id]);
 
   // INVENTORY RESTOCK
   $active_statuses = ['pending', 'confirmed'];

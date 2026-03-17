@@ -215,6 +215,28 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                   </div>
                 </div>
               )}
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <p className="text-[10px] font-bold text-gray-700 uppercase italic">
+                      Last Updated: {order?.updated_at 
+                      ? new Date(order.updated_at).toLocaleString('en-US', { 
+                          month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                        }) 
+                      : '---'}
+                    </p>
+                    
+                    <span className="text-gray-300">|</span>
+                    
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[10px] font-black uppercase ${!order?.updated_by_name ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
+                        Updated By: {order?.updated_by_name || 'No record yet'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

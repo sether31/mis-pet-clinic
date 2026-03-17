@@ -30,6 +30,7 @@ const initialFormState = {
   province: '',
   zipCode: '',
   est: '',
+  contactNumber: '',
   clinicDescription: '',
   website: '',
   facebook: '',
@@ -64,6 +65,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
     province: "Province",
     zipCode: "Zip Code",
     est: "Year Established",
+    contactNumber: "Clinic Contact Number",
     clinicDescription: "Clinic Description",
     website: "Website",
     facebook: "Facebook",
@@ -114,7 +116,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
             toast.success(`Status updated to ${newStatus}!`);
           }
         }
-     
+
         setStatus(newStatus || '');
         setFeedback(branch.feedback || '');    
 
@@ -128,6 +130,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
             province: branch.province || '',
             zipCode: branch.zip_code || '',
             est: branch.est || '',
+            contactNumber: branch.contact_number || '',
             clinicDescription: branch.description || '',
             website: branch.website || '',
             facebook: branch.facebook || '',
@@ -206,10 +209,10 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
       "province",
       "zipCode",
       "est",
+      "contactNumber",
       "clinicDescription",
       "tinNumber",
       "businessPermitNumber",
-      "vetLicenseNumber",
       "agreeTerms"
     ];
 
@@ -220,7 +223,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
     });
 
     // check image
-    ["tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
+    ["tinNumberPic", "businessPermitPic"].forEach(field => {
       if(!form[field] && !existingPaths[field]) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
@@ -347,7 +350,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
                   <h3 className="text-lg font-bold">Verification Successful</h3>
                 </div>
                 <p className="text-sm font-medium text-(--clr-text-header)">
-                  Your clinic has been approved! Redirecting you to select branch...
+                  Your clinic has been approved!
                 </p>
               </div>
             ) : status === "rejected" ? (
@@ -465,7 +468,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
                       value={form.clinicDescription} 
                       id="clinicDescription"
                       name="clinicDescription"
-                      className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
+                      className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[220px] mt-2 
                         ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
                         ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
                       `}
@@ -480,7 +483,19 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
                     )}
                   </div>
 
-                  <div>
+                  <div className='grid gap-1'>
+                    <Input
+                      value={form.contactNumber}
+                      label="Clinic Contact Number"
+                      labelStyle="mb-2 ml-1"
+                      id="contactNumber"
+                      name="contactNumber"
+                      isImportant={true}
+                      placeholder="09123456789 or (02) 8123-4567"
+                      onChange={handleChange}
+                      error={errors.contactNumber}
+                    />
+  
                     <Input
                       value={form.website}
                       label="Website"
@@ -492,7 +507,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
                       onChange={handleChange}
                       error={errors.website}
                     />
-
+  
                     <Input
                       value={form.facebook}
                       label="Facebook"
@@ -566,7 +581,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
                   </div>
 
                   {/* vet license */}
-                  <div className="flex flex-col">
+                  {/* <div className="flex flex-col">
                     <InputImage
                       className="mt-4"
                       label="Veterinarian License Picture"
@@ -587,7 +602,7 @@ export default function BranchStatusModal({ branch, onClose, onSuccess}) {
                       onChange={handleChange}
                       error={errors.vetLicenseNumber}
                     />
-                  </div>
+                  </div> */}
                 </div>
               </div>
 

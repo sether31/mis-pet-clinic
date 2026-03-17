@@ -16,11 +16,11 @@ try {
 
       /* get clinic and branch */
       c.clinic_id,
-      b.branch_id, b.name as branch_name, b.description, b.est,
+      b.branch_id, b.name as branch_name, b.description, b.est, b.contact_number,
       b.address, b.municipality, b.province, b.zip_code, 
       b.website, b.facebook,
-      b.tin_id_picture, b.business_permit_picture, b.vet_license_picture,
-      b.tin_id_number, b.business_permit_number, b.vet_license_number,
+      b.tin_id_picture, b.business_permit_picture, 
+      b.tin_id_number, b.business_permit_number,
       b.status as branch_status, b.feedback,
       b.subscription_id, b.feedback
     FROM user_tb u
@@ -56,14 +56,13 @@ try {
           "status" => $user['branch_status'],
           "feedback" => $user['feedback'] ?? '',
           "subscription_id" => $user['subscription_id'],
+          "contact_number" => $user['contact_number'],
 
           "license" => [
             "tin_id_pic" => $user['tin_id_picture'],
             "tin_id_number" => $user['tin_id_number'],
             "business_permit_pic" => $user['business_permit_picture'],
-            "business_permit_number" => $user['business_permit_number'],
-            "vet_license_pic" => $user['vet_license_picture'],
-            "vet_license_number" => $user['vet_license_number']
+            "business_permit_number" => $user['business_permit_number']
           ],
 
           "contact_info" => [
