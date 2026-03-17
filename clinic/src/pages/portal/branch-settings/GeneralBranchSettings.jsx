@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'; 
 import { toast } from 'react-toastify';
 import { useUI } from '../../../hooks/useUI';
+import { useUser } from '../../../hooks/useUser'; 
 import { authFetch } from '../../../utils/authFetch'
 import Input from '../../../components/Input';
 import InputImage from '../../../components/InputImage';
@@ -15,6 +16,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const initialFormState = {
   logoPic: null, 
   clinicName: '',
+  contactNumber: '',
   completeAddress: '',
   municipality: '',
   province: '',
@@ -25,28 +27,30 @@ const initialFormState = {
   facebook: '',
   tinNumber: '',
   businessPermitNumber: '',
-  vetLicenseNumber: '',
   tinNumberPic: null,
-  businessPermitPic: null,
-  vetLicensePic: null
+  businessPermitPic: null
 }
 
 export default function GeneralBranchSettings() {
   const { branchId } = useParams();
   const { showLoader, hideLoader } = useUI();
+  const { user } = useUser(); 
   const [isLoading, setIsLoading] = useState(true);
   const [form, setForm] = useState(initialFormState);
   const [existingPaths, setExistingPaths] = useState({
     logoPic: '',
     tinNumberPic: '',
-    businessPermitPic: '',
-    vetLicensePic: ''
+    businessPermitPic: ''
+    // Removed Vet License Path
   });
   const [errors, setErrors] = useState({});
+
+  const isBranchAdmin = user?.role === 'branch_admin';
 
   const inputLabels = {
     logoPic: "Clinic Logo",
     clinicName: "Clinic Name",
+    contactNumber: "Contact Number", 
     completeAddress: "Complete Address",
     municipality: "City/Municipality",
     province: "Province",
@@ -57,10 +61,8 @@ export default function GeneralBranchSettings() {
     facebook: "Facebook",
     tinNumber: "Tin Number",
     businessPermitNumber: "Business Permit Number",
-    vetLicenseNumber: "Veterinarian License Number",
     tinNumberPic: "Tin Picture",
-    businessPermitPic: "Business Permit Picture",
-    vetLicensePic: "Veterinarian License Picture"
+    businessPermitPic: "Business Permit Picture"
   };
 
   const fetchClinicData = async () => {
@@ -75,6 +77,7 @@ export default function GeneralBranchSettings() {
         setForm(prev => ({
           ...prev,
           clinicName: res.data.name || '',
+          contactNumber: res.data.contact_number || '',
           completeAddress: res.data.address || '',
           municipality: res.data.municipality || '',
           province: res.data.province || '',
@@ -84,19 +87,17 @@ export default function GeneralBranchSettings() {
           website: res.data.website || '',
           facebook: res.data.facebook || '',         
           tinNumber: res.data.tin_id_number || '',
-          businessPermitNumber: res.data.business_permit_number || '',
-          vetLicenseNumber: res.data.vet_license_number || '',
+          businessPermitNumber: res.data.business_permit_number || ''
         }));
 
         setExistingPaths({
           logoPic: res.data.logo_picture || '', 
           tinNumberPic: res.data.tin_id_picture || '',
-          businessPermitPic: res.data.business_permit_picture || '',
-          vetLicensePic: res.data.vet_license_picture || ''
+          businessPermitPic: res.data.business_permit_picture || ''
         });
       }
     } catch(err) {
-      toast.error("Failed to load clinic settings.");
+      toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -127,11 +128,18 @@ export default function GeneralBranchSettings() {
 
   const validateForm = () => {
     const newErrors = {};
+    
+    // 👇 Added contactNumber to base required fields 👇
     const requiredInputFields = [
-      "clinicName", "completeAddress", "municipality", "province",
-      "zipCode", "est", "clinicDescription",
-      "tinNumber", "businessPermitNumber", "vetLicenseNumber"
+      "clinicName", "contactNumber", "completeAddress", "municipality", "province",
+      "zipCode", "est", "clinicDescription"
     ];
+    const requiredImages = ["logoPic"];
+
+    if (!isBranchAdmin) {
+      requiredInputFields.push("tinNumber", "businessPermitNumber");
+      requiredImages.push("tinNumberPic", "businessPermitPic");
+    }
 
     requiredInputFields.forEach(field => {
       if(!form[field] || (typeof form[field] === "string" && !form[field].trim())) {
@@ -139,7 +147,7 @@ export default function GeneralBranchSettings() {
       }
     });
 
-    ["logoPic", "tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
+    requiredImages.forEach(field => {
       if(!form[field] && !existingPaths[field]) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
@@ -150,7 +158,7 @@ export default function GeneralBranchSettings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    showLoader("Updating...")
+    showLoader();
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
@@ -176,27 +184,30 @@ export default function GeneralBranchSettings() {
       });
 
       if(res.success) {
-        toast.success("Settings updated successfully!");
+        if(res.no_changes) {
+          toast.info(res.message);
+        } else {
+          toast.success("Settings updated successfully!");
+        }
         fetchClinicData(); 
       } else {
-        toast.error(res.message || "Failed to update settings");
+        toast.error("Something went wrong");
       }
     } catch(error) {
-      toast.error("An error occurred during update");
+      toast.error("Something went wrong");
     }
     hideLoader();
   };
 
   return (
     <div className='w-full'>
-      {/* header */}
       <div className="pb-5 mb-8 border-b border-gray-100">
         <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-800">
           <HiOutlineBuildingOffice2 className="text-(--clr-primary)" />
           Branch Profile
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Update your clinic's public information, contact details, and legal documentation.
+          Update your clinic's information and contact details.
         </p>
       </div>
 
@@ -287,93 +298,117 @@ export default function GeneralBranchSettings() {
                 />
 
                 <div className='mb-4'>
-                  <label className='ml-1 text-sm font-medium text-gray-700'>
-                    Clinic Description <span className="text-red-500">*</span>
+                  <label htmlFor='clinicDescription' className='ml-1 text-sm font-medium text-gray-700'>
+                    Clinic Description {' '}
+                    <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={form.clinicDescription} 
+                    id="clinicDescription"
                     name="clinicDescription"
+                    className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[220px] mt-2 
+                      ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
+                      ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300"}
+                    `}
                     placeholder="Brief description of your clinic, specialization, and what makes you unique..."
-                    className={`border outline-none rounded-lg p-2 w-full min-h-[115px] ${errors.clinicDescription && errors.clinicDescription !== "valid" ? "border-red-500" : "border-gray-300"}`}
                     onChange={handleChange} 
                   ></textarea>
-                  {errors.clinicDescription && errors.clinicDescription !== "valid" && (
-                    <p className="flex items-center mt-1 text-sm text-red-500"><HiMiniExclamationCircle className="mr-1" />{errors.clinicDescription}</p>
+                  {(errors.clinicDescription && errors.clinicDescription !== "valid") && (
+                    <p className="flex items-center text-xs text-red-500">
+                      <HiMiniExclamationCircle size={16} />
+                      {errors.clinicDescription}
+                    </p>
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <Input value={form.website} label="Website" name="website" placeholder="https://www.clinic.com" isOptional={true} onChange={handleChange} />
-                  <Input value={form.facebook} label="Facebook" name="facebook" placeholder="https://facebook.com/" isOptional={true} onChange={handleChange} />
+                <div className='grid gap-1'>
+                  <Input
+                    value={form.contactNumber}
+                    label="Clinic Contact Number"
+                    labelStyle="mb-2 ml-1"
+                    id="contactNumber"
+                    name="contactNumber"
+                    isImportant={true}
+                    placeholder="09123456789 or (02) 8123-4567"
+                    onChange={handleChange}
+                    error={errors.contactNumber}
+                  />
+
+                  <Input
+                    value={form.website}
+                    label="Website"
+                    labelStyle="mb-1 ml-1"
+                    id="website"
+                    name="website"
+                    isOptional={true}
+                    placeholder="https://www.clinic.com"
+                    onChange={handleChange}
+                    error={errors.website}
+                  />
+
+                  <Input
+                    value={form.facebook}
+                    label="Facebook"
+                    labelStyle="mb-1 ml-1"
+                    id="facebook"
+                    name="facebook"
+                    isOptional={true}
+                    placeholder="https://facebook.com/"
+                    onChange={handleChange}
+                    error={errors.facebook}
+                  />
                 </div>
               </div>
             </div>
 
             {/* business & licensing */}
-            <div className='pb-8 mb-5 border-b border-gray-300'>
-              <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
-                <CiCreditCard1 className='text-(--clr-text-header)' />
-                <span>Business & Licensing Information</span>
-              </h1>
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6'>
-                <div className="flex flex-col">
-                  <InputImage 
-                    label="Tin Picture" 
-                    name="tinNumberPic" 
-                    isPreview 
-                    onChange={handleChange} 
-                    error={errors.tinNumberPic} 
-                    existingImage={existingPaths.tinNumberPic} 
-                  />
-                  <Input 
-                    value={form.tinNumber} 
-                    label="Tin Number" 
-                    name="tinNumber" 
-                    placeholder="123-456-789-000"
-                    isImportant={true} 
-                    onChange={handleChange} 
-                    error={errors.tinNumber} 
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <InputImage 
-                    label="Business Permit Picture" 
-                    name="businessPermitPic" 
-                    isPreview 
-                    onChange={handleChange} 
-                    error={errors.businessPermitPic} 
-                    existingImage={existingPaths.businessPermitPic}
-                  />
-                  <Input 
-                    value={form.businessPermitNumber} 
-                    label="Permit Number" 
-                    name="businessPermitNumber" 
-                    placeholder="BP-2025-12345"
-                    isImportant={true} onChange={handleChange} 
-                    error={errors.businessPermitNumber} 
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <InputImage 
-                    label="Vet License Picture" 
-                    name="vetLicensePic" 
-                    isPreview 
-                    onChange={handleChange} 
-                    error={errors.vetLicensePic} 
-                    existingImage={existingPaths.vetLicensePic} 
-                  />
-                  <Input 
-                    value={form.vetLicenseNumber} 
-                    label="License Number" 
-                    name="vetLicenseNumber"
-                    placeholder="12345" 
-                    isImportant={true} 
-                    onChange={handleChange} 
-                    error={errors.vetLicenseNumber} 
-                  />
+            {!isBranchAdmin && (
+              <div className='pb-8 mb-5 border-b border-gray-300'>
+                <h1 className='flex items-center gap-1 mb-4 text-xl font-medium'>
+                  <CiCreditCard1 className='text-(--clr-text-header)' />
+                  <span>Business & Licensing Information</span>
+                </h1>
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6'>
+                  <div className="flex flex-col">
+                    <InputImage 
+                      label="Tin Picture" 
+                      name="tinNumberPic" 
+                      isPreview 
+                      onChange={handleChange} 
+                      error={errors.tinNumberPic} 
+                      existingImage={existingPaths.tinNumberPic} 
+                    />
+                    <Input 
+                      value={form.tinNumber} 
+                      label="Tin Number" 
+                      name="tinNumber" 
+                      placeholder="123-456-789-000"
+                      isImportant={true} 
+                      onChange={handleChange} 
+                      error={errors.tinNumber} 
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <InputImage 
+                      label="Business Permit Picture" 
+                      name="businessPermitPic" 
+                      isPreview 
+                      onChange={handleChange} 
+                      error={errors.businessPermitPic} 
+                      existingImage={existingPaths.businessPermitPic}
+                    />
+                    <Input 
+                      value={form.businessPermitNumber} 
+                      label="Permit Number" 
+                      name="businessPermitNumber" 
+                      placeholder="BP-2025-12345"
+                      isImportant={true} onChange={handleChange} 
+                      error={errors.businessPermitNumber} 
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </section>
 
           <div className="flex justify-end mt-8">

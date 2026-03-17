@@ -96,7 +96,6 @@ try {
       ":len3" => $months
     ]);
 
-    // ... after $stmt2->execute() (the subscription update) ...
 
     if($type === 'activation') {
       // check if operating hours already exist to avoid duplicates
@@ -128,6 +127,62 @@ try {
     $action = ($type === 'activation') ? 'CREATE' : 'UPDATE';
     $entity = 'SUBSCRIPTION_' . strtoupper($type);
     $currentUserId = $user->user_id;
+
+
+      
+    // Fetch the Clinic Admin's User ID and Plan Details
+    $stmtAdmin = $pdo->prepare(
+      "SELECT c.created_by as admin_id, cb.name as branch_name, s.name as plan_name
+      FROM clinic_branches_tb cb
+      JOIN clinics_tb c ON cb.clinic_id = c.clinic_id
+      JOIN subscription_tb s ON s.subscription_id = ?
+      WHERE cb.branch_id = ?"
+    );
+    $stmtAdmin->execute([$newSubId, $realBranchId]);
+    $adminData = $stmtAdmin->fetch();
+
+    if ($adminData) {
+      require_once __DIR__ . '/../../../../helper/send_notification.php';
+      
+      $title = "Subscription " . ucfirst($type) . ": " . ucwords($adminData['branch_name']);
+      
+      // 👇 Wrap these three in ucwords() 👇
+      $branchName = ucwords($adminData['branch_name']);
+      $planName = ucwords($adminData['plan_name']);
+      $payerName = ucwords(trim($user->fname . ' ' . $user->lname));
+      
+      $payerRole = ($user->role === 'clinic_admin') ? 'Clinic Admin' : 'Branch Admin';
+      $paidByText = " by {$payerRole} ({$payerName})";
+      
+      // Attach the Payer info to the message
+      if ($type === 'upgrade') {
+        $message = "The subscription for {$branchName} was successfully upgraded to the {$planName} plan{$paidByText}.";
+      } elseif ($type === 'renewal') {
+        $message = "The {$planName} plan for {$branchName} was successfully renewed{$paidByText}.";
+      } else {
+        $message = "The {$planName} plan for {$branchName} was successfully paid and activated{$paidByText}.";
+      }
+      
+      send_notification($pdo, $adminData['admin_id'], 'billing', $title, $message);
+      
+      // 2. Send to the Branch Admin(s) via branch_staff_tb
+      $stmtBranchAdmins = $pdo->prepare(
+        "SELECT bs.user_id 
+        FROM branch_staff_tb bs
+        JOIN user_tb u ON bs.user_id = u.user_id
+        WHERE bs.branch_id = ? 
+          AND bs.status = 1"
+      );
+      $stmtBranchAdmins->execute([$realBranchId]);
+      $branchAdmins = $stmtBranchAdmins->fetchAll();
+
+      foreach ($branchAdmins as $ba) {
+        // Prevent sending a duplicate notification if the Clinic Admin is somehow also in the branch_staff_tb
+        if ($ba['user_id'] !== $adminData['admin_id']) {
+          send_notification($pdo, $ba['user_id'], 'billing', $title, $message);
+        }
+      }
+    }
 
     // audit log
     log_audit(

@@ -13,6 +13,7 @@ import { HiSearch } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiOutlineInformationCircle } from 'react-icons/hi2';
 import { IoBagHandleOutline, IoCalendarOutline, IoCardOutline } from 'react-icons/io5';
 import { LuPackage } from 'react-icons/lu';
+import { TbAlertTriangle } from 'react-icons/tb';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -158,6 +159,15 @@ export default function Notifications() {
         return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-red-700 bg-red-50 border border-red-200 rounded-lg w-fit mx-auto"><LuPackage size={12}/> Inventory</span>;
       case 'billing':
         return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-(--clr-primary) bg-green-50 border border-green-200 rounded-lg w-fit mx-auto"><IoCardOutline size={12}/> Billing</span>;
+
+      // subs
+      case 'subscription':
+        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-lg w-fit mx-auto"><IoCardOutline size={12}/> Subscription</span>;
+      case 'subscription_warn':
+        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-300 rounded-lg w-fit mx-auto"><TbAlertTriangle size={12}/> Expiring Soon</span>;
+      case 'subscription_expired':
+        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-red-700 bg-red-50 border border-red-200 rounded-lg w-fit mx-auto"><TbAlertTriangle size={12}/> Expired</span>;
+
       default:
         return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-700 bg-gray-100 border border-gray-300 rounded-lg w-fit mx-auto"><HiOutlineInformationCircle size={12}/> System</span>;
     }
