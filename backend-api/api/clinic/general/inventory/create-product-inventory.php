@@ -77,10 +77,15 @@ try {
 
     if($existingBatch) {
       $newTotal = $existingBatch['stock_level'] + $stockLevel;
+      
+      // 👇 ADDED last_updated_by and updated_at HERE 👇
       $updateInv = $pdo->prepare(
-        "UPDATE inventory_tb SET stock_level = ?, unit_cost = ?, price = ?, supplier_name = ?, supplier_contact = ? WHERE inventory_id = ?"
+        "UPDATE inventory_tb 
+         SET stock_level = ?, unit_cost = ?, price = ?, supplier_name = ?, supplier_contact = ?, last_updated_by = ?, updated_at = NOW() 
+         WHERE inventory_id = ?"
       );
-      $updateInv->execute([$newTotal, $unitCost, $price, $supplierName, $supplierContact, $existingBatch['inventory_id']]);
+      // Notice we are passing $adminId into the array below!
+      $updateInv->execute([$newTotal, $unitCost, $price, $supplierName, $supplierContact, $adminId, $existingBatch['inventory_id']]);
 
       // audit merge stock
       log_audit($pdo, $adminId, $clinicId, $branchId, 'UPDATE', 'INVENTORY_STOCK_MERGE', $productId);
@@ -109,15 +114,17 @@ try {
   }
 
   // create inventory
+  // 👇 ADDED last_updated_by HERE 👇
   $stmtInvInsert = $pdo->prepare(
-    "INSERT INTO inventory_tb (product_id, branch_id, stock_level, unit_cost, price, min_stock_level, expiry_date, supplier_name, supplier_contact) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO inventory_tb (product_id, branch_id, stock_level, unit_cost, price, min_stock_level, expiry_date, supplier_name, supplier_contact, last_updated_by, updated_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
   );
-  $stmtInvInsert->execute([$productId, $branchId, $stockLevel, $unitCost, $price, $minStock, $expiryDate, $supplierName, $supplierContact]);
+  // Passing $adminId into the array
+  $stmtInvInsert->execute([$productId, $branchId, $stockLevel, $unitCost, $price, $minStock, $expiryDate, $supplierName, $supplierContact, $adminId]);
 
   // audit update and create audit
-  $auditTag = $existingProduct ? 'INVENTORY_NEW_BATCH' : 'INVENTORY_NEW_PRODUCT';
-  log_audit($pdo, $adminId, $clinicId, $branchId, 'CREATE', $auditTag, $productId);
+  // $auditTag = $existingProduct ? 'INVENTORY_NEW_BATCH' : 'INVENTORY_NEW_PRODUCT';
+  // log_audit($pdo, $adminId, $clinicId, $branchId, 'CREATE', $auditTag, $productId);
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Inventory updated successfully."]);
@@ -126,3 +133,4 @@ try {
   http_response_code(500);
   echo json_encode(["success" => false, "message" => "Database Error: " . $e->getMessage()]);
 }
+?>

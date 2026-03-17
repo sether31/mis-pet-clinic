@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Swal from 'sweetalert2';
+import { toast } from 'react-toastify';
 // components
 import SubscriptionGate from '../../../../components/SubscriptionGate';
 // icons
@@ -11,19 +12,27 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function ShopModal({ order, onClose, onUpdate }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const pickupDate = new Date(order.pickup_date);
+  pickupDate.setHours(0, 0, 0, 0);
+
+  const isOverdue = pickupDate < today;
   const isLocked = ['completed', 'cancelled', 'rejected'].includes(order.order_status);
 
+  // Dynamic naming based on current status
   const actionName = order.order_status === 'pending' ? 'Reject' : 'Cancel';
   const targetStatus = order.order_status === 'pending' ? 'rejected' : 'cancelled';
 
-  // Cancellation/Rejection
   const handleRejectClick = async () => {
     const { value: reason, isConfirmed } = await Swal.fire({
       icon: 'warning',
       title: `${actionName} Order?`,
-      text: `Please provide a reason for ${actionName.toLowerCase()}ing this order:`,
+      text: isOverdue 
+        ? `This reservation has expired. Please provide a reason for clearing this order:` 
+        : `Please provide a reason for ${actionName.toLowerCase()}ing this order:`,
       input: 'textarea',
-      inputPlaceholder: 'e.g., Item is out of stock / Customer no-show...',
+      inputPlaceholder: 'ex. Item is out of stock / Customer did not show...',
       showCancelButton: true,
       confirmButtonText: `Confirm ${actionName}`,
       cancelButtonText: 'Back',
@@ -53,6 +62,11 @@ export default function ShopModal({ order, onClose, onUpdate }) {
   };
 
   const handleAction = async (newStatus) => {
+    if (isOverdue && newStatus === 'confirmed') {
+      toast.error("Cannot approve an expired reservation.");
+      return;
+    }
+    
     setIsSubmitting(true);
     await onUpdate(order.order_id, newStatus);
     setIsSubmitting(false);
@@ -60,29 +74,33 @@ export default function ShopModal({ order, onClose, onUpdate }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white rounded-2xl animate-in fade-in slide-in-from-bottom-4">
+      <div className="flex flex-col w-full max-w-xl max-h-[95vh] overflow-hidden bg-white rounded-2xl">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50">
           <div>
-            <h2 className="text-xl font-black tracking-tight text-gray-800 uppercase">
-              Order Details
-            </h2>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              Ref: #{order.order_id}
-            </p>
+            <h2 className="text-xl font-black tracking-tight text-gray-800 uppercase">Order Details</h2>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ref: #{order.order_id}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 transition-all cursor-pointer hover:text-red-500">
             <HiXCircle size={32}/>
           </button>
         </div>
 
-        <div className="flex flex-col p-8 space-y-6">
+        <div className="flex flex-col p-8 space-y-6 overflow-y-auto custom-scrollbar">
+          {isOverdue && !isLocked && (
+            <div className="flex items-center gap-3 p-4 border border-amber-200 bg-amber-50 rounded-xl">
+              <HiInformationCircle className="text-amber-500" size={20} />
+              <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">
+                This reservation is overdue
+              </p>
+            </div>
+          )}
           
           {/* Customer Info */}
           <div className="flex items-center justify-between p-5 border border-blue-100 bg-blue-50/50 rounded-2xl">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 overflow-hidden bg-white border-2 border-white rounded-full shadow-sm shrink-0">
+              <div className="w-12 h-12 overflow-hidden bg-white border-2 border-white rounded-full shrink-0">
                 <img 
                   src={order.profile_picture ? `${API_URL}/${order.profile_picture}` : noImage} 
                   alt={order.owner_name}
@@ -92,64 +110,43 @@ export default function ShopModal({ order, onClose, onUpdate }) {
               <div>
                 <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest">Customer Name</p>
                 <p className="text-base font-black text-(--text-primary) uppercase mb-1">{order.owner_name}</p>
-                <p className="text-[10px] font-bold text-(--text-primary)mt-1 uppercase">
+                <p className="text-[10px] font-bold uppercase mt-1">
                   Pickup Date: 
-                  <span className='text-blue-500 ml-1'>
+                  <span className={`${isOverdue ? 'text-red-500' : 'text-blue-500'} ml-1 font-black`}>
                     {new Date(order.pickup_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                    {isOverdue && " (OVERDUE)"}
                   </span>
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Product  */}
+          {/* Reserved Items Section */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reserved Items</h4>        
             <div className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl">
               <div className="flex items-center flex-1 gap-4">
                 <div className="w-12 h-12 overflow-hidden bg-gray-100 border border-gray-200 shrink-0 rounded-xl">
-                  <img 
-                    src={order.prod_pic ? `${API_URL}/${order.prod_pic}` : noImage} 
-                    alt={order.product_name}
-                    className="object-cover w-full h-full"
-                  />
+                  <img src={order.prod_pic ? `${API_URL}/${order.prod_pic}` : noImage} alt={order.product_name} className="object-cover w-full h-full" />
                 </div>
-                
                 <div>
-                  <p className="text-[12px] font-black text-gray-800 uppercase flex gap-2 items-center">
-                    {order.product_name}
+                  <p className="text-[12px] font-black text-gray-800 uppercase">{order.product_name}</p>
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                    ₱{parseFloat(order.unit_price).toLocaleString()} x {order.quantity}
                   </p>
-                  <div className="flex flex-wrap gap-3 mt-1">
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                      ₱{parseFloat(order.unit_price).toLocaleString()} x {order.quantity}
-                    </span>
-                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-xl">
-                  <span className="text-[10px] font-black text-gray-600 uppercase">
-                    Subtotal: ₱{(parseFloat(order.unit_price) * parseInt(order.quantity)).toLocaleString()}
-                  </span>
-                </div>
+              <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-xl">
+                <span className="text-[10px] font-black text-gray-600 uppercase">
+                  Subtotal: ₱{(parseFloat(order.unit_price) * parseInt(order.quantity)).toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Action Area & Total */}
+          {/* Action Area */}
           <div className="pt-6 mt-auto border-t border-gray-100">
             <div className="flex flex-col gap-4">
-              
-              {/* Payment Info */}
-              <div className="px-2 space-y-1">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  <span>Payment Method</span>
-                  <span className="text-gray-600">Cash on Pickup</span>
-                </div>
-              </div>
-
-              {/* Total Due Black Box */}
               <div className="flex items-center justify-between text-white bg-black p-6 rounded-[1.5rem]">
                 <div>
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Due</p>
@@ -158,14 +155,13 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                   </p>
                 </div>
                 
-                {/* Status Badges or Action Buttons */}
                 {isLocked ? (
-                  <div className={`px-6 py-3 font-black text-[10px] uppercase tracking-widest rounded-xl border flex flex-col items-end justify-center gap-1 ${
+                  <div className={`px-6 py-3 font-black text-[10px] uppercase tracking-widest rounded-xl border ${
                     order.order_status === 'completed' 
                       ? 'bg-green-500/10 text-(--clr-primary) border-green-500/20' 
                       : 'bg-red-500/10 text-red-500 border-red-500/20'
                   }`}>
-                    <span>Status: {order.order_status == 'completed' ? 'Fully Paid' : order.order_status}</span>
+                    {order.order_status === 'completed' ? 'Fully Paid' : order.order_status}
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -174,7 +170,7 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                         <button 
                           onClick={() => handleAction('confirmed')} 
                           disabled={isSubmitting} 
-                          className="px-6 py-3 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                          className="px-6 py-3 font-black text-[10px] uppercase tracking-widest text-white rounded-xl transition-all cursor-pointer bg-(--clr-primary) hover:bg-(--clr-primary)/95 active:scale-95"
                         >
                           Confirm & Pack
                         </button>
@@ -185,8 +181,8 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                       <SubscriptionGate>
                         <button 
                           onClick={() => handleAction('completed')} 
-                          disabled={isSubmitting} 
-                          className="px-6 py-3 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                          disabled={isSubmitting}
+                          className="px-6 py-3 font-black text-[10px] uppercase tracking-widest text-white rounded-xl transition-all cursor-pointer bg-(--clr-primary) hover:bg-(--clr-primary)/95 active:scale-95"
                         >
                           Mark as Paid & Done
                         </button>
@@ -196,30 +192,51 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                 )}
               </div>
 
-              {/* Reject/Cancel Button */}
+              {/* Reject/Cancel */}
               {!isLocked && (
                 <button 
                   onClick={handleRejectClick}
                   disabled={isSubmitting}
-                  className="w-full py-4 mt-2 text-[10px] font-black text-red-500 uppercase tracking-widest border-2 border-red-50 rounded-xl hover:bg-red-50 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full py-4 mt-2 text-[10px] font-black text-red-500 uppercase tracking-widest border-2 border-red-50 rounded-xl hover:bg-red-50 active:scale-95 transition-all cursor-pointer"
                 >
-                  {actionName} Order
+                  {isOverdue ? 'Reject Overdue Order' : `${actionName} Order`}
                 </button>
               )}
 
-              {/* Show cancellation reason if applicable */}
+              {/* Cancellation Reason Footer */}
               {isLocked && order.cancellation_reason && (
-                <div className="p-4 mt-2 bg-red-50 border border-red-100 rounded-xl flex gap-3 items-start">
+                <div className="flex items-start gap-3 p-4 mt-2 border border-red-100 bg-red-50 rounded-xl">
                   <HiInformationCircle className="text-red-500 mt-0.5 shrink-0" size={16} />
                   <div>
                     <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">
                       {order.order_status === 'rejected' ? 'Rejection' : 'Cancellation'} Reason
                     </p>
-                    <p className="text-xs font-bold text-red-800 mt-1">{order.cancellation_reason}</p>
+                    <p className="mt-1 text-xs font-bold text-red-800">{order.cancellation_reason}</p>
                   </div>
                 </div>
               )}
 
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <p className="text-[10px] font-bold text-gray-700 uppercase italic">
+                      Last Updated: {order?.updated_at 
+                      ? new Date(order.updated_at).toLocaleString('en-US', { 
+                          month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                        }) 
+                      : '---'}
+                    </p>
+                    
+                    <span className="text-gray-300">|</span>
+                    
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[10px] font-black uppercase ${!order?.updated_by_name ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
+                        Updated By: {order?.updated_by_name || 'No record yet'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

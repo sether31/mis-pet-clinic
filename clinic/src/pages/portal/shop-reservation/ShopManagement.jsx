@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 // hooks
 import { useUI } from '../../../hooks/useUI';
 // utils
@@ -17,6 +17,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ShopManagement() {
   const { branchId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { showLoader, hideLoader } = useUI();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +26,21 @@ export default function ShopManagement() {
   
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    const orderIdToView = searchParams.get('view');
+    
+    // If we have an ID in the URL and our reservations list is loaded
+    if (orderIdToView && reservations.length > 0) {
+      const order = reservations.find(r => r.order_id.toString() === orderIdToView);
+      if (order) {
+        setSelectedOrder(order);
+        setIsModalOpen(true);
+        // clear
+        setSearchParams({}, { replace: true }); 
+      }
+    }
+  }, [searchParams, reservations]);
 
   const fetchReservations = useCallback(async () => {
     if (!branchId) return;
@@ -76,7 +92,14 @@ export default function ShopManagement() {
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
       
-      <section className="flex-1 w-full px-6 my-6 container-xl">       
+      <section className="flex-1 w-full px-6 my-6 container-xl">      
+        <div className="flex flex-col justify-between mb-6 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Product Reservations</h1>
+            <p className="text-gray-500">Manage incoming orders, track status, and process customer pickups.</p>
+          </div>
+        </div>
+
         {isLoading ? (
           <LoaderV2 />
         ) : (

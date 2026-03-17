@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 // utils
 import { authFetch } from '../../../../utils/authFetch';
 // components
@@ -17,11 +17,35 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function AdminView({ appointments, loading, onSelect, user, onRefresh, branchId }) {
   const { branchData } = useOutletContext();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTask, setActiveTask] = useState(null);
   const [staffList, setStaffList] = useState([]);
   const [selectedStaffId, setSelectedStaffId] = useState('all');
   const branchSchedules = branchData?.schedules || [];
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // trigger modal
+  useEffect(() => {
+    const viewId = searchParams.get('view');
+
+    if (viewId && appointments.length > 0) {
+      const target = appointments.find(a => 
+        String(a.appointment_id) === String(viewId) || String(a.id) === String(viewId)
+      );
+
+      if (target) {
+        if (target.status === 'pending') {
+          // open the Pending Modal
+          onSelect(target); 
+        } else {
+          // open the Payment Modal
+          setActiveTask(target); 
+        }
+        
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, appointments, onSelect, setSearchParams]);
 
   useEffect(() => {
     const fetchStaff = async () => {
@@ -33,7 +57,9 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
             const isActive = Number(staff.status) === 1;
             const hasPermission = Array.isArray(staff.permissions) && 
                                   staff.permissions.includes('appointment_management');
-            return isActive && hasPermission;
+            const isAssignableRole = ['veterinarian', 'groomer', 'branch_admin'].includes(staff.role_name);
+
+            return isActive && hasPermission && isAssignableRole;
           });
           setStaffList(activePractitioners);
         }

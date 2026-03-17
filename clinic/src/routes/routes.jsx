@@ -21,7 +21,7 @@ import SelectPlans from "../pages/clinic-admin/SelectPlans";
 import PaymentSuccess from "../pages/clinic-admin/payments/PaymentSuccess";
 import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
   // portal
-import { DashboardSwitch } from "../pages/portal/dashboard/DashboardSwitch";
+import DashboardController from "../pages/portal/dashboard/DashboardController";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
 import StaffManagement from "../pages/portal/staff-management/StaffManagement";
 import AppointmentManagement from "../pages/portal/appointment-management/AppointmentManagement";
@@ -36,6 +36,7 @@ import TransactionManagement from "../pages/portal/transaction-management/Transa
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import Settings from "../pages/navigation/settings/Settings";
 import ShopManagement from "../pages/portal/shop-reservation/ShopManagement";
+import Notifications from "../pages/navigation/notifications/Notifications";
 
 
 export const routes = createBrowserRouter([
@@ -57,8 +58,7 @@ export const routes = createBrowserRouter([
       { path: "register", element: <Register /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "pending-user", element: <PendingUser /> },
-      { path: "payment-success", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentSuccess /></ProtectedRoute> },
-      { path: "payment-failed", element: <ProtectedRoute allowedRoles={['clinic_admin']}><PaymentFailed /></ProtectedRoute> },
+      { path: "payment-success", element: <ProtectedRoute allowedRoles={['clinic_admin', 'branch_admin']}><PaymentSuccess /></ProtectedRoute> },
 
       // clinic
       {
@@ -95,7 +95,7 @@ export const routes = createBrowserRouter([
                 ),
                 children: [
                   { index: true, element: <Navigate to="dashboard" replace /> },
-                  { path: "dashboard", element: <DashboardSwitch /> },
+                  { path: "dashboard", element: <DashboardController /> },
                   { 
                     path: "appointment-management", 
                     element: (
@@ -135,7 +135,6 @@ export const routes = createBrowserRouter([
                     path: "transaction-management", 
                     element: (
                     <ProtectedRoute 
-                      allowedRoles={['clinic_admin', 'branch_admin']}
                       requiredPermission="transaction_management"
                     >
                       <TransactionManagement />
@@ -146,7 +145,6 @@ export const routes = createBrowserRouter([
                     path: "inventory-management", 
                     element: (
                     <ProtectedRoute 
-                      allowedRoles={['clinic_admin', 'branch_admin']}
                       requiredPermission="inventory_management"
                     >
                       <InventoryManagement />
@@ -179,6 +177,10 @@ export const routes = createBrowserRouter([
                       { path: "schedule", element: <BranchScheduleSettings /> },
                       { path: "subscription", element: <BranchSubscriptionSettings /> },
                     ]
+                  },
+                  { 
+                    path: "notifications", 
+                    element: <Notifications />
                   },
                   { 
                     path: "settings", 

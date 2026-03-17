@@ -39,13 +39,23 @@ export default function CreateAppointmentModalStaff({ branchId, staffUser, onClo
     return date.toTimeString().slice(0, 5);
   };
 
+  // Helper to safely parse roles array from DB
+  const parseRoles = (rolesData) => {
+    if (!rolesData) return [];
+    if (Array.isArray(rolesData)) return rolesData;
+    if (typeof rolesData === 'string') {
+      try { return JSON.parse(rolesData); } 
+      catch { return [rolesData]; } 
+    }
+    return [];
+  };
+
   // border
   const getBorderClass = (field, hasError) => {
     if (hasError) return 'border-red-500';
     if (formData[field]) return 'border-green-500';
     return 'border-gray-200 bg-gray-50';
   };
-
 
   // get staff data
   useEffect(() => {
@@ -71,11 +81,17 @@ export default function CreateAppointmentModalStaff({ branchId, staffUser, onClo
       const res = await authFetch(`${API_URL}/api/clinic/general/services/get-branch-services.php?branch_id=${branchId}`);
       if (res.success) {
         const myRole = String(staffUser?.role_name || staffUser?.role || "").toLowerCase().trim();
+        
         const filtered = res.data.filter(s => {
           const isActive = Number(s.status) === 1;
-          const serviceRole = String(s.assigned_role || "").toLowerCase().trim();
-          return isActive && (serviceRole === "" || serviceRole === "null" || serviceRole === myRole);
+          
+          // Use parseRoles to get an array, then check if myRole is in that array
+          const roles = parseRoles(s.assigned_roles || s.assigned_role).map(r => r.toLowerCase().trim());
+          
+          // Allow if the service is active AND (it has no specific roles OR my role is included)
+          return isActive && (roles.length === 0 || roles.includes("null") || roles.includes(myRole));
         });
+        
         setServices(filtered);
       }
     };
@@ -185,7 +201,7 @@ export default function CreateAppointmentModalStaff({ branchId, staffUser, onClo
           <div>
             <h2 className="text-xl font-black tracking-tight text-gray-800 uppercase">Create Appointment</h2>
             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
-              Assigning to: {staffUser?.fname} {staffUser?.lname} ({staffUser?.role})
+              Create your appointment
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 transition-all cursor-pointer hover:text-red-500">

@@ -47,12 +47,12 @@ export default function ServiceManagement() {
 
     // alert
     const result = await Swal.fire({
-      title: isArchiving ? 'Archive Product?' : 'Restore Product?',
-      text: `Are you sure you want to ${isArchiving ? 'archive' : 'restore'} "${service.custom_name}?"`,
+      title: isArchiving ? 'Archive Service?' : 'Activate Service?',
+      text: `Are you sure you want to ${isArchiving ? 'archive' : 'activate'} "${service.custom_name}?"`,
       icon: isArchiving ? 'warning' : 'info',
       buttonsStyling: false,
       showCancelButton: true,
-      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Restore',
+      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Activate',
       cancelButtonText: 'Cancel',
       reverseButtons: true,
       customClass: {

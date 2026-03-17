@@ -29,9 +29,13 @@ try {
       i.min_stock_level,
       i.supplier_name,
       i.supplier_contact,
-      i.is_active
+      i.is_active,
+      i.updated_at,
+      i.last_updated_by,
+      CONCAT(u.first_name, ' ', u.last_name) as updated_by_staff_name
     FROM products_tb p
     INNER JOIN inventory_tb i ON p.product_id = i.product_id
+    LEFT JOIN user_tb u ON i.last_updated_by = u.user_id
     WHERE i.branch_id = :branch_id
     ORDER BY i.expiry_date ASC, p.name ASC"
   );
@@ -66,14 +70,12 @@ try {
 
       if($expiry < $today) {
         $cardData['expired_items']++;
-        // mark as expired 
         $isExpired = true; 
       } elseif($isActive && $expiry <= $thirtyDaysFromNow) { 
         $cardData['expiring_soon']++; 
       }
     }
 
-    // only count active and stocks if they are not archived or expired 
     if($isActive) {
       $cardData['active_products']++; 
       if(!$isExpired) {

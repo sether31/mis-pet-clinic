@@ -17,6 +17,7 @@ const links = [
   { label: 'Service Management', path: '/service-management' },
   { label: 'Branch Settings', path: '/branch-settings' },
   // other links
+  { label: 'Notifications', path: '/notifications'},
   { label: 'Settings', path: '/settings'},
 ];
 
@@ -37,6 +38,7 @@ export default function Header() {
   const role = `${user?.role?.replace(/_/g, ' ') || 'User'} portal`;
 
   const isSettingsActive = location.pathname.includes('/settings');
+  const isNotificationsActive = location.pathname.includes('/notifications');
 
   return (
     <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-gray-100 border-b">
@@ -54,9 +56,14 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button className="p-2 transition-all rounded-lg hover:bg-black hover:text-white">
+          <Link 
+            to={`/clinic/${branchId}/portal/notifications`}
+            className={`p-2 transition-all rounded-lg hover:bg-black hover:text-white ${
+              isNotificationsActive ? 'bg-black text-white' : 'text-gray-800'
+            }`}
+          >
             <MdOutlineNotifications size={22} />
-          </button>
+          </Link>
           <Link 
             to={`/clinic/${branchId}/portal/settings`}
             className={`p-2 transition-all rounded-lg hover:bg-black hover:text-white ${

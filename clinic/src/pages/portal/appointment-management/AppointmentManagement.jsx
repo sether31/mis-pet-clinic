@@ -52,7 +52,7 @@ export default function AppointmentManagement() {
   
 
   // check if admin
-  const isAdmin = user?.role === 'branch_admin' || user?.role === 'clinic_admin';
+  const isEagleEyeRole = ['branch_admin', 'clinic_admin', 'staff'].includes(user?.role);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -61,7 +61,7 @@ export default function AppointmentManagement() {
       <section className="w-full px-6 my-6 container-xl">
         {isLoading && appointments.length === 0 ? (
           <LoaderV2 />
-        ) : isAdmin ? (
+        ) : isEagleEyeRole ? (
           <AdminView 
             appointments={appointments} 
             loading={isLoading}

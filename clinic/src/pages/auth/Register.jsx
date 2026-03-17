@@ -27,6 +27,7 @@ const initialFormState = {
   province: '',
   zipCode: '',
   est: '',
+  contactNumber: '',
   clinicDescription: '',
   website: '',
   facebook: '',
@@ -72,10 +73,11 @@ export default function Register() {
   const inputLabels = {
     clinicName: "Clinic Name",
     completeAddress: "Complete Address",
-    municipality: "City/Municipality",
+    municipality: "Municipality",
     province: "Province",
     zipCode: "Zip Code",
     est: "Year Established",
+    contactNumber: "Clinic Contact Number",
     clinicDescription: "Clinic Description",
     website: "Website",
     facebook: "Facebook",
@@ -196,6 +198,7 @@ export default function Register() {
       "province",
       "zipCode",
       "est",
+      "contactNumber",
       "clinicDescription",
       "email",
       "firstName",
@@ -204,7 +207,6 @@ export default function Register() {
       "confirmPassword",
       "tinNumber",
       "businessPermitNumber",
-      "vetLicenseNumber",
       "agreeTerms"
     ];
 
@@ -220,7 +222,7 @@ export default function Register() {
     }
   
     // check image
-    ["tinNumberPic", "businessPermitPic", "vetLicensePic"].forEach(field => {
+    ["tinNumberPic", "businessPermitPic"].forEach(field => {
       if(!form[field]) {
         newErrors[field] = `${inputLabels[field]} is required.`;
       }
@@ -397,7 +399,7 @@ export default function Register() {
 
                 <Input
                   value={form.municipality}
-                  label="City/Municipality"
+                  label="Municipality"
                   labelStyle="mb-1 ml-1"
                   id="municipality"
                   name="municipality"
@@ -443,7 +445,6 @@ export default function Register() {
                   onChange={handleChange}
                   error={errors.est}
                 />
-
                 <div className='mb-4'>
                   <label htmlFor='clinicDescription' className='ml-1 text-sm font-medium text-gray-700'>
                     Clinic Description {' '}
@@ -453,7 +454,7 @@ export default function Register() {
                     value={form.clinicDescription} 
                     id="clinicDescription"
                     name="clinicDescription"
-                    className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[115px] mt-2 
+                    className={`border border-gray-300 outline-none rounded-lg p-2 w-full min-h-[220px] mt-2 
                       ${errors.clinicDescription === "valid" ? "border-green-500" : "border-gray-300"}
                       ${errors.clinicDescription === "Clinic Description is required." ? "border-red-500" : "border-gray-300 focus-within:border-(--clr-black)"}
                     `}
@@ -468,7 +469,19 @@ export default function Register() {
                   )}
                 </div>
 
-                <div>
+                <div className='grid gap-1'>
+                  <Input
+                    value={form.contactNumber}
+                    label="Clinic Contact Number"
+                    labelStyle="mb-2 ml-1"
+                    id="contactNumber"
+                    name="contactNumber"
+                    isImportant={true}
+                    placeholder="09123456789 or (02) 8123-4567"
+                    onChange={handleChange}
+                    error={errors.contactNumber}
+                  />
+
                   <Input
                     value={form.website}
                     label="Website"
@@ -620,7 +633,7 @@ export default function Register() {
                 </div>
 
                 {/* vet license */}
-                <div className="flex flex-col">
+                {/* <div className="flex flex-col">
                   <InputImage
                     className="mt-4"
                     label="Veterinarian License Picture"
@@ -640,7 +653,7 @@ export default function Register() {
                     onChange={handleChange}
                     error={errors.vetLicenseNumber}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
               

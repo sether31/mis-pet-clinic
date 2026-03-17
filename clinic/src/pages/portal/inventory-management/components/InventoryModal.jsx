@@ -23,7 +23,7 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     category: initialData?.category || 'Medication',
     prod_pic: null,
     inventory_id: initialData?.inventory_id || null,
-    stock_level: initialData?.stock_level || '',
+    stock_adjustment: '', 
     unit_cost: initialData?.unit_cost || '', 
     expiry_date: initialData?.expiry_date ? initialData.expiry_date.split(' ')[0] : '',
     min_stock_level: initialData?.min_stock_level || '',
@@ -32,6 +32,14 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
   });
 
   const categories = ["Medication", "Supplies", "Pet Food", "Accessories", "Hygiene"];
+
+  // 👇 FORMAT THE DATE FOR THE FOOTER 👇
+  const formattedDateUpdate = initialData?.updated_at 
+    ? new Date(initialData.updated_at).toLocaleString('en-US', { 
+        dateStyle: 'medium', 
+        timeStyle: 'short' 
+      }) 
+    : "--:--";
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target || { 
@@ -44,13 +52,12 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     if(type !== "file") {
       const stringVal = String(updatedValue).trim();
       
-      if(!stringVal) {
+      if(!stringVal && name !== 'stock_adjustment') {
         const labels = {
           name: "Product name",
           description: "Description",
           price: "Price",
           unit_cost: "Unit cost",
-          stock_level: "Stock quantity",
           min_stock_level: "Restock level",
           expiry_date: "Expiry date",
           supplier_name: "Supplier name",
@@ -59,6 +66,17 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
         setErrors(prev => ({ ...prev, [name]: `${labels[name] || name} is required.` }));
       } else if ((name === 'price' || name === 'unit_cost') && Number(updatedValue) <= 0) {
         setErrors(prev => ({ ...prev, [name]: "Must be greater than 0." }));
+      } else if (name === 'stock_adjustment' && updatedValue !== '') {
+        const adjustment = Number(updatedValue);
+        const currentStock = Number(initialData?.stock_level || 0);
+        
+        if (!form.product_id && adjustment < 0) {
+          setErrors(prev => ({ ...prev, [name]: "Initial stock cannot be negative." }));
+        } else if (form.product_id && (currentStock + adjustment < 0)) {
+          setErrors(prev => ({ ...prev, [name]: "Stock cannot drop below 0." }));
+        } else {
+          setErrors(prev => ({ ...prev, [name]: "valid" }));
+        }
       } else {
         setErrors(prev => ({ ...prev, [name]: "valid" }));
       }
@@ -73,7 +91,6 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     if (!form.description.trim()) newErrors.description = "Description is required.";
     if (!form.price || form.price <= 0) newErrors.price = "Valid price is required.";
     if (!form.unit_cost || form.unit_cost <= 0) newErrors.unit_cost = "Unit cost is required.";
-    if (form.stock_level === '' || form.stock_level < 0) newErrors.stock_level = "Stock quantity is required.";
     if (form.min_stock_level === '' || form.min_stock_level < 0) newErrors.min_stock_level = "Restock level is required.";
     if (!form.expiry_date) newErrors.expiry_date = "Expiry date is required.";
     if (!form.supplier_name.trim()) newErrors.supplier_name = "Supplier name is required.";
@@ -81,6 +98,16 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     
     if(!form.product_id && !form.prod_pic) {
       newErrors.prod_pic = "Product image is required.";
+    }
+
+    const adjustment = Number(form.stock_adjustment || 0);
+    const currentStock = Number(initialData?.stock_level || 0);
+
+    if(!form.product_id && (form.stock_adjustment === '' || adjustment < 0)) {
+        newErrors.stock_adjustment = "Initial stock is required and cannot be negative.";
+    }
+    if(form.product_id && (currentStock + adjustment < 0)) {
+        newErrors.stock_adjustment = "Final stock cannot drop below 0.";
     }
     
     return newErrors;
@@ -97,14 +124,21 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
 
     setIsSubmitting(true);
     const fd = new FormData();
+    
+    const currentStock = Number(initialData?.stock_level || 0);
+    const adjustment = Number(form.stock_adjustment || 0);
+    const finalStockLevel = form.product_id ? (currentStock + adjustment) : adjustment;
+
     Object.keys(form).forEach(key => {
       if(key === 'prod_pic') { 
         if (form[key]) fd.append(key, form[key]); 
       } 
-      else if(form[key] !== null) { 
+      else if(key !== 'stock_adjustment' && form[key] !== null) { 
         fd.append(key, form[key]); 
       }
     });
+    
+    fd.append('stock_level', finalStockLevel);
     fd.append('branch_id', branchId);
 
     try {
@@ -188,22 +222,29 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
               error={errors.unit_cost} placeholder="0.00" 
             />
             <Input 
-              type="number" value={form.stock_level} label="Stock Quantity" 
-              name="stock_level" isImportant onChange={handleChange} 
-              error={errors.stock_level} placeholder="Enter quantity..." 
+              type="number" value={form.min_stock_level} label="Restock Level Alert" 
+              name="min_stock_level" isImportant onChange={handleChange} 
+              error={errors.min_stock_level} placeholder="Enter min stock..." 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* SPLIT INVENTORY UI */}
+          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl">
             <Input 
-              type="number" value={form.min_stock_level} label="Restock Level" 
-              name="min_stock_level" isImportant onChange={handleChange} 
-              error={errors.min_stock_level} placeholder="Enter stock..." 
+              type="number" 
+              value={initialData?.stock_level || 0} 
+              label="Current Stock" 
+              disabled={true} 
             />
-             <Input 
-              type="date" value={form.expiry_date} label="Expiry Date" 
-              name="expiry_date" isImportant onChange={handleChange} 
-              error={errors.expiry_date} 
+            <Input 
+              type="number" 
+              value={form.stock_adjustment} 
+              label={form.product_id ? "Adjust Stock (+ / -)" : "Initial Stock Amount"} 
+              name="stock_adjustment" 
+              isImportant={!form.product_id} 
+              onChange={handleChange} 
+              error={errors.stock_adjustment} 
+              placeholder={form.product_id ? "e.g. 20 or -5" : "Enter amount..."} 
             />
           </div>
 
@@ -217,6 +258,14 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
               value={form.supplier_contact} label="Supplier Contact #" 
               name="supplier_contact" isImportant onChange={handleChange} 
               error={errors.supplier_contact} placeholder="0912 345 6789" 
+            />
+          </div>
+          
+          <div className="grid grid-cols-1">
+             <Input 
+              type="date" value={form.expiry_date} label="Expiry Date" 
+              name="expiry_date" isImportant onChange={handleChange} 
+              error={errors.expiry_date} 
             />
           </div>
 
@@ -241,6 +290,25 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
           >
             <HiSave size={18}/> {isSubmitting ? "Saving..." : "Save Product & Stock"}
           </button>
+
+          {/* AUDIT */}
+          {initialData?.product_id && (
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-3">
+                  <p className="text-[10px] font-bold text-gray-700 uppercase italic">
+                    Last Updated: {initialData.updated_at ? formattedDateUpdate : '---'}
+                  </p>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-1">
+                    <span className={`text-[10px] font-black uppercase ${!initialData.last_updated_by ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
+                      Updated By: {initialData.updated_by_staff_name || initialData.last_updated_by || 'No record yet'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>

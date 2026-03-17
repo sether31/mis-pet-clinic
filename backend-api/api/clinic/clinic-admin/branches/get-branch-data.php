@@ -17,9 +17,9 @@ try {
   $stmt = $pdo->prepare(
     "SELECT 
       b.name, b.address, b.municipality, b.province, b.zip_code, 
-      b.est, b.description, b.website, b.facebook, 
+      b.est, b.contact_number, b.description, b.website, b.facebook, 
       b.tin_id_picture, b.business_permit_picture, b.vet_license_picture,
-      b.tin_id_number, b.business_permit_number, b.vet_license_number, 
+      b.tin_id_number, b.business_permit_number, 
       b.status, b.is_maintenance, b.feedback
     FROM clinic_branches_tb b
     INNER JOIN clinics_tb c ON b.clinic_id = c.clinic_id
