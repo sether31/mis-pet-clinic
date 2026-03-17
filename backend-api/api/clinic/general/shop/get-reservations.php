@@ -52,7 +52,7 @@ try {
       o.updated_at,
       CONCAT(u_updater.first_name, ' ', u_updater.last_name) AS updated_by_name
     FROM order_tb o
-    JOIN user_tb u ON o.user_id = u.user_id  
+    LEFT JOIN user_tb u ON o.user_id = u.user_id  -- 🔥 CHANGED TO LEFT JOIN
     LEFT JOIN order_items_tb oi ON o.order_id = oi.order_id 
     LEFT JOIN products_tb p ON oi.product_id = p.product_id 
     LEFT JOIN appointments_tb a ON o.order_id = a.order_id 
@@ -94,7 +94,13 @@ try {
   ];
 
   $formattedOrders = array_map(function($order) use (&$cardData) {
-    $order['owner_name'] = trim(($order['first_name'] ?? '') . ' ' . ($order['last_name'] ?? 'Unknown User'));
+    // 🔥 Handle Anonymous Guest Name
+    if (empty($order['first_name']) && empty($order['last_name'])) {
+        $order['owner_name'] = null; 
+    } else {
+        $order['owner_name'] = trim(($order['first_name'] ?? '') . ' ' . ($order['last_name'] ?? ''));
+    }
+
     $order['product_name'] = $order['product_name'] ?? 'Multiple / Custom Items';
     $order['quantity'] = $order['quantity'] ?? 1;
     $order['unit_price'] = $order['unit_price'] ?? 0;
