@@ -8,10 +8,12 @@ import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
 import LoaderV2 from '../../../components/LoaderV2';
+import CreateReservationModal from './components/CreateReservationModal';
 // sub components
 import ShopTable from './components/ShopTable';
 import ShopModal from './components/ShopModal';
 import ShopCard from './components/ShopCard';
+import { HiPlus } from 'react-icons/hi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -26,6 +28,7 @@ export default function ShopManagement() {
   
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
 
   useEffect(() => {
     const orderIdToView = searchParams.get('view');
@@ -95,9 +98,16 @@ export default function ShopManagement() {
       <section className="flex-1 w-full px-6 my-6 container-xl">      
         <div className="flex flex-col justify-between mb-6 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Product Reservations</h1>
-            <p className="text-gray-500">Manage incoming orders, track status, and process customer pickups.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Shop Management</h1>
+            <p className="text-gray-500">Process reservations or handle walk-in sales.</p>
           </div>
+          
+          <button 
+            onClick={() => setIsReservationModalOpen(true)}
+            className="bg-(--clr-primary) text-white justify-center px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+          >
+            <HiPlus size={18}/> Direct Sale
+          </button>
         </div>
 
         {isLoading ? (
@@ -127,6 +137,14 @@ export default function ShopManagement() {
           onUpdate={handleUpdateStatus} 
         />
       )}
+
+      {isReservationModalOpen && (
+          <CreateReservationModal 
+            branchId={branchId} 
+            onClose={() => setIsReservationModalOpen(false)} 
+            onRefresh={fetchReservations} 
+          />
+        )}
     </div>
   );
 }

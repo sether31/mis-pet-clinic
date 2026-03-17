@@ -12,12 +12,17 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function ShopModal({ order, onClose, onUpdate }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 👇 Fixed Overdue Logic: Safely handle Guest Sales which have NO pickup_date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const pickupDate = new Date(order.pickup_date);
-  pickupDate.setHours(0, 0, 0, 0);
+  
+  let isOverdue = false;
+  if (order.pickup_date) {
+    const pickupDate = new Date(order.pickup_date);
+    pickupDate.setHours(0, 0, 0, 0);
+    isOverdue = pickupDate < today;
+  }
 
-  const isOverdue = pickupDate < today;
   const isLocked = ['completed', 'cancelled', 'rejected'].includes(order.order_status);
 
   // Dynamic naming based on current status
@@ -103,19 +108,30 @@ export default function ShopModal({ order, onClose, onUpdate }) {
               <div className="w-12 h-12 overflow-hidden bg-white border-2 border-white rounded-full shrink-0">
                 <img 
                   src={order.profile_picture ? `${API_URL}/${order.profile_picture}` : noImage} 
-                  alt={order.owner_name}
+                  alt={order.owner_name || "Guest"}
                   className="object-cover w-full h-full"
                 />
               </div>
               <div>
                 <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest">Customer Name</p>
-                <p className="text-base font-black text-(--text-primary) uppercase mb-1">{order.owner_name}</p>
+                {/* 👇 Added Guest Walk-in styling fallback */}
+                <p className={`text-base font-black uppercase mb-1 ${order.owner_name ? 'text-(--text-primary)' : 'text-gray-500 italic'}`}>
+                  {order.owner_name || "Guest Walk-in"}
+                </p>
+                
+                {/* 👇 Handle missing dates for direct sales */}
                 <p className="text-[10px] font-bold uppercase mt-1">
-                  Pickup Date: 
-                  <span className={`${isOverdue ? 'text-red-500' : 'text-blue-500'} ml-1 font-black`}>
-                    {new Date(order.pickup_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                    {isOverdue && " (OVERDUE)"}
-                  </span>
+                  {order.pickup_date ? (
+                    <>
+                      Pickup Date: 
+                      <span className={`${isOverdue ? 'text-red-500' : 'text-blue-500'} ml-1 font-black`}>
+                        {new Date(order.pickup_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                        {isOverdue && " (OVERDUE)"}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-blue-500 font-black">Direct Cash Sale (Walk-in)</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -123,7 +139,9 @@ export default function ShopModal({ order, onClose, onUpdate }) {
 
           {/* Reserved Items Section */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Reserved Items</h4>        
+            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+              {order.pickup_date ? "Reserved Items" : "Purchased Items"}
+            </h4>        
             <div className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl">
               <div className="flex items-center flex-1 gap-4">
                 <div className="w-12 h-12 overflow-hidden bg-gray-100 border border-gray-200 shrink-0 rounded-xl">

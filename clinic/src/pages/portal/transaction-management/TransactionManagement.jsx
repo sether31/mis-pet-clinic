@@ -7,7 +7,7 @@ import { useUser } from '../../../hooks/useUser';
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
-import LoaderV2 from '../../../components/LoaderV2'; // 💥 Imported LoaderV2
+import LoaderV2 from '../../../components/LoaderV2'; 
 // view
 import ClinicAdminView from './views/ClinicAdminView';
 import StaffView from './views/StaffView';
