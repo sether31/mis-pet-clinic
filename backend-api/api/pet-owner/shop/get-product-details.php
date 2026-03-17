@@ -1,8 +1,9 @@
 <?php
+ob_clean();
 require_once __DIR__ . '/../../../middleware/auth-middleware.php'; 
 require_once __DIR__ . '/../../../config/Database.php';
 
-validate_auth(['pet_owner']); 
+$decoded = validate_auth(['pet_owner']); 
 
 if (!isset($_GET['product_id']) || empty($_GET['product_id']) || !isset($_GET['branch_id']) || empty($_GET['branch_id'])) {
   http_response_code(400);
@@ -75,27 +76,40 @@ try {
     throw new Exception("Product not found.");
   }
 
-  // grabs ONLY the stock level and price of the batch expiring first!
+  // We grab the BEST available inventory. If none are active/sellable, we still grab the latest one for the price!
   $stmtInv = $pdo->prepare(
-    "SELECT stock_level, price 
+    "SELECT stock_level, price, expiry_date, is_active 
     FROM inventory_tb 
     WHERE product_id = :product_id 
       AND branch_id = :branch_id 
-      AND stock_level > 0 
-      AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
     ORDER BY 
+      is_active DESC, -- Active first
+      CASE WHEN stock_level > 0 THEN 0 ELSE 1 END ASC, -- In stock first
+      CASE WHEN expiry_date >= CURDATE() OR expiry_date IS NULL THEN 0 ELSE 1 END ASC, -- Not expired first
       CASE WHEN expiry_date IS NULL THEN 1 ELSE 0 END, 
       expiry_date ASC,                                
-      inventory_id ASC                                
+      inventory_id DESC                
     LIMIT 1"
   );
   $stmtInv->execute([':product_id' => $product_id, ':branch_id' => $branch_id]);
   $inventory = $stmtInv->fetch();
 
-  // If we found a valid batch, use its exact stock and price. Otherwise, set to 0.
+  // Evaluate what we found
   if ($inventory) {
-    $product['total_stock'] = (int)$inventory['stock_level'];
     $product['price'] = number_format((float)$inventory['price'], 2, '.', '');
+    
+    // Check if it's actually sellable (Not expired, Not archived)
+    $today = date('Y-m-d');
+    $is_expired = ($inventory['expiry_date'] !== null && $inventory['expiry_date'] < $today);
+    $is_archived = ($inventory['is_active'] == 0);
+
+    // If it's expired or archived, FORCE the stock to 0 so they can't buy it, but they still see the price/page
+    if ($is_expired || $is_archived) {
+      $product['total_stock'] = 0; 
+    } else {
+      $product['total_stock'] = (int)$inventory['stock_level'];
+    }
+
   } else {
     $product['total_stock'] = 0;
     $product['price'] = "0.00";
