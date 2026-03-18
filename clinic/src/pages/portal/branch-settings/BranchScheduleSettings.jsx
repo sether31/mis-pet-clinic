@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext, useParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../../hooks/useUI';
@@ -19,6 +19,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ScheduleSettings() {
   const { branchId } = useParams();
+  const navigate = useNavigate();
   const { branchData, fetchBranchData } = useOutletContext() || {};
   const { showLoader, hideLoader, loading } = useUI();
   const [schedule, setSchedule] = useState([]);
@@ -70,10 +71,20 @@ export default function ScheduleSettings() {
       if(res.success) {
         if(res.no_changes) {
           toast.info(res.message);
+        } else if (res.auto_maintenance) {
+          setIsMaintenance(true); 
+          
+          toast.warning(
+            "Schedule updated! Maintenance Mode enabled due to potential conflicts. Redirecting you to Staff Schedules to verify...", 
+            { autoClose: 10000 }
+          );
+
+          navigate(`/clinic/${branchId}/portal/staff-management?tab=schedule`); 
+
         } else {
           toast.success("Branch settings updated successfully!");
         }
-        fetchBranchData();
+        fetchBranchData(); 
       } else {
         toast.error("Something went wrong");
       }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 // hooks
@@ -21,11 +21,12 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function StaffManagement() {
   const { branchId } = useParams();
+  const [searchParams] = useSearchParams();
   const { showLoader, hideLoader } = useUI();
   
   const [isLoading, setIsLoading] = useState(true);
   
-  const [activeTab, setActiveTab] = useState('staffList'); 
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'staffList');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [staffData, setStaffData] = useState([]);
   const [branchSchedule, setBranchSchedule] = useState([]);

@@ -98,18 +98,15 @@ try {
 
 
     if($type === 'activation') {
-      // check if operating hours already exist to avoid duplicates
       $stmtCheckBOH = $pdo->prepare("SELECT COUNT(*) FROM branch_operating_hours_tb WHERE branch_id = ?");
       $stmtCheckBOH->execute([$realBranchId]);
       
       if($stmtCheckBOH->fetchColumn() == 0) {
-        // insert default closed status for the full week
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         
-        // We set start_time and end_time to NULL because they are closed by default
         $stmtInsertBOH = $pdo->prepare(
           "INSERT INTO branch_operating_hours_tb (branch_id, day_of_week, start_time, end_time, is_closed) 
-          VALUES (?, ?, NULL, NULL, 1)"
+          VALUES (?, ?, '06:00:00', '19:00:00', 0)"
         );
 
         foreach($days as $day) {
