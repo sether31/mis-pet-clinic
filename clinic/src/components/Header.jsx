@@ -1,10 +1,15 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 // hooks
-import { useUser } from '../hooks/useUser'
+import { useUser } from '../hooks/useUser';
+// utils 
+import { authFetch } from '../utils/authFetch'; 
 // icons
 import { MdOutlineNotifications } from "react-icons/md";
 import { LuSettings } from "react-icons/lu";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const links = [
   { label: 'Dashboard', path: '/dashboard' },
@@ -16,7 +21,6 @@ const links = [
   { label: 'Staff Management', path: '/staff-management' },
   { label: 'Service Management', path: '/service-management' },
   { label: 'Branch Settings', path: '/branch-settings' },
-  // other links
   { label: 'Notifications', path: '/notifications'},
   { label: 'Settings', path: '/settings'},
 ];
@@ -25,6 +29,37 @@ export default function Header() {
   const { branchId } = useParams();
   const location = useLocation();
   const { user } = useUser();
+  
+  // State for the notification count
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await authFetch(`${API_URL}/api/clinic/general/notifications/get-unread-count.php?branch_id=${branchId}`);
+        if (res?.success) {
+          setUnreadCount(res.count || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+
+    if (user?.user_id && branchId) {
+      fetchUnreadCount();
+    }
+
+    const handleLocalUpdate = (e) => {
+      setUnreadCount(e.detail); 
+    };
+
+    window.addEventListener('syncUnreadCount', handleLocalUpdate);
+    
+    return () => {
+      window.removeEventListener('syncUnreadCount', handleLocalUpdate);
+    };
+  }, [user?.user_id, branchId]);
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -58,11 +93,19 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <Link 
             to={`/clinic/${branchId}/portal/notifications`}
-            className={`p-2 transition-all rounded-lg hover:bg-black hover:text-white ${
+            className={`relative p-1 transition-all rounded-lg hover:bg-black hover:text-white ${
               isNotificationsActive ? 'bg-black text-white' : 'text-gray-800'
             }`}
           >
             <MdOutlineNotifications size={22} />
+            
+            {/* Notification Badge Logic */}
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-gray-100 transform translate-x-1/3 -translate-y-1/3">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+            
           </Link>
           <Link 
             to={`/clinic/${branchId}/portal/settings`}

@@ -65,23 +65,25 @@ export default function Notifications() {
     setSortConfig({ key, direction });
   };
 
-  // View Notification & Mark as Read
   const handleView = async (notif) => {
     setSelectedNotif(notif);
     setModalVisible(true);
 
-    if (!notif.isRead) {
+    if(!notif.isRead) {
+      // Calculate the new count locally
+      const newCount = Math.max(0, unreadCount - 1);
+      
+      // Update the page state
       setData(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount(newCount);
+
+      window.dispatchEvent(new CustomEvent('syncUnreadCount', { detail: newCount }));
 
       try {
-        const res = await authFetch(`${API_URL}/api/clinic/general/notifications/update-notification-status.php`, {
+        await authFetch(`${API_URL}/api/clinic/general/notifications/update-notification-status.php`, {
           method: 'POST',
           body: JSON.stringify({ notification_id: notif.id })
         });
-        if (!res.success) {
-            console.error("Backend failed to update status:", res.message);
-        }
       } catch (error) {
         console.error("Failed to mark as read", error);
       }
@@ -93,16 +95,14 @@ export default function Notifications() {
     setData(prev => prev.map(n => ({ ...n, isRead: true })));
     setUnreadCount(0);
 
+    window.dispatchEvent(new CustomEvent('syncUnreadCount', { detail: 0 }));
+
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/notifications/update-notification-status.php`, {
         method: 'POST',
         body: JSON.stringify({ notification_id: 'all' })
       });
-      if (res.success) {
-          toast.success("All notifications marked as read.");
-      } else {
-          toast.error("Failed to update status.");
-      }
+      if (res.success) toast.success("All notifications marked as read");
     } catch (error) {
       console.error("Failed to mark all as read", error);
     }
