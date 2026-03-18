@@ -44,6 +44,42 @@ export default function PetProfile() {
     }, [id])
   );
 
+  const pickImage = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1], 
+        quality: 0.5,
+      });
+
+      if (!result.canceled) {
+        setNewImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Toast.show({ type: 'error', text1: 'Could not open gallery' });
+    }
+  };
+
+  const onDateChange = (event, selectedDate) => {
+    // Android closes the picker automatically on selection, iOS doesn't
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (selectedDate) {
+      // Formats the date to YYYY-MM-DD for your PHP backend
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      setForm(prev => ({ ...prev, birthdate: formattedDate }));
+      
+      // Clear the error for this field if there was one
+      if (errors.birthdate) {
+        setErrors(prev => ({ ...prev, birthdate: null }));
+      }
+    }
+  };
+
   const fetchPetDetails = async () => {
     try {
       const data = await authFetch(`${API_URL}/api/pet-owner/pet/get-pet-details.php?id=${id}`);
