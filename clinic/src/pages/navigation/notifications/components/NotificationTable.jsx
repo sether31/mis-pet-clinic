@@ -31,11 +31,11 @@ export default function NotificationTable({
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600">
-              <th onClick={() => handleSort('title')} className="w-[55%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors">
-                <div className="flex items-center justify-between">Notification Details <SortIcon column="title" /></div>
+              <th className="w-[55%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors">
+                <div className="flex items-center justify-between">Notification Details</div>
               </th>
-              <th onClick={() => handleSort('type')} className="w-[20%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 text-center">
-                <div className="flex items-center justify-center gap-2">Category <SortIcon column="type" /></div>
+              <th className="w-[20%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 text-center">
+                <div className="flex items-center justify-center gap-2">Category</div>
               </th>
               <th onClick={() => handleSort('date')} className="w-[15%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 text-center">
                 <div className="flex items-center justify-center gap-2">Date & Time <SortIcon column="date" /></div>
