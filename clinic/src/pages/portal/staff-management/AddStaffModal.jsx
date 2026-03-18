@@ -49,7 +49,7 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     3: ["role_dashboard", "appointment_management", "shop_management", "staff_management", "transaction_management", "medical_record_management", "inventory_management", "service_management", "branch_settings"],
     
     // Veterinarian
-    4: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management", "inventory_management"], 
+    4: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management"], 
     
     // Groomer & Support
     5: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management"], 
@@ -371,13 +371,13 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
                     // allow everything to branch admin
                     if(roleId === 3) return true;
 
-                    // Hide admin perm to othher
+                    // Hide admin perm to other
                     if(strictlyAdminPermissions.includes(perm.id)) {
                       return false; 
                     }
 
-                    // Groomers shouldn't touch inventory or medical records
-                    if(roleId === 5 && ["inventory_management"].includes(perm.id)) {
+                    // Groomer and vet shouldn't touch inventory
+                    if((roleId === 4 || roleId === 5) && ["inventory_management"].includes(perm.id)) {
                       return false;
                     }
                     

@@ -64,8 +64,9 @@ export default function ClinicAdminDashboard() {
     }
   }, [user]);
 
-  // ADDED: Check if any branches are in maintenance mode
-  const maintenanceBranches = branchPerformance.filter(b => b.status === 'Maintenance');
+  const maintenanceBranches = branchPerformance.filter(
+    b => b.status === 'Maintenance' && b.sub_status == 'Active'
+  );
   const isMaintenance = maintenanceBranches.length > 0;
 
   const dashboardCards = [
