@@ -27,88 +27,81 @@ try {
   $todayEnd   = date('Y-m-d 23:59:59');
 
   // --- 2. SMART INVENTORY ALERT ENGINE (PINGS) ---
-  if (in_array('inventory_management', $permissions) || $user->role === 'branch_admin') {
+  if (in_array('inventory_management', $permissions) || $user->role === 'branch_admin' || $user->role === 'clinic_admin') {
       
-      $stmtInvScan = $pdo->prepare("
-          SELECT i.inventory_id, p.name, i.stock_level, i.min_stock_level, i.expiry_date
-          FROM inventory_tb i
-          JOIN products_tb p ON i.product_id = p.product_id
-          WHERE i.branch_id = ? AND i.is_active = 1
-            AND (
-                i.stock_level <= i.min_stock_level 
-                OR i.stock_level = 0 
-                OR (i.expiry_date IS NOT NULL AND i.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))
-            )
+    $stmtInvScan = $pdo->prepare("
+        SELECT i.inventory_id, p.name, i.stock_level, i.min_stock_level, i.expiry_date
+        FROM inventory_tb i
+        JOIN products_tb p ON i.product_id = p.product_id
+        WHERE i.branch_id = ? AND i.is_active = 1
+          AND (
+              i.stock_level <= i.min_stock_level 
+              OR i.stock_level = 0 
+              OR (i.expiry_date IS NOT NULL AND i.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))
+          )
+    ");
+    $stmtInvScan->execute([$branchId]);
+    $problemItems = $stmtInvScan->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!empty($problemItems)) {
+      // 👇 FIX 1: Make sure Clinic Admins and Vets get the alerts too!
+      $stmtRecipients = $pdo->prepare("
+        SELECT u.user_id 
+        FROM branch_staff_tb bs
+        JOIN user_tb u ON bs.user_id = u.user_id
+        JOIN roles_tb r ON u.role_id = r.role_id
+        WHERE bs.branch_id = ? AND bs.status = 1 
+          AND r.role_name IN ('branch_admin', 'veterinarian')
       ");
-      $stmtInvScan->execute([$branchId]);
-      $problemItems = $stmtInvScan->fetchAll(PDO::FETCH_ASSOC);
+      $stmtRecipients->execute([$branchId]);
+      $recipients = $stmtRecipients->fetchAll(PDO::FETCH_ASSOC);
 
-      if (!empty($problemItems)) {
-          $stmtRecipients = $pdo->prepare("
-              SELECT u.user_id 
-              FROM branch_staff_tb bs
-              JOIN user_tb u ON bs.user_id = u.user_id
-              JOIN roles_tb r ON u.role_id = r.role_id
-              WHERE bs.branch_id = ? AND bs.status = 1 
-                AND r.role_name IN ('branch_admin', 'staff')
-          ");
-          $stmtRecipients->execute([$branchId]);
-          $recipients = $stmtRecipients->fetchAll(PDO::FETCH_ASSOC);
+      // 👇 FIX 2: Prepare the redundancy check OUTSIDE the loops for massive performance gain
+      $stmtCheck = $pdo->prepare("
+        SELECT 1 FROM notification_tb 
+        WHERE user_id = ? AND title = ? AND created_at > NOW() - INTERVAL 1 DAY
+        LIMIT 1
+      ");
 
-          $today = new DateTime();
-          $today->setTime(0,0);
+      $today = new DateTime();
+      $today->setTime(0,0);
 
-          foreach ($problemItems as $item) {
-              $title = ""; $msg = "";
-              $formattedName = ucwords(strtolower($item['name']));
-              
-              // 👇 ONLY FOR INVENTORY: Format to "March 17, 2026" and strip time
-              $cleanExpiry = $item['expiry_date'] ? date('F j, Y', strtotime($item['expiry_date'])) : null;
-              
-              $today = new DateTime();
-              $today->setTime(0,0);
-              $expiryDate = $item['expiry_date'] ? new DateTime($item['expiry_date']) : null;
-              
-              $isExpired = $expiryDate && $expiryDate < $today;
-              $isExpiringSoon = $expiryDate && $expiryDate >= $today && $expiryDate <= (new DateTime())->modify('+30 days');
+      foreach ($problemItems as $item) {
+        $title = ""; $msg = "";
+        $formattedName = ucwords(strtolower($item['name']));
+        $cleanExpiry = $item['expiry_date'] ? date('F j, Y', strtotime($item['expiry_date'])) : null;
+        
+        $expiryDate = $item['expiry_date'] ? new DateTime($item['expiry_date']) : null;
+        $isExpired = $expiryDate && $expiryDate < $today;
+        $isExpiringSoon = $expiryDate && $expiryDate >= $today && $expiryDate <= (new DateTime())->modify('+30 days');
 
-              // 1. OUT OF STOCK
-              if ($item['stock_level'] == 0) {
-                  $title = "OUT OF STOCK: " . $formattedName;
-                  $msg = "{$formattedName} is out of stock. Please restock immediately.";
-              } 
-              // 2. EXPIRED
-              elseif ($isExpired) {
-                  $title = "EXPIRED: " . $formattedName;
-                  $msg = "{$formattedName} expired on {$cleanExpiry}. Remove from shelves immediately.";
-              } 
-              // 3. EXPIRING SOON
-              elseif ($isExpiringSoon) {
-                  $title = "EXPIRING SOON: " . $formattedName;
-                  $msg = "{$formattedName} will expire on {$cleanExpiry}. Plan to use or replace this stock.";
-              } 
-              // 4. LOW STOCK
-              else {
-                  $title = "Low Stock: " . $formattedName;
-                  $msg = "{$formattedName} is low ({$item['stock_level']} left). Restock level is {$item['min_stock_level']}.";
-              }
+        // Assign Titles and Messages
+        if ($item['stock_level'] == 0) {
+          $title = "OUT OF STOCK: " . $formattedName;
+          $msg = "{$formattedName} is out of stock. Please restock immediately.";
+        } elseif ($isExpired) {
+          $title = "EXPIRED: " . $formattedName;
+          $msg = "{$formattedName} expired on {$cleanExpiry}. Remove from shelves immediately.";
+        } elseif ($isExpiringSoon) {
+          $title = "EXPIRING SOON: " . $formattedName;
+          $msg = "{$formattedName} will expire on {$cleanExpiry}. Plan to use or replace this stock.";
+        } else {
+          $title = "Low Stock: " . $formattedName;
+          $msg = "{$formattedName} is low ({$item['stock_level']} left). Restock level is {$item['min_stock_level']}.";
+        }
 
-              foreach ($recipients as $recipient) {
-                  $targetId = $recipient['user_id'];
-                  
-                  // Redundancy check (notification_tb singular)
-                  $stmtCheck = $pdo->prepare("
-                      SELECT COUNT(*) FROM notification_tb 
-                      WHERE user_id = ? AND title = ? AND created_at > NOW() - INTERVAL 1 DAY
-                  ");
-                  $stmtCheck->execute([$targetId, $title]);
-                  
-                  if ($stmtCheck->fetchColumn() == 0) {
-                      send_notification($pdo, $targetId, 'inventory', $title, $msg);
-                  }
-              }
+        foreach ($recipients as $recipient) {
+          $targetId = $recipient['user_id'];
+          
+          // 👇 FIX 3: Execute the pre-prepared statement (Much faster!)
+          $stmtCheck->execute([$targetId, $title]);
+          
+          if (!$stmtCheck->fetchColumn()) {
+            send_notification($pdo, $targetId, 'inventory', $title, $msg);
           }
+        }
       }
+    }
   }
 
   // --- 3. FETCH DASHBOARD STATS (Unifying Logic) ---
