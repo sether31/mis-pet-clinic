@@ -28,7 +28,7 @@ try {
     }
   }
 
-  // get order and branch details
+  // 2. GET ORDER AND BRANCH DETAILS
   $stmt = $pdo->prepare(
     "SELECT 
       o.order_id as transaction_id,
@@ -42,6 +42,7 @@ try {
       p.name as pet_name,
       CONCAT(u.first_name, ' ', u.last_name) as owner_name,
       CONCAT(s_user.first_name, ' ', s_user.last_name) as assigned_staff,
+      CONCAT(cashier.first_name, ' ', cashier.last_name) as cashier_name,
       a.start_time, 
       a.end_time
     FROM order_tb o
@@ -50,9 +51,10 @@ try {
     LEFT JOIN payments_tb pay ON o.order_id = pay.order_id
     LEFT JOIN appointments_tb a ON a.order_id = o.order_id
     LEFT JOIN pet_tb p ON a.pet_id = p.pet_id
-    LEFT JOIN user_tb u ON p.owner_id = u.user_id
+    LEFT JOIN user_tb u ON o.user_id = u.user_id  -- 🔥 Fixed Join for Shop Buyers
     LEFT JOIN branch_staff_tb s ON a.staff_id = s.staff_id
     LEFT JOIN user_tb s_user ON s.user_id = s_user.user_id
+    LEFT JOIN user_tb cashier ON o.last_updated_by = cashier.user_id -- 🔥 Added Cashier lookup
     WHERE o.order_id = :id"
   );
   $stmt->execute([':id' => $transaction_id]);
@@ -109,6 +111,18 @@ try {
       </tr>";
   }
 
+  // Formatted Output Variables
+  $ownerName = trim($trx['owner_name']);
+  $isGuest = empty($ownerName);
+  $displayName = $isGuest ? 'Guest Walk-in' : $ownerName;
+  $nameStyle = $isGuest ? 'color: #777;' : 'color: #333;';
+
+  $petHtml = !empty($trx['pet_name']) 
+      ? "<span style='font-size: 11px; color: #555;'>Pet: " . htmlspecialchars($trx['pet_name']) . "</span>" 
+      : "";
+
+  $assistedBy = trim($trx['assigned_staff'] ?: $trx['cashier_name'] ?: 'Staff');
+
   $appointmentInfo = "";
   if(!empty($trx['start_time'])) {
     $date = date("F d, Y", strtotime($trx['start_time']));
@@ -151,20 +165,20 @@ try {
             </tr>
           </table>
 
-          <h2 style='margin:0; letter-spacing: 1.5px; font-size: 24px; color: #111;'>OFFICIAL TRANSACTION RECEIPT</h2>
+          <h2 style='margin:0; letter-spacing: 1.5px; font-size: 24px; color: #111;'>OFFICIAL RECEIPT</h2>
           <p style='color:#666; font-size:11px; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;'>ID: #TRANSAC-{$trx['transaction_id']}</p>
         </div>
 
         <table class='info-section'>
           <tr>
             <td width='50%' valign='top'>
-              <small style='color:#888; text-transform: uppercase; font-size: 9px;'>Client & Pet</small><br>
-              <strong style='font-size: 14px;'>" . htmlspecialchars($trx['owner_name']) . "</strong><br>
-              <span style='font-size: 11px; color: #555;'>Pet: " . htmlspecialchars($trx['pet_name'] ?: 'N/A') . "</span>
+              <small style='color:#888; text-transform: uppercase; font-size: 9px;'>Client</small><br>
+              <strong style='font-size: 14px; text-transform: capitalize; {$nameStyle}'>" . htmlspecialchars($displayName) . "</strong><br>
+              {$petHtml}
             </td>
             <td align='right' width='50%' valign='top'>
-              <small style='color:#888; text-transform: uppercase; font-size: 9px;'>Assigned Staff</small><br>
-              <strong style='font-size: 12px;'>" . htmlspecialchars($trx['assigned_staff'] ?: 'N/A') . "</strong><br>
+              <small style='color:#888; text-transform: uppercase; font-size: 9px;'>Assisted By</small><br>
+              <strong style='font-size: 12px; text-transform: capitalize;'>" . htmlspecialchars($assistedBy) . "</strong><br>
               $appointmentInfo
             </td>
           </tr>
@@ -186,7 +200,7 @@ try {
             <tr>
               <td valign='middle'>
                 <small style='opacity:0.7; font-size: 10px; text-transform: uppercase;'>Payment Method</small><br>
-                <strong style='font-size: 14px;'>" . htmlspecialchars($trx['payment_method'] ?: 'PENDING') . "</strong>
+                <strong style='font-size: 14px; text-transform: uppercase;'>" . htmlspecialchars($trx['payment_method'] ?: 'CASH') . "</strong>
               </td>
               <td align='right' valign='middle'>
                 <span style='font-size:10px; opacity:0.7; text-transform: uppercase;'>Gross Amount Due</span><br>

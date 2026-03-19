@@ -42,6 +42,7 @@ try {
   $stmtBranches->execute([':clinic_id' => $clinic_id]);
   $branches = $stmtBranches->fetchAll();
 
+  // 👇 ADDED IMAGES TO SQL SELECT
   $sql = "SELECT 
     o.order_id as transaction_id,
     o.total_amount as amount,
@@ -53,6 +54,8 @@ try {
     b.name as branch_name,
     a.appointment_id,
     p.name as pet_name,
+    p.pet_picture as pet_image ,
+    u_owner.profile_picture as user_image,
     CONCAT(u_owner.first_name, ' ', u_owner.last_name) as owner_name,
     CASE 
       WHEN a.appointment_id IS NOT NULL THEN 'Appointment' 
@@ -152,3 +155,4 @@ try {
   http_response_code(500);
   echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }
+?>

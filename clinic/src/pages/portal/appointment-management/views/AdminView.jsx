@@ -10,7 +10,7 @@ import CalendarComponent from '../components/CalendarComponent';
 import AppointmentPaymentModal from '../components/AppointmentPaymentModal'; 
 import CreateAppointmentModalAdmin from '../components/CreateAppointmentModalAdmin';
 // icons
-import { HiRefresh } from 'react-icons/hi';
+import { HiPlus, HiRefresh } from 'react-icons/hi';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -141,9 +141,9 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
           <SubscriptionGate type="appointment">
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="bg-(--clr-primary) text-white justify-center px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 cursor-pointer"
+              className="bg-(--clr-primary) text-white justify-center px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
             >
-              + New Appointment
+              <HiPlus size={18}/> New Appointment
             </button>
           </SubscriptionGate>
 

@@ -37,6 +37,7 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import Settings from "../pages/navigation/settings/Settings";
 import ShopManagement from "../pages/portal/shop-reservation/ShopManagement";
 import Notifications from "../pages/navigation/notifications/Notifications";
+import Analytics from "../pages/portal/analytics/Analytics";
 
 
 export const routes = createBrowserRouter([
@@ -161,6 +162,17 @@ export const routes = createBrowserRouter([
                       <ServiceManagement />
                     </ProtectedRoute>
                     ) 
+                  },
+                  {
+                    path: "analytics",
+                    element: (
+                      <ProtectedRoute 
+                        allowedRoles={['clinic_admin', 'branch_admin']}
+                        requiredPermission="analytics"
+                      >
+                        <Analytics />
+                      </ProtectedRoute>
+                    )
                   },
                   { 
                     path: "branch-settings", 

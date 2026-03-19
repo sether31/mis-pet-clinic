@@ -15,6 +15,11 @@ export default function TransactionModal({ transaction, onClose }) {
     window.open(pdfUrl, '_blank');
   };
 
+  // 👇 Format the date to show the Month name (e.g., "March 17, 2026")
+  const formattedDate = transaction.transaction_date 
+    ? new Date(transaction.transaction_date).toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' })
+    : 'Unknown Date';
+
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-[100] bg-black/60 backdrop-blur-sm">
       <div className="flex flex-col w-full max-w-xl max-h-[95vh] overflow-y-auto bg-white rounded-2xl text-left no-scrollbar">
@@ -27,8 +32,9 @@ export default function TransactionModal({ transaction, onClose }) {
                 {isPaid ? 'Paid' : 'Unpaid'}
               </span>
             </div>
+            {/* 👇 Applied the formatted date here */}
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-              ID: #TRANSAC-{transaction.transaction_id} • {transaction.transaction_date}
+              ID: #TRANSAC-{transaction.transaction_id} • {formattedDate}
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 transition-all cursor-pointer hover:text-red-500">
@@ -41,13 +47,18 @@ export default function TransactionModal({ transaction, onClose }) {
           <div className="grid grid-cols-2 gap-8 p-4 border border-gray-100 rounded-xl bg-gray-50/50">
             <div>
               <label className="text-[9px] font-black text-gray-700 uppercase tracking-wider">Client & Pet</label>
-              <p className="font-bold capitalize">{transaction.owner_name || 'Walk-in Customer'}</p>
-              <p className="text-xs font-medium text-gray-700 capitalize">Pet: {transaction.pet_name || 'N/A'}</p>
+              <p className={`font-bold capitalize ${transaction.owner_name ? 'text-gray-800' : 'text-gray-500'}`}>
+                {transaction.owner_name || 'Guest Walk-in'}
+              </p>
+              
+              {transaction.pet_name && (
+                <p className="text-xs font-medium text-gray-700 capitalize">Pet: {transaction.pet_name}</p>
+              )}
             </div>
             <div>
               <label className="text-[9px] font-black text-gray-700 uppercase tracking-wider">Branch & Payment</label>
               <p className="font-bold text-gray-800 uppercase">{transaction.branch_name}</p>
-              <p className="text-xs font-medium text-gray-700">Method: {transaction.payment_method || 'N/A'}</p>
+              <p className="text-xs font-medium text-gray-700">Method: {transaction.payment_method || 'Cash'}</p>
             </div>
           </div>
 

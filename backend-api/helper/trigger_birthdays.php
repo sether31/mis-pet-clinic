@@ -3,11 +3,13 @@ require_once __DIR__ . '/send_notification.php';
 
 function trigger_birthdays($pdo, $userId) {
   try {
-    // Find pets owned by this user whose birthday is TODAY
+    // 👇 FIX: Added filters so it only selects LIVING and ACTIVE pets
     $stmt = $pdo->prepare(
       "SELECT pet_id, name 
       FROM pet_tb 
       WHERE owner_id = ? 
+      AND (status = 1 OR status IS NULL) 
+      AND (is_deceased = 0 OR is_deceased IS NULL)
       AND MONTH(birthdate) = MONTH(CURDATE()) 
       AND DAY(birthdate) = DAY(CURDATE())"
     );

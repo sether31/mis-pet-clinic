@@ -24,18 +24,30 @@ try {
 
   // Added a.staff_id to fetch the assigned vet/groomer
   $stmtDetails = $pdo->prepare(
-    "SELECT a.branch_id, b.clinic_id, a.user_id, a.staff_id, p.name AS pet_name, b.name AS clinic_name, a.status AS current_status
-    FROM appointments_tb a
-    JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
-    JOIN pet_tb p ON a.pet_id = p.pet_id           
-    WHERE a.appointment_id = ?"
-  );
-  $stmtDetails->execute([$appointment_id]);
-  $details = $stmtDetails->fetch();
+      "SELECT a.branch_id, b.clinic_id, a.user_id, a.staff_id, 
+        p.name AS pet_name, p.status AS pet_status, p.is_deceased, 
+        b.name AS clinic_name, a.status AS current_status
+      FROM appointments_tb a
+      JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
+      JOIN pet_tb p ON a.pet_id = p.pet_id           
+      WHERE a.appointment_id = ?"
+    );
+    $stmtDetails->execute([$appointment_id]);
+    $details = $stmtDetails->fetch();
 
-  if(!$details) {
-    throw new Exception("Appointment not found.");
-  }
+    if(!$details) {
+      throw new Exception("Appointment not found.");
+    }
+
+    // 2. NEW: Check if pet is valid ONLY when confirming
+    if ($status === 'confirmed') {
+      if ((int)$details['is_deceased'] === 1) {
+        throw new Exception("Cannot approve appointment. This pet has passed away.");
+      }
+      if ($details['pet_status'] === 0) {
+        throw new Exception("Cannot approve appointment. This pet is currently inactive.");
+      }
+    }
 
   // Check if the appointment is already cancelled
   if ($details['current_status'] === 'cancelled') {

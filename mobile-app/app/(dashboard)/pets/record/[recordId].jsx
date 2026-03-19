@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 
 // File System and Sharing
+import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
@@ -72,22 +73,70 @@ export default function MedicalRecordDetail() {
     if (!url) return;
 
     setDownloading(true);
-    Toast.show({ type: 'info', text1: `Downloading ${displayType}...` });
+    Toast.show({ type: 'info', text1: `Preparing ${displayType}...` });
 
     try {
-      const filename = filePath.split('/').pop() || 'downloaded_file';
-      const cleanFilename = filename.replace(/\s+/g, '_'); 
-      const localUri = FileSystem.documentDirectory + cleanFilename;
+      const filename = filePath.split('/').pop() || `download.${displayType === 'Image' ? 'jpg' : 'pdf'}`;
+      const cleanFilename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_'); 
+      const mimeType = displayType === 'Image' ? 'image/jpeg' : 'application/pdf';
 
-      const encodedUrl = encodeURI(url); 
+      // 1. Download to temporary cache
+      const tempLocalUri = FileSystem.documentDirectory + cleanFilename;
+      const { uri, status } = await FileSystem.downloadAsync(url, tempLocalUri);
 
-      const { uri } = await FileSystem.downloadAsync(encodedUrl, localUri);
+      if (status !== 200) throw new Error("Failed to fetch file from server");
 
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri);
-      } else {
-        Toast.show({ type: 'success', text1: 'File downloaded successfully!' });
+      const base64Data = await FileSystem.readAsStringAsync(uri, { 
+        encoding: FileSystem.EncodingType.Base64 
+      });
+
+      // 2. Check SecureStore for a saved folder permission from a previous download
+      let savedFolderUri = await SecureStore.getItemAsync('savedDownloadFolder');
+      let fileSavedSilently = false;
+
+      if (savedFolderUri) {
+        try {
+          // Try to save it silently to the remembered folder!
+          const targetUri = await FileSystem.StorageAccessFramework.createFileAsync(
+            savedFolderUri, 
+            cleanFilename, 
+            mimeType
+          );
+          await FileSystem.writeAsStringAsync(targetUri, base64Data, { 
+            encoding: FileSystem.EncodingType.Base64 
+          });
+          
+          fileSavedSilently = true;
+          Toast.show({ type: 'success', text1: 'Downloaded successfully!' });
+        } catch(e) {
+          console.log("Something went wrong");
+        }
       }
+
+      // 3. If it's their first time (or silent save failed), ask them to pick a folder
+      if (!fileSavedSilently) {
+        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        
+        if (permissions.granted) {
+          // REMEMBER this folder choice in SecureStore for NEXT time!
+          await SecureStore.setItemAsync('savedDownloadFolder', permissions.directoryUri);
+
+          // Save the file
+          const targetUri = await FileSystem.StorageAccessFramework.createFileAsync(
+            permissions.directoryUri, 
+            cleanFilename, 
+            mimeType
+          );
+          await FileSystem.writeAsStringAsync(targetUri, base64Data, { 
+            encoding: FileSystem.EncodingType.Base64 
+          });
+          
+          Toast.show({ type: 'success', text1: 'Downloaded successfully!' });
+        } else {
+          Toast.show({ type: 'info', text1: 'Something went wrong' });
+        }
+      }
+
     } catch (error) {
       console.error("Download Error:", error);
       Toast.show({ type: 'error', text1: 'Something went wrong' });

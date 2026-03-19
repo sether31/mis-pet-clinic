@@ -14,6 +14,9 @@ export default function ShopTable({ data = [], onReview }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10); 
   
+  // State for the Guest / Member filter
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("all"); 
+  
   const [sortConfig, setSortConfig] = useState({ key: 'pickup_date', direction: 'asc' });
 
   const getMediaUrl = (path) => {
@@ -22,7 +25,6 @@ export default function ShopTable({ data = [], onReview }) {
     return `${API_URL}/${path}`;
   };
 
-  // Sort Handler
   const handleSort = (key) => {
     let direction = 'desc'; 
     if (sortConfig.key === key && sortConfig.direction === 'desc') {
@@ -31,7 +33,6 @@ export default function ShopTable({ data = [], onReview }) {
     setSortConfig({ key, direction });
   };
 
-  // Sort Icon Component
   const SortIcon = ({ column }) => {
     if (sortConfig.key !== column) return <HiChevronDown className="opacity-30" />;
     return sortConfig.direction === 'desc' ? <HiChevronUp className="text-(--clr-primary)" /> : <HiChevronDown className="text-(--clr-primary)" />;
@@ -41,12 +42,19 @@ export default function ShopTable({ data = [], onReview }) {
   const filteredAndSorted = useMemo(() => {
     let result = data
       .filter(order => activeTab === "all" ? true : order.order_status === activeTab)
-      .filter(order => 
-        !search || 
-        order.owner_name?.toLowerCase().includes(search.toLowerCase()) || 
-        order.product_name?.toLowerCase().includes(search.toLowerCase()) ||
-        order.order_id?.toString().includes(search)
-      );
+      // Apply the Customer Type filter
+      .filter(order => {
+        if (customerTypeFilter === 'guest') return !order.owner_name;
+        if (customerTypeFilter === 'user') return !!order.owner_name;
+        return true; // 'all'
+      })
+      .filter(order => {
+        const customerName = order.owner_name || "Guest Walk-in";
+        return !search || 
+          customerName.toLowerCase().includes(search.toLowerCase()) || 
+          order.product_name?.toLowerCase().includes(search.toLowerCase()) ||
+          order.order_id?.toString().includes(search);
+      });
 
     // Apply Sorting
     if (sortConfig.key) {
@@ -71,20 +79,20 @@ export default function ShopTable({ data = [], onReview }) {
     }
 
     return result; 
-  }, [data, activeTab, search, sortConfig]);
+  }, [data, activeTab, search, sortConfig, customerTypeFilter]);
 
   const paginated = filteredAndSorted.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
   const totalPages = Math.ceil(filteredAndSorted.length / entriesPerPage);
 
+  // Reset page when any filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, search, entriesPerPage, sortConfig]);
+  }, [activeTab, search, entriesPerPage, sortConfig, customerTypeFilter]);
 
   return (
     <div className="flex flex-col w-full overflow-hidden text-left bg-white border border-gray-300 rounded-xl">
       
       <div className="flex flex-col justify-between gap-4 p-4 bg-white border-b border-gray-300 xl:flex-row">
-        
         {/* tabs */}
         <div className="flex justify-center w-full p-1 bg-gray-100 rounded-lg xl:w-fit overflow-x-auto scrollbar-hide">
           {[
@@ -109,13 +117,28 @@ export default function ShopTable({ data = [], onReview }) {
 
         {/* filters */}
         <div className="flex flex-col items-center justify-center gap-3 md:flex-row">
-          <select 
-            value={entriesPerPage} 
-            onChange={(e) => setEntriesPerPage(Number(e.target.value))} 
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-black transition-all"
-          >
-            {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
-          </select>
+          
+          <div className="flex items-center gap-2">
+            {/* 👇 Entries Dropdown */}
+            <select 
+              value={entriesPerPage} 
+              onChange={(e) => setEntriesPerPage(Number(e.target.value))} 
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-black transition-all"
+            >
+              {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
+            </select>
+
+            {/* 👇 Moved Customer Type Dropdown Here */}
+            <select 
+              value={customerTypeFilter}
+              onChange={(e) => setCustomerTypeFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-black transition-all"
+            >
+              <option value="all">All Customers</option>
+              <option value="user">User Only</option>
+              <option value="guest">Guests Only</option>
+            </select>
+          </div>
 
           <div className="relative w-full md:w-auto">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
@@ -143,10 +166,11 @@ export default function ShopTable({ data = [], onReview }) {
                 <div className="flex items-center justify-between">Order ID <SortIcon column="order_id" /></div>
               </th>
 
+              {/* Header is back to normal text */}
               <th className="w-[18%] px-6 py-4 border-r border-gray-300">Customer Name</th>
+              
               <th className="w-[25%] px-6 py-4 border-r border-gray-300">Product Details</th>
               
-              {/* Sortable Total Column */}
               <th 
                 onClick={() => handleSort('total_amount')} 
                 className="w-[12%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors group"
@@ -154,12 +178,11 @@ export default function ShopTable({ data = [], onReview }) {
                 <div className="flex items-center justify-center gap-2">Total <SortIcon column="total_amount" /></div>
               </th> 
               
-              {/* Sortable Date Column */}
               <th 
                 onClick={() => handleSort('pickup_date')} 
                 className="w-[13%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors group"
               >
-                <div className="flex items-center justify-center gap-2">Pickup Date <SortIcon column="pickup_date" /></div>
+                <div className="flex items-center justify-center gap-2">Date <SortIcon column="pickup_date" /></div>
               </th>
               
               <th className="w-[10%] px-6 py-4 border-r border-gray-300 text-center">Status</th>
@@ -171,12 +194,10 @@ export default function ShopTable({ data = [], onReview }) {
             {paginated.length > 0 ? paginated.map(order => (
               <tr key={order.order_id} className="transition-colors hover:bg-gray-50/80 even:bg-gray-50/30">
                 
-                {/* order id */}
                 <td className="px-6 py-4 font-bold text-gray-800 border-r border-gray-300">
                   #{order.order_id}
                 </td>
                 
-                {/* customer */}
                 <td className="px-6 py-4 border-r border-gray-300">
                   <div className="flex items-center gap-3">
                     <img 
@@ -186,12 +207,13 @@ export default function ShopTable({ data = [], onReview }) {
                       alt=""
                     />
                     <div>
-                      <p className="font-bold leading-tight text-gray-800 capitalize truncate max-w-[140px]">{order.owner_name}</p>
+                      <p className={`font-bold leading-tight capitalize truncate max-w-[140px] ${order.owner_name ? 'text-gray-800' : 'text-gray-500'}`}>
+                        {order.owner_name || "Guest Walk-in"}
+                      </p>
                     </div>
                   </div>
                 </td>
 
-                {/* product */}
                 <td className="px-6 py-4 border-r border-gray-300">
                   <div className="flex items-center gap-3">
                     <img 
@@ -209,21 +231,18 @@ export default function ShopTable({ data = [], onReview }) {
                   </div>
                 </td>
 
-                {/* total */}
                 <td className="px-6 py-4 text-center border-r border-gray-300">
                   <p className="text-sm font-black text-(--clr-primary) tracking-tight">
                     ₱{parseFloat(order.total_amount).toLocaleString()}
                   </p>
                 </td>
 
-                {/* date */}
                 <td className="px-6 py-4 text-center border-r border-gray-300">
                   <p className="text-[11px] font-bold uppercase text-gray-600">
-                    {new Date(order.pickup_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                    {order.pickup_date ? new Date(order.pickup_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Direct Sale'}
                   </p>
                 </td>
 
-                {/* status */}
                 <td className="px-6 py-4 text-center border-r border-gray-300">
                   <span className={`px-2 py-1 rounded text-[9px] font-black uppercase border ${
                     order.order_status === 'completed' ? 'bg-green-50 text-(--clr-primary) border-green-200' : 
@@ -235,7 +254,6 @@ export default function ShopTable({ data = [], onReview }) {
                   </span>
                 </td>
 
-                {/* action */}
                 <td className="px-6 py-4 text-center">
                   <div className="flex justify-center gap-2">
                     <button 

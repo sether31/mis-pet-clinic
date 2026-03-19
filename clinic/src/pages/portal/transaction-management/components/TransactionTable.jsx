@@ -1,15 +1,27 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+// images (Make sure this path is correct for your project structure)
+import NoImage from '../../../../assets/images/no-image.jpg';
 // icons
 import { CiSearch } from 'react-icons/ci';
 import { HiSearch, HiOutlineEye } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function TransactionTable({ data = [], loading, onViewDetails, isGlobalView }) {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState({ key: 'transaction_date', direction: 'desc' });
+
+  // 👇 Media Helper
+  const getMediaUrl = (path) => {
+    if (!path) return NoImage;
+    if (path.startsWith('http')) return path;
+    return `${API_URL}/${path}`;
+  };
 
   // sorting
   const handleSort = (key) => {
@@ -29,13 +41,19 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
         if (activeTab === "retail") return item.source_type === 'Retail/Product';
         return true;
       })
-      .filter(item => 
-        !search || 
-        item.transaction_id?.toString().includes(search.toLowerCase()) || 
-        item.owner_name?.toLowerCase().includes(search.toLowerCase()) ||
-        item.pet_name?.toLowerCase().includes(search.toLowerCase()) ||
-        item.branch_name?.toLowerCase().includes(search.toLowerCase())
-      );
+      .filter(item => {
+        if (customerTypeFilter === 'guest') return !item.owner_name;
+        if (customerTypeFilter === 'user') return !!item.owner_name;
+        return true; 
+      })
+      .filter(item => {
+        const customerName = item.owner_name || "Guest Walk-in";
+        return !search || 
+          item.transaction_id?.toString().includes(search.toLowerCase()) || 
+          customerName.toLowerCase().includes(search.toLowerCase()) ||
+          (item.pet_name && item.pet_name.toLowerCase().includes(search.toLowerCase())) ||
+          item.branch_name?.toLowerCase().includes(search.toLowerCase());
+      });
 
     if(sortConfig.key) {
       result.sort((a, b) => {
@@ -48,11 +66,15 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
       });
     }
     return result;
-  }, [data, activeTab, search, sortConfig]);
+  }, [data, activeTab, search, sortConfig, customerTypeFilter]);
 
   // pagination Logic
   const paginated = filteredAndSorted.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
   const totalPages = Math.ceil(filteredAndSorted.length / entriesPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, entriesPerPage, sortConfig, customerTypeFilter]);
 
   const SortIcon = ({ column }) => {
     if (sortConfig.key !== column) return <HiChevronDown className="opacity-20" />;
@@ -67,7 +89,7 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
         {/* tabs */}
         <div className="flex justify-center w-full p-1 bg-gray-100 rounded-lg xl:w-fit">
           {[
-            { id: "all", label: "All Logs" },
+            { id: "all", label: "All" },
             { id: "paid", label: "Paid" },
             { id: "unpaid", label: "Unpaid" },
             { id: "appointment", label: "Service" },
@@ -85,13 +107,26 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
 
         {/* search entries */}
         <div className="flex flex-col items-center justify-center gap-3 md:flex-row">
-          <select 
-            value={entriesPerPage} 
-            onChange={(e) => setEntriesPerPage(Number(e.target.value))} 
-            className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-gray-400 transition-all"
-          >
-            {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
-          </select>
+          
+          <div className="flex items-center gap-2">
+            <select 
+              value={entriesPerPage} 
+              onChange={(e) => setEntriesPerPage(Number(e.target.value))} 
+              className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-gray-400 transition-all"
+            >
+              {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
+            </select>
+
+            <select 
+              value={customerTypeFilter}
+              onChange={(e) => setCustomerTypeFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-gray-400 transition-all"
+            >
+              <option value="all">All Customers</option>
+              <option value="user">User Only</option>
+              <option value="guest">Guests Only</option>
+            </select>
+          </div>
 
           <div className="relative">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
@@ -141,7 +176,7 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
           <tbody className="text-sm bg-white divide-y divide-gray-200">
             {paginated.length > 0 ? paginated.map(trx => (
               <tr key={trx.transaction_id} className="transition-colors hover:bg-blue-50/30">
-                <td className="px-6 py-4 italic font-black text-gray-400 border-r border-gray-300">#TRANSAC-{trx.transaction_id}</td>
+                <td className="px-6 py-4 font-bold text-gray-800 border-r border-gray-300">#transac-{trx.transaction_id}</td>
                 
                 {isGlobalView && (
                   <td className="px-6 py-4 border-r border-gray-300">
@@ -152,8 +187,25 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
                 )}
 
                 <td className="px-6 py-4 border-r border-gray-300">
-                  <p className="font-bold leading-tight text-gray-800">{trx.owner_name}</p>
-                  <span className="text-[9px] font-black text-gray-400 uppercase">Pet: {trx.pet_name || 'N/A'}</span>
+                  {/* 👇 ADDED IMAGES HERE */}
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={getMediaUrl(trx.pet_image || trx.user_image)} 
+                      className="object-cover w-10 h-10 border-2 border-gray-100 rounded-full bg-gray-50 shrink-0" 
+                      onError={(e) => e.target.src = NoImage} 
+                      alt=""
+                    />
+                    <div>
+                      <p className={`font-bold leading-tight capitalize ${trx.owner_name ? 'text-gray-800' : 'text-gray-500 italic'}`}>
+                        {trx.owner_name || "Guest Walk-in"}
+                      </p>
+                      {trx.pet_name && (
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5 block">
+                          Pet: {trx.pet_name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </td>
 
                 <td className="px-6 py-4 border-r border-gray-300">
@@ -183,7 +235,7 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
                   </span>
                 </td>
 
-                <td className="px-6 py-4 text-center border-r border-gray-300 text-[11px] font-bold text-gray-500 uppercase">
+                <td className="px-6 py-4 text-center border-r border-gray-300 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                   {new Date(trx.transaction_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
                 </td>
 
@@ -205,7 +257,7 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
                     </div>
                     
                     <h3 className="mt-4 font-bold text-gray-800">
-                      No {activeTab === 'all' ? 'transactions' : `${activeTab} logs`} found
+                      No {activeTab === 'all' ? 'transactions' : `${activeTab}`} found
                     </h3>
                     
                     <p className="mt-1 text-sm text-gray-500">
@@ -234,11 +286,11 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
 
       {/* footer */}
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
-        <span className="text-[11px] text-gray-500 font-black uppercase">Total: {filteredAndSorted.length}</span>
+        <span className="text-[11px] text-gray-500 font-black uppercase tracking-widest">Total: {filteredAndSorted.length}</span>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg disabled:opacity-20"><HiChevronLeft/></button>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border border-gray-300 rounded-lg disabled:opacity-20 cursor-pointer active:scale-95 transition-all"><HiChevronLeft/></button>
           <span className="px-4 text-xs font-black">{currentPage} / {totalPages || 1}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border rounded-lg disabled:opacity-20"><HiChevronRight/></button>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border border-gray-300 rounded-lg disabled:opacity-20 cursor-pointer active:scale-95 transition-all"><HiChevronRight/></button>
         </div>
       </div>
     </div>
