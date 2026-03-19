@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { CiSearch } from 'react-icons/ci';
 import { HiSearch, HiPencilAlt, HiPlus, HiArchive, HiRefresh } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 
@@ -88,7 +89,7 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
           {/* search */}
           <div className="relative">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-            <input type="text" placeholder="Search service..." className="w-64 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg outline-none bg-gray-50 focus:bg-white" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search service..." className="w-64 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg outline-none bg-gray-50 focus:bg-white focus:ring-1 focus:ring-(--clr-primary)" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           {/* add service */}
           <button onClick={onCreate} className="px-6 py-2 bg-(--clr-primary) text-white text-[11px] font-black rounded-lg uppercase tracking-widest flex items-center gap-2 hover:opacity-90">
@@ -155,14 +156,36 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
                 </td>
               </tr>
             )) : (
-              <tr><td colSpan="6" className="py-24 text-xs font-bold text-center text-gray-400 uppercase tracking-widest">No records found</td></tr>
+              <tr>
+                <td colSpan="6" className="py-24 text-center bg-white border-gray-200 border-dashed rounded-b-3xl">
+                  <div className="flex flex-col items-center max-w-xs mx-auto">
+                    <div className="p-4 rounded-full bg-gray-50">
+                      <CiSearch className="text-gray-300" size={40} />
+                    </div>
+                    <h3 className="font-bold text-gray-800">No {activeTab === 'all' ? '' : activeTab} Service found</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {search
+                        ? `We couldn't find any results for "${search}" in the ${activeTab} list.`
+                        : `There are currently no service marked as ${activeTab}.`}
+                    </p>
+                    {search && (
+                      <button
+                        onClick={() => setSearch('')}
+                        className="mt-4 text-sm font-bold text-(--clr-primary) hover:underline cursor-pointer"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
       
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
-        <span className="text-[11px] text-gray-500 font-black uppercase">Total Found: {filteredAndSorted.length}</span>
+        <span className="text-[11px] text-gray-500 font-black uppercase">Total: {filteredAndSorted.length}</span>
         <div className="flex items-center gap-2">
           <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg disabled:opacity-20"><HiChevronLeft/></button>
           <span className="px-4 text-[10px] font-black uppercase">{currentPage}/{totalPages || 1}</span>

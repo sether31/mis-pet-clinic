@@ -1,10 +1,11 @@
 // components
 import DashboardCard from '../../../components/DashboardCard';
 // icons
-import { LuWallet, LuBadgeCheck } from "react-icons/lu";
-import { PiWarning } from "react-icons/pi";
+import { LuWallet } from "react-icons/lu";
+import { RiMoneyDollarCircleLine } from "react-icons/ri";
 import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { FiMinusCircle } from "react-icons/fi";
+import { TbAlertTriangle } from "react-icons/tb";
 
 export default function TransactionCard({ summary, data = [] }) {
   const active = summary?.totalActive || 0;
@@ -22,13 +23,13 @@ export default function TransactionCard({ summary, data = [] }) {
     {
       title: "Active",
       data: active,
-      icon: LuBadgeCheck, 
-      iconColor: "text-green-500"
+      icon: RiMoneyDollarCircleLine, 
+      iconColor: "text-(--clr-primary)"
     },
     {
       title: "Expired",
       data: expired,
-      icon: PiWarning, 
+      icon: TbAlertTriangle, 
       iconColor: "text-amber-500" 
     },
     {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 // utils
-import { authFetch } from '../../utils/authFetch';
+import { authFetch } from '../../../utils/authFetch';
 // icons
 import { HiXCircle, HiSave, HiExclamationCircle } from 'react-icons/hi';
 import { HiCheckCircle } from 'react-icons/hi2';
@@ -80,7 +80,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 text-left z-100 bg-black/60 backdrop-blur-sm">
-      <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white shadow-2xl rounded-2xl">
+      <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white rounded-2xl">
         {/* header */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50">
           <div>
@@ -151,7 +151,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
               value={form.appointment_limit}
               onChange={(e) => setForm({...form, appointment_limit: e.target.value})}
             >
-              {[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000].map(val => (
+              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000].map(val => (
                 <option key={val} value={val}>{val} Appointments</option>
               ))}
               <option value="1001">Unlimited Appointments</option>
@@ -169,7 +169,7 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
                   <span className="block text-xs font-bold text-gray-400 uppercase">Email Support</span>
                   <span className="bg-gray-200 text-[8px] px-2 py-0.5 rounded-full font-black text-gray-500 uppercase">System Default</span>
                 </div>
-                <p className="text-[9px] text-gray-400 font-bold uppercase italic tracking-tighter">Included in all plans</p>
+                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Included in all plans</p>
               </div>
               
               <label className="relative inline-flex items-center cursor-not-allowed">
@@ -213,11 +213,10 @@ export default function SubscriptionModal({ initialData, onClose, onRefresh }) {
             </div>
           </div>
 
-           
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-white uppercase transition-all bg-(--clr-primary) shadow-lg rounded-xl hover:brightness-110 disabled:opacity-50 cursor-pointer"
+            className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-white uppercase transition-all bg-(--clr-primary) rounded-xl hover:brightness-110 disabled:opacity-50 cursor-pointer active:scale-95"
           >
             <HiSave size={18}/>
             {isSubmitting ? "Processing..." : "Save Subscription Plan"}

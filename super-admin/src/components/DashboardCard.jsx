@@ -8,7 +8,7 @@ export default function DashboardCard({
 }) {
   return (
     <article
-      className={`grid grid-cols-[1.5fr_.5fr] gap-4 p-4 rounded-xl w-full h-32 items-center bg-(--clr-bg-card) text-(--clr-text-primary) border-2 border-gray-300 ${className}`}
+      className={`grid grid-cols-[1.5fr_.5fr] gap-4 p-4 rounded-xl w-full h-32 items-center bg-white text-(--clr-text-primary) border-2 border-gray-300 ${className}`}
     >
       {/* data */}
       <div>

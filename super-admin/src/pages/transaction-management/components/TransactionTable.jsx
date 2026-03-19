@@ -94,7 +94,7 @@ export default function TransactionTable({ data = [], onViewDetails }) {
             <input 
               type="text" 
               placeholder="Search clinic or branch..." 
-              className="w-64 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg outline-none bg-gray-50 focus:ring-2 focus:ring-(--clr-primary)/20 focus:border-(--clr-primary) transition-all" 
+              className="w-64 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg outline-none bg-gray-50 focus:ring-1 focus:ring-(--clr-primary) transition-all" 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
             />
@@ -187,8 +187,8 @@ export default function TransactionTable({ data = [], onViewDetails }) {
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
                       {search
-                        ? `We couldn't find any results for "${search}".`
-                        : "There are no transaction records matching this criteria."}
+                        ? `We couldn't find any results for "${search}" in the ${activeTab} list.`
+                        : `There are currently no transaction records marked as ${activeTab}.`}
                     </p>
                     {search && (
                       <button type="button" onClick={() => setSearch('')} className="mt-4 text-sm font-bold text-(--clr-primary) hover:underline cursor-pointer transition-all active:scale-95">
