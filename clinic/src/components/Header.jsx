@@ -20,6 +20,7 @@ const links = [
   { label: 'Transaction Management', path: '/transaction-management' },
   { label: 'Staff Management', path: '/staff-management' },
   { label: 'Service Management', path: '/service-management' },
+  { label: 'Analytics', path: '/analytics' },
   { label: 'Branch Settings', path: '/branch-settings' },
   { label: 'Notifications', path: '/notifications'},
   { label: 'Settings', path: '/settings'},

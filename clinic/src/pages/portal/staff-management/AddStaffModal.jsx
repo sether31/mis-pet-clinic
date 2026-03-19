@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
+// hooks
+import { useUser } from '../../../hooks/useUser';
 // utils
 import { authFetch } from '../../../utils/authFetch';
 import { validateEmail } from '../../../utils/validateEmail';
@@ -15,6 +17,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function AddStaffModal({ initialData, branchSchedule = [], onClose, onRefresh, branchId }) {
+  const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   
@@ -31,6 +34,13 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     { id: 5, label: 'Groomer' },
     { id: 6, label: 'Support Staff' }
   ];
+
+  const availableRoles = userRoles.filter(role => {
+    if (user?.role === 'branch_admin' && role.id === 3) {
+      return false;
+    }
+    return true;
+  });
 
   const availablePermissions = [
     { id: "role_dashboard", label: "Role Dashboard"},
@@ -310,7 +320,7 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
             </div>
             {showRoleDropdown && (
               <div className="absolute left-0 right-0 z-50 w-full mt-1 overflow-y-auto bg-white border border-gray-200 shadow-2xl top-full max-h-60 rounded-xl">
-                {userRoles.map((role) => (
+                {availableRoles.map((role) => (
                   <div 
                     key={role.id} 
                     onClick={() => { 
