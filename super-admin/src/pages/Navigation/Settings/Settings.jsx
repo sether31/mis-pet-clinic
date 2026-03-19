@@ -21,31 +21,7 @@ export default function Settings() {
   return (
     <div className='min-h-screen bg-gray-100'>
       <Header /> 
-      <section className='px-4 mt-30 lg:px-6 container-xl'>
-        {/* breadcrumbs */}
-        <nav className="flex items-center gap-2 mb-4 overflow-x-auto text-sm text-gray-500 whitespace-nowrap scrollbar-hide touch-pan-x">
-          <Link to="/dashboard" className="flex items-center gap-1 hover:text-(--clr-primary) duration-300 ease-in-out shrink-0">
-            <HiHome size={16} />
-            <span>Dashboard</span>
-          </Link>
-          
-          <RiArrowRightSLine size={16} className="text-gray-400 shrink-0" />
-          
-          <Link 
-            to="/settings" 
-            className={`hover:text-(--clr-primary) duration-300 ease-in-out shrink-0 ${!isSecurity ? 'font-bold text-gray-900' : ''}`}
-          >
-            Platform Settings
-          </Link>
-
-          {isSecurity && (
-            <>
-              <RiArrowRightSLine size={16} className="text-gray-400 shrink-0" />
-              <span className="font-bold text-gray-900 shrink-0">Account Security</span>
-            </>
-          )}
-        </nav>
-
+      <section className='px-4 my-6 lg:px-6 container-xl'>
         {/* tab */}
         <nav className="relative flex items-center w-full pb-px overflow-x-auto border-b border-gray-200 scrollbar-hide">
           <NavLink to="" end className={navClass}>

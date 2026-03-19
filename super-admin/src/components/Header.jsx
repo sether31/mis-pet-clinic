@@ -10,7 +10,7 @@ const links = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Clinic Applications', path: '/clinic-applications' },
   { label: 'Registered Clinics', path: '/registered-clinics' },
-  { label: 'Subscription Plans', path : '/subscription-plans' },
+  { label: 'Subscription Management', path : '/subscription-management' },
   { label: 'Transaction Management', path: '/transaction-management' },
   { label: 'Service Management', path: '/service-management' },
   { label: 'Platform Analytics', path: '/platform-analytics' },
@@ -38,14 +38,11 @@ export default function Header() {
     <header className="sticky top-0 left-0 h-[81px] w-full z-50 flex items-center bg-gray-100 border-b">
       <div className="flex items-center justify-between flex-1 px-6 pl-20 md:pl-6 container-xl">
         <div className="flex flex-col">
-          <motion.h1 
-            key={pageTitle} 
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
+          <h1 
             className="text-md sm:text-lg md:text-xl font-black uppercase tracking-tight truncate max-w-[150px] sm:max-w-none"
           >
             {pageTitle}
-          </motion.h1>
+          </h1>
           <h2 className="text-[12px] md:text-[14px] font-bold opacity-70 capitalize">
             {role}
           </h2>

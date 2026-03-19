@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { CiSearch } from 'react-icons/ci';
 // icons
 import { 
   HiSearch,HiPencilAlt, HiPlus, HiArchive, 
@@ -55,7 +56,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
   }, [activeTab, search, entriesPerPage]);
 
   return (
-    <div className="flex flex-col w-full overflow-hidden text-left bg-white border border-gray-300 shadow-sm rounded-xl">
+    <div className="flex flex-col w-full overflow-hidden text-left bg-white border border-gray-300 rounded-xl">
       {/* table header */}
       <div className="flex flex-col justify-between gap-4 p-4 bg-white border-b border-gray-300 lg:flex-row">
         
@@ -88,7 +89,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
 
           <div className="relative">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-            <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm w-64 outline-none focus:bg-white focus:border-(--clr-primary) transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search..." className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm w-64 outline-none focus:bg-white focus:ring-1 focus:ring-(--clr-primary) transition-all" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
 
           <button 
@@ -144,7 +145,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
                 
                 {/* subscription name */}
                 <td className="px-6 py-4 border-r border-gray-300">
-                  <div className="text-sm font-bold text-gray-800">{plan.name}</div>
+                  <div className="text-sm font-bold text-gray-800 capitalize">{plan.name}</div>
                   <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
                     {plan.duration_months} {Number(plan.duration_months) === 1 ? 'Month' : 'Months'}
                   </div>
@@ -210,10 +211,27 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
                 </td>
               </tr>
             )) : (
-              // without data
               <tr>
-                <td colSpan="5" className="py-24 text-xs font-bold tracking-widest text-center text-gray-400 uppercase">
-                  No subscription found.
+                <td colSpan="6" className="py-24 text-center bg-white border-gray-200 border-dashed rounded-b-3xl">
+                  <div className="flex flex-col items-center max-w-xs mx-auto">
+                    <div className="p-4 rounded-full bg-gray-50">
+                      <CiSearch className="text-gray-300" size={40} />
+                    </div>
+                    <h3 className="font-bold text-gray-800">No {activeTab === 'all' ? '' : activeTab}  Subscription found</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {search
+                        ? `We couldn't find any results for "${search}" in the ${activeTab} list.`
+                        : `There are currently no subscription marked as ${activeTab}.`}
+                    </p>
+                    {search && (
+                      <button
+                        onClick={() => setSearch('')}
+                        className="mt-4 text-sm font-bold text-(--clr-primary) hover:underline cursor-pointer"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             )}
@@ -223,7 +241,7 @@ export default function SubscriptionTable({ data = [], onEdit, onToggleStatus, o
 
       {/* --- table footer --- */}
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
-        <span className="text-[11px] text-gray-500 font-black uppercase">Total Found: {filtered.length}</span>
+        <span className="text-[11px] text-gray-500 font-black uppercase">Total: {filtered.length}</span>
 
         <div className="flex items-center gap-2">
           {/* prev page */}

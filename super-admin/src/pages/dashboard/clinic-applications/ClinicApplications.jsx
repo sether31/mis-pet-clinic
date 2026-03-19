@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-// component
-import Header from '../../components/Header'
-import DashboardCard from '../../components/DashboardCard'
-import ClinicApplicationTable from '../../components/ClinicApplicationTable'
-import FullScreenLoader from '../../components/FullScreenLoader'
+import { toast } from 'react-toastify';
 // utils
-import { authFetch } from '../../utils/authFetch';
+import { authFetch } from '../../../utils/authFetch';
+// component
+import Header from '../../../components/Header'
+import DashboardCard from '../../../components/DashboardCard'
+import ClinicApplicationTable from './components/ClinicApplicationTable'
+import LoaderV2 from '../../../components/LoaderV2';
 // icons
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2'
 import { IoDocumentTextOutline } from 'react-icons/io5'
@@ -77,29 +76,37 @@ export default function ClinicApplications() {
   return (
     <div className='min-h-screen bg-gray-100'>
       <Header />
-      <section className='my-6 container-xl'>
-        <div className='grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4'>
-          <DashboardCard title='Total Applications' data={clinics.length} icon={HiOutlineBuildingOffice2} />
-          <DashboardCard title='Pending Review' data={clinics.filter(c => c.status === 'pending').length} icon={IoDocumentTextOutline} iconColor='text-amber-500' />
-          <DashboardCard title='Approved' data={clinics.filter(c => c.status === 'approved').length} icon={IoDocumentTextOutline} iconColor='text-green-700' />
-          <DashboardCard title='Rejected' data={clinics.filter(c => c.status === 'rejected').length} icon={IoDocumentTextOutline} iconColor='text-red-500' />
+
+      <section className='flex-1 w-full px-6 my-6 container-xl'>
+        <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Clinic Application Review</h1>
+            <p className="text-gray-500">Review and manage registration requests from new clinic partners.</p>
+          </div>
         </div>
 
-        <div className='pb-20'>
-            <ClinicApplicationTable 
-              data={clinics} 
-              onAccept={handleAccept} 
-              onReject={handleReject} 
-            />
-        </div>
+        
+        {loading ? (
+          <LoaderV2 />
+        ) : (
+            <>
+              <div className='grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4'>
+                <DashboardCard title='Total Applications' data={clinics.length} icon={HiOutlineBuildingOffice2} />
+                <DashboardCard title='Pending Review' data={clinics.filter(c => c.status === 'pending').length} icon={IoDocumentTextOutline} iconColor='text-amber-500' />
+                <DashboardCard title='Approved' data={clinics.filter(c => c.status === 'approved').length} icon={IoDocumentTextOutline} iconColor='text-green-700' />
+                <DashboardCard title='Rejected' data={clinics.filter(c => c.status === 'rejected').length} icon={IoDocumentTextOutline} iconColor='text-red-500' />
+              </div>
+
+              <div className='pb-20'>
+                <ClinicApplicationTable 
+                  data={clinics} 
+                  onAccept={handleAccept} 
+                  onReject={handleReject} 
+                />
+              </div>
+            </>
+          )}
       </section>
-
-      {/* Keep ToastContainer here so it's globally available for this page */}
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
-      {/* loader */}
-      {loading && (
-        <FullScreenLoader message='Fetching...' />
-      )}
     </div>
   )
 }

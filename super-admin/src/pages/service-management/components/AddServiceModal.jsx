@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 // hooks
-import { useUI } from '../../hooks/useUI';
+import { useUI } from '../../../hooks/useUI';
 // utils
-import { authFetch } from '../../utils/authFetch';
+import { authFetch } from '../../../utils/authFetch';
 // components
-import Input from '../../components/Input'; 
+import Input from '../../../components/Input'; 
 // icons 
 import { HiXCircle, HiSave } from 'react-icons/hi';
 import { HiMiniExclamationCircle } from 'react-icons/hi2';
@@ -100,7 +100,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
             id="name"
             name="name"
             isImportant={true}
-            placeholder="Premium grooming"
+            placeholder="ex. Premium grooming"
             onChange={handleChange}
             error={errors.name}
           />
@@ -126,7 +126,6 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
             )}
           </div>
 
-
           <div className="grid grid-cols-2 gap-4">
             <Input
               value={form.price}
@@ -146,7 +145,7 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
               id="duration"
               name="duration"
               isImportant={true}
-              placeholder="e.g. 30"
+              placeholder="ex. 30"
               onChange={handleChange}
               error={errors.duration}
             />

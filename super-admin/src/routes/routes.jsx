@@ -13,7 +13,7 @@ import NotFound from "../pages/NotFound";
 import Login from "../pages/auth/Login";
   // main
 import Dashboard from "../pages/dashboard/Dashboard";
-import ClinicApplications from "../pages/dashboard/ClinicApplications";
+import ClinicApplications from "../pages/dashboard/clinic-applications/ClinicApplications";
 import RegisteredClinics from "../pages/dashboard/RegisteredClinics";
 import PlatformAnalytics from "../pages/dashboard/PlatformAnalytics";
 import NotFoundDashboard from "../pages/dashboard/NotFoundDashboard";
@@ -58,7 +58,7 @@ export const routes = createBrowserRouter([
           { path: "dashboard", element: <Dashboard /> },
           { path: "clinic-applications", element: <ClinicApplications /> },
           { path: "registered-clinics", element: <RegisteredClinics /> },
-          { path: "subscription-plans", element: <SubscriptionPlans />},
+          { path: "subscription-management", element: <SubscriptionPlans />},
           { path: "transaction-management", element: <TransactionManagement />},
           { path: "service-management", element: <ServiceManagement />},
           { path: "platform-analytics", element: <PlatformAnalytics /> },
