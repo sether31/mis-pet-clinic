@@ -48,23 +48,20 @@ try {
     $currentSchedMap[$cs['day_of_week']] = $cs;
   }
 
-  // 👇 2. SMART CHANGE DETECTOR 👇
+  // 2. SMART CHANGE DETECTOR
   $hasChanges = false;
   $maintenanceChanged = false;
   $scheduleChanged = false;
 
-  // Check maintenance
   if ((int)$branch['is_maintenance'] !== $isMaintenance) {
       $hasChanges = true;
       $maintenanceChanged = true;
   }
   
-  // Check config status
   if ($markConfigured === 1 && (int)$branch['is_configured'] !== 1) {
       $hasChanges = true;
   }
 
-  // Check schedules
   foreach ($schedules as $s) {
     $day = $s['day_of_week'];
     $curr = $currentSchedMap[$day] ?? null;
@@ -75,111 +72,106 @@ try {
         break;
     }
 
-    $start = empty($s['start_time']) ? null : $s['start_time'];
-    $end = empty($s['end_time']) ? null : $s['end_time'];
+    $start = empty($s['start_time']) ? null : substr($s['start_time'], 0, 5);
+    $end = empty($s['end_time']) ? null : substr($s['end_time'], 0, 5);
     $isClosed = isset($s['is_closed']) ? (int)$s['is_closed'] : 1;
-
     $currStart = empty($curr['start_time']) ? null : substr($curr['start_time'], 0, 5);
     $currEnd = empty($curr['end_time']) ? null : substr($curr['end_time'], 0, 5);
 
     if ($start !== $currStart || $end !== $currEnd || $isClosed !== (int)$curr['is_closed']) {
       $hasChanges = true;
       $scheduleChanged = true;
-      break; // Stop loop, we found a schedule change!
+      break; 
     }
   }
 
   if (!$hasChanges) {
       echo json_encode(["success" => true, "message" => "No changes were made.", "no_changes" => true]);
-      exit; // Stops here, no DB updates
+      exit; 
+  }
+
+  // AUTO-MAINTENANCE LOGIC
+  $autoMaintTriggered = false;
+  if ($scheduleChanged) {
+      $isMaintenance = 1;
+      $autoMaintTriggered = true;
   }
 
   // 3. UPDATE SCHEDULES
-  $stmt = $pdo->prepare(
-    "UPDATE branch_operating_hours_tb 
-    SET 
-      start_time = ?, 
-      end_time = ?, 
-      is_closed = ?
-    WHERE branch_id = ? AND day_of_week = ?"
-  );
-
+  $stmt = $pdo->prepare("UPDATE branch_operating_hours_tb SET start_time = ?, end_time = ?, is_closed = ? WHERE branch_id = ? AND day_of_week = ?");
   foreach ($schedules as $s) {
     $day = $s['day_of_week'];
     $isClosed = isset($s['is_closed']) ? (int)$s['is_closed'] : 1;
-    
-    // Safely save old times even if closed!
     $curr = $currentSchedMap[$day] ?? [];
     $startTime = !empty($s['start_time']) ? $s['start_time'] : ($curr['start_time'] ?? null);
     $endTime   = !empty($s['end_time']) ? $s['end_time'] : ($curr['end_time'] ?? null);
-
     $stmt->execute([$startTime, $endTime, $isClosed, $branchId, $day]);
   }
 
   // Update branch maintenance and config
-  $updateBranchSql = "UPDATE clinic_branches_tb 
-                      SET is_maintenance = ?, 
-                          is_configured = CASE WHEN ? = 1 THEN 1 ELSE is_configured END 
-                      WHERE branch_id = ?";
-  
+  $updateBranchSql = "UPDATE clinic_branches_tb SET is_maintenance = ?, is_configured = CASE WHEN ? = 1 THEN 1 ELSE is_configured END WHERE branch_id = ?";
   $branchStmt = $pdo->prepare($updateBranchSql);
   $branchStmt->execute([$isMaintenance, $markConfigured, $branchId]);
 
   log_audit($pdo, $userId, $branch['clinic_id'], $branchId, 'UPDATE', 'BRANCH_SETTINGS_OPERATIONAL', $branchId);
 
-  // 👇 4. DYNAMIC NOTIFICATION WITH ROLE 👇
+// 4. NOTIFICATIONS logic
   $actorName = ucwords(trim($decodedToken->fname . ' ' . $decodedToken->lname));
   $branchName = ucwords($branch['name']);
+  $roleDisplay = ucwords(str_replace('_', ' ', $userRole));
   
-  // Format the Role nicely
-  $roleDisplay = ($userRole === 'clinic_admin') ? 'Clinic Admin' : 'Branch Admin';
-  $actorWithRole = "{$roleDisplay} ({$actorName})";
-  
-  // Build the message based on what changed
-  if (isset($maintenanceChanged) || isset($scheduleChanged)) {
-    if ($maintenanceChanged && $scheduleChanged) {
-      $maintText = $isMaintenance === 1 ? "enabled maintenance mode" : "disabled maintenance mode";
-      $message = "{$actorWithRole} updated the operating hours and {$maintText} for {$branchName}.";
-      $title = "Branch Schedule Updated: " . $branchName;
-    } elseif ($maintenanceChanged) {
-      $maintText = $isMaintenance === 1 ? "Enabled" : "Disabled";
-      $title = "Branch Maintenance Mode {$maintText}: " . $branchName;
-      $message = "{$actorWithRole} " . strtolower($maintText) . " maintenance mode for {$branchName}.";
-    } else {
-      $title = "Branch Schedule Updated: " . $branchName;
-      $message = "{$actorWithRole} updated the operating hours for {$branchName}.";
-    }
-  } else {
-    // Fallback
-    $title = "Branch Profile Updated: " . $branchName;
-    $message = "{$actorWithRole} updated the profile details for {$branchName}.";
+  // Prepare the maintenance word (enabled/disabled)
+  $maintWord = ($isMaintenance === 1) ? "enabled" : "disabled";
+  $actionText = "";
+  $title = "";
+
+  // 👇 DYNAMIC LOGIC: If schedule changed, it's ALWAYS "Schedule & Maintenance" 👇
+  if ($scheduleChanged) {
+    $title = "Schedule & Maintenance Updated";
+    $actionText = "updated the operating hours and " . ($autoMaintTriggered ? "automatically " : "") . "{$maintWord} maintenance mode";
+  } 
+  // If only the manual toggle was flipped
+  elseif ($maintenanceChanged) {
+      $title = "Maintenance Mode " . ucwords($maintWord);
+      $actionText = "{$maintWord} maintenance mode";
+  } 
+  else {
+      $title = "Branch Settings Updated";
+      $actionText = "updated the branch settings";
   }
+
+  // Final sentence construction
+  $message = "{$roleDisplay} ({$actorName}) {$actionText} for {$branchName}.";
+
+  // --- Notification Routing ---
 
   // A. If Branch Admin did it -> Notify Clinic Admin
-  if ($userRole === 'branch_admin') {
-    send_notification($pdo, $branch['clinic_owner_id'], 'system', $title, $message);
+  if ($userRole === 'branch_admin' && $userId !== $branch['clinic_owner_id']) {
+      send_notification($pdo, $branch['clinic_owner_id'], 'system', $title, $message);
   } 
-  // B. If Clinic Admin did it -> Notify Branch Admin(s)
+
+  // B. If Clinic Admin did it -> Notify all Branch Admins
   elseif ($userRole === 'clinic_admin') {
-    $stmtBranchAdmins = $pdo->prepare(
-      "SELECT bs.user_id 
-      FROM branch_staff_tb bs
-      JOIN user_tb u ON bs.user_id = u.user_id
-      WHERE bs.branch_id = ? 
-        AND bs.status = 1"
-    );
-    $stmtBranchAdmins->execute([$branchId]);
-    $branchAdmins = $stmtBranchAdmins->fetchAll();
+      $stmtAdmins = $pdo->prepare("
+          SELECT bs.user_id FROM branch_staff_tb bs
+          JOIN user_tb u ON bs.user_id = u.user_id
+          JOIN roles_tb r ON u.role_id = r.role_id
+          WHERE bs.branch_id = ? AND r.role_name = 'branch_admin'
+          AND bs.status = 1 AND bs.user_id != ?
+      ");
+      $stmtAdmins->execute([$branchId, $userId]);
+      $branchAdmins = $stmtAdmins->fetchAll();
 
-    foreach ($branchAdmins as $ba) {
-      if ($ba['user_id'] !== $branch['clinic_owner_id']) {
-        send_notification($pdo, $ba['user_id'], 'system', $title, $message);
+      foreach ($branchAdmins as $admin) {
+          send_notification($pdo, $admin['user_id'], 'system', $title, $message);
       }
-    }
   }
-
   $pdo->commit();
-  echo json_encode(["success" => true, "message" => "Settings updated successfully!"]);
+  echo json_encode([
+    "success" => true, 
+    "message" => "Settings updated successfully!",
+    "auto_maintenance" => $autoMaintTriggered 
+  ]);
 
 } catch(Exception $e) {
   if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();

@@ -24,7 +24,7 @@ export default function NotFoundDashboard() {
     <div className="flex flex-col h-full">
       <Header />
 
-      <div className='flex flex-col items-center justify-center flex-1 px-6 py-12 text-center bg-(--clr-bg-page)'>
+      <div className='flex flex-col items-center justify-center flex-1 px-6 py-12 text-center'>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

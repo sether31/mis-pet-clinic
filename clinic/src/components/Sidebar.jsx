@@ -14,11 +14,12 @@ import {
   LuUsers, 
   LuReceipt,       
   LuPackage,      
-  LuSettings2
+  LuSettings2,
 } from "react-icons/lu";
 import { FaRegCalendarAlt } from 'react-icons/fa';
 import { RiBankCard2Line } from "react-icons/ri";
 import { PiShoppingCartBold } from 'react-icons/pi';
+import { RiPieChart2Line } from "react-icons/ri";
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: LuLayoutDashboard },
@@ -29,6 +30,7 @@ const sidebarItems = [
   { label: 'Transaction Management', path: 'transaction-management', icon: RiBankCard2Line, requiredPermission: 'transaction_management' },
   { label: 'Staff Management', path: 'staff-management', icon: LuUsers, requiredPermission: 'staff_management' },
   { label: 'Service Management', path: 'service-management', icon: MdOutlineHomeRepairService, requiredPermission: 'service_management' },
+  { label: 'Analytics', path: 'analytics', icon: RiPieChart2Line, requiredPermission: 'analytics' },
   { label: 'Branch Settings', path: 'branch-settings', icon: LuSettings2, requiredPermission: 'branch_settings' },
 ];
 
