@@ -17,7 +17,6 @@ import { MdOutlineSubscriptions } from "react-icons/md";
 
 const sidebarItems = [
   { label: 'Dashboard', path: '/dashboard', icon: RiDashboardLine },
-  { label: 'Platform Analytics', path: '/platform-analytics', icon: RiPieChart2Line }, 
   
   { label: 'Clinic Applications', path: '/clinic-applications', icon: CgFileDocument },
   { label: 'Registered Clinics', path: '/registered-clinics', icon: LuBuilding2 },
@@ -26,6 +25,7 @@ const sidebarItems = [
   { label: 'Transaction Management', path: '/transaction-management', icon: LuWallet},
   
   { label: 'Service Management', path: '/service-management', icon: MdOutlineHomeRepairService},
+  { label: 'Platform Analytics', path: '/platform-analytics', icon: RiPieChart2Line }, 
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;

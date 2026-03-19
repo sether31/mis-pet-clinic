@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 // hooks
-import { useUI } from '../../hooks/useUI'; 
+import { useUI } from '../../../hooks/useUI'; 
 // utils
-import { authFetch } from '../../utils/authFetch';
+import { authFetch } from '../../../utils/authFetch';
 // components
-import Header from '../../components/Header';
-import LoaderV2 from '../../components/LoaderV2';
+import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2';
 import TransactionCard from './components/TransactionCard';
 import TransactionTable from './components/TransactionTable';
 import TransactionModal from './components/TransactionModal';

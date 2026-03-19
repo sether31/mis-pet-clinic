@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 // utils
-import { authFetch } from '../../utils/authFetch';
+import { authFetch } from '../../../utils/authFetch';
 // components
-import Header from '../../components/Header';
+import Header from '../../../components/Header';
+import LoaderV2 from '../../../components/LoaderV2';
 // sub components
 import ServiceCard from './components/ServiceCard';
 import ServiceTable from './components/ServiceTable';
 import AddServiceModal from './components/AddServiceModal';
-import LoaderV2 from '../../components/LoaderV2';
 
 export default function ServiceManagement() {
   const [services, setServices] = useState([]);

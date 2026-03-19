@@ -1,5 +1,5 @@
 // components
-import DashboardCard from '../../../components/DashboardCard';
+import DashboardCard from '../../../../components/DashboardCard';
 // icons
 import { LuWallet } from "react-icons/lu";
 import { RiMoneyDollarCircleLine } from "react-icons/ri";

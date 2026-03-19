@@ -1,5 +1,5 @@
 // components
-import DashboardCard from '../../../components/DashboardCard';
+import DashboardCard from '../../../../components/DashboardCard';
 // icons
 import { BsBoxSeam } from "react-icons/bs";
 

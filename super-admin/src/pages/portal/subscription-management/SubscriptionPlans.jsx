@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify';
 // utils
-import { authFetch } from '../../utils/authFetch';
+import { authFetch } from '../../../utils/authFetch';
 // component
-import Header from '../../components/Header'
-import LoaderV2 from '../../components/LoaderV2';
-import DashboardCard from '../../components/DashboardCard'
+import Header from '../../../components/Header'
+import LoaderV2 from '../../../components/LoaderV2';
+import DashboardCard from '../../../components/DashboardCard'
 import SubscriptionTable from './components/SubscriptionTable'
 import SubscriptionModal from './components/SubscriptionModal'
 // icons
