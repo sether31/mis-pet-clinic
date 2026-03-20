@@ -1,7 +1,7 @@
 import React from 'react'
 // components
-import Header from '../../components/Header'
-import DashboardCard from '../../components/DashboardCard'
+import Header from '../../../components/Header'
+import DashboardCard from '../../../components/DashboardCard'
 // icons
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2'
 import { IoDocumentTextOutline } from 'react-icons/io5'

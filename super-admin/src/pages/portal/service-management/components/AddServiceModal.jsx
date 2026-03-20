@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 // hooks
-import { useUI } from '../../../hooks/useUI';
+import { useUI } from '../../../../hooks/useUI';
 // utils
-import { authFetch } from '../../../utils/authFetch';
+import { authFetch } from '../../../../utils/authFetch';
 // components
-import Input from '../../../components/Input'; 
+import Input from '../../../../components/Input'; 
 // icons 
 import { HiXCircle, HiSave } from 'react-icons/hi';
 import { HiMiniExclamationCircle } from 'react-icons/hi2';

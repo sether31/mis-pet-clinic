@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 // hooks
 import { useUser } from '../hooks/useUser';
+import { useUI } from '../hooks/useUI';
+
 // utils
 import { authFetch } from '../utils/authFetch';
+import wait from '../utils/wait';
 // icons
 import { MdOutlineClose, MdOutlineHomeRepairService } from 'react-icons/md';
 import { RxHamburgerMenu } from "react-icons/rx";
 import { 
   LuLayoutDashboard, 
   LuClipboard, 
-  LuUsers, 
-  LuReceipt,       
+  LuUsers,      
   LuPackage,      
   LuSettings2,
 } from "react-icons/lu";
@@ -20,6 +22,8 @@ import { FaRegCalendarAlt } from 'react-icons/fa';
 import { RiBankCard2Line } from "react-icons/ri";
 import { PiShoppingCartBold } from 'react-icons/pi';
 import { RiPieChart2Line } from "react-icons/ri";
+import { TbLogout } from 'react-icons/tb';
+
 
 const sidebarItems = [
   { label: 'Dashboard', path: 'dashboard', icon: LuLayoutDashboard },
@@ -37,9 +41,11 @@ const sidebarItems = [
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Sidebar({ className, open, setOpen }) {
+  const navigate = useNavigate();
   const location = useLocation();
   const { branchId } = useParams();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
+  const { showLoader, hideLoader } = useUI();
   const [selectedBranch, setSelectedBranch] = useState("");
 
   const visibleItems = sidebarItems.filter(item => {
@@ -61,6 +67,15 @@ export default function Sidebar({ className, open, setOpen }) {
     };
     if (branchId) fetchBranchName();
   }, [branchId]);
+
+    const logout = async () => {
+      showLoader('Logging out...');
+      await wait(1000);
+      sessionStorage.clear();
+      setUser(null);
+      navigate('/login', { replace: true });
+      hideLoader();
+    }
 
   return (
     <>
@@ -116,6 +131,20 @@ export default function Sidebar({ className, open, setOpen }) {
                 onLinkClick={() => window.innerWidth < 768 && setOpen(false)}
               />
             ))}
+          </div>
+
+          <div className='mt-auto mb-30'>
+            <button 
+              onClick={logout}
+              className="flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) hover:text-white text-(--clr-black) overflow-hidden text-sm cursor-pointer"
+            >
+              <div className="shrink-0"><TbLogout size={22} /></div>
+              {open && (
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="whitespace-nowrap">
+                  Logout
+                </motion.span>
+              )}
+            </button>
           </div>
         </nav>
       </aside>

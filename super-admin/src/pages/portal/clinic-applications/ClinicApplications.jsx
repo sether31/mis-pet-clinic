@@ -5,8 +5,9 @@ import { authFetch } from '../../../utils/authFetch';
 // component
 import Header from '../../../components/Header'
 import DashboardCard from '../../../components/DashboardCard'
-import ClinicApplicationTable from './components/ClinicApplicationTable'
 import LoaderV2 from '../../../components/LoaderV2';
+// sub component
+import ClinicApplicationTable from './components/ClinicApplicationTable'
 // icons
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2'
 import { IoDocumentTextOutline } from 'react-icons/io5'

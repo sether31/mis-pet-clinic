@@ -100,7 +100,7 @@ export default function CalendarComponent({
       <FullCalendar
         key={`${viewMode}-${selectedStaffId}`} 
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView={viewMode === 'admin' ? 'dayGridMonth' : 'timeGridDay'} 
+        initialView={viewMode === 'admin' ? 'dayGridMonth' : 'timeGridWeek'}
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',

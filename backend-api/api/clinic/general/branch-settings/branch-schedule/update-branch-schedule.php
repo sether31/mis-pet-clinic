@@ -11,7 +11,6 @@ $userRole = $decodedToken->role;
 $branchId = $_POST['branch_id'] ?? null;
 $schedulesJson = $_POST['schedules'] ?? null;
 $isMaintenance = isset($_POST['is_maintenance']) ? (int)$_POST['is_maintenance'] : 0;
-$markConfigured = isset($_POST['mark_configured']) ? (int)$_POST['mark_configured'] : 0;
 
 if(!$branchId || !$schedulesJson) {
   echo json_encode(["success" => false, "message" => "Missing required data."]);
@@ -109,9 +108,13 @@ try {
   }
 
   // Update branch maintenance and config
-  $updateBranchSql = "UPDATE clinic_branches_tb SET is_maintenance = ?, is_configured = CASE WHEN ? = 1 THEN 1 ELSE is_configured END WHERE branch_id = ?";
+  $updateBranchSql = "UPDATE clinic_branches_tb 
+                    SET is_maintenance = ?, 
+                        is_configured = 1 
+                    WHERE branch_id = ?";
+                    
   $branchStmt = $pdo->prepare($updateBranchSql);
-  $branchStmt->execute([$isMaintenance, $markConfigured, $branchId]);
+  $branchStmt->execute([$isMaintenance, $branchId]);
 
   log_audit($pdo, $userId, $branch['clinic_id'], $branchId, 'UPDATE', 'BRANCH_SETTINGS_OPERATIONAL', $branchId);
 

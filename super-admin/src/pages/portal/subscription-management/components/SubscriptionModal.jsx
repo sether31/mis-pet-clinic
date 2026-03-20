@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 // utils
-import { authFetch } from '../../../utils/authFetch';
+import { authFetch } from '../../../../utils/authFetch';
 // icons
 import { HiXCircle, HiSave, HiExclamationCircle } from 'react-icons/hi';
-import { HiCheckCircle } from 'react-icons/hi2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
