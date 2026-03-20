@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'; // Added useEffect and useState
 // hooks
 import { useUser } from '../../../hooks/useUser';
 // components
@@ -8,10 +9,30 @@ import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { IoDocumentTextOutline } from "react-icons/io5";
 import { FiUsers } from "react-icons/fi";
 import { BsGraphUpArrow } from "react-icons/bs";
-
+// utils (assuming you have an authFetch or similar)
+import { authFetch } from '../../../utils/authFetch'; 
 
 export default function Dashboard() {
   const { user } = useUser();
+  const [isChecking, setIsChecking] = useState(false);
+
+  useEffect(() => {
+    const runSubscriptionCheck = async () => {
+      try {
+        setIsChecking(true);
+        await authFetch(`${import.meta.env.VITE_API_URL}/api/super-admin/notifications/check-all-expiring-subscriptions.php`);
+        console.log("Subscription scan complete.");
+      } catch (err) {
+        console.error("Failed to run subscription check:", err);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    if (user?.role === 'super_admin') {
+      runSubscriptionCheck();
+    }
+  }, [user]);
 
   return (
     <div className='min-h-screen bg-gray-100'>

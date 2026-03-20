@@ -181,6 +181,31 @@ try {
       }
     }
 
+    // --- 3. NOTIFY ALL SUPER ADMINS ---
+    try {
+      // Fetch all Super Admins (Role 1)
+      $stmtSAs = $pdo->prepare("SELECT user_id FROM user_tb WHERE role_id = 1");
+      $stmtSAs->execute();
+      $superAdminIds = $stmtSAs->fetchAll(PDO::FETCH_COLUMN);
+
+      // Ensure names are clean for the Super Admin alert
+      $cleanPlan = ucwords(strtolower($adminData['plan_name']));
+      $cleanBranch = ucwords(strtolower($adminData['branch_name']));
+      $cleanPayer = ucwords(strtolower(trim($user->fname . ' ' . $user->lname)));
+
+      // Super Admin Title
+      $saTitle = "Payment Received: $cleanPlan ($cleanBranch)";
+      
+      // Super Admin Message
+      $saMessage = "(#$currentUserId) $cleanPayer ($payerRole) has successfully processed a $cleanPlan " . strtoupper($type) . " for $cleanBranch.";
+
+      foreach ($superAdminIds as $saId) {
+        send_notification($pdo, $saId, 'billing', $saTitle, $saMessage);
+      }
+    } catch (Exception $e) {
+      error_log("Super Admin Notification Error: " . $e->getMessage());
+    }
+
     // audit log
     log_audit(
       $pdo, 
