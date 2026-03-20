@@ -3,7 +3,7 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 // context
 import PlatformProvider from "../contexts/PlatformProvider";
-import UIProvider from "../contexts/UiProvider";
+import UIProvider from "../contexts/UIProvider";
 import UserProvider from "../contexts/UserProvider";
 // layout
 import ClinicLayout from "../layouts/ClinicLayout";
@@ -19,7 +19,6 @@ import PendingUser from "../pages/pending/PendingUser";
 import SelectBranch from "../pages/clinic-admin/SelectBranch";
 import SelectPlans from "../pages/clinic-admin/SelectPlans";
 import PaymentSuccess from "../pages/clinic-admin/payments/PaymentSuccess";
-import PaymentFailed from "../pages/clinic-admin/payments/PaymentFailed";
   // portal
 import DashboardController from "../pages/portal/dashboard/DashboardController";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
