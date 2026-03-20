@@ -8,17 +8,15 @@ import { authFetch } from '../../../utils/authFetch';
 import Header from '../../../components/Header';
 import NotificationModal from './components/NotificationModal'; 
 import NotificationTable from './components/NotificationTable'; 
-// icons
+// icons (Updated for Super Admin context)
 import { HiSearch } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiOutlineInformationCircle } from 'react-icons/hi2';
-import { IoBagHandleOutline, IoCalendarOutline, IoCardOutline } from 'react-icons/io5';
-import { LuPackage } from 'react-icons/lu';
-import { TbAlertTriangle } from 'react-icons/tb';
-import { TbFileCertificate } from 'react-icons/tb';
+import { IoCardOutline, IoBusinessOutline } from 'react-icons/io5';
+import { TbAlertTriangle, TbFileCertificate } from 'react-icons/tb';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function Notifications() {
+export default function SuperAdminNotifications() {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState([]);
@@ -35,20 +33,20 @@ export default function Notifications() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState(null);
 
-  // REAL DATA FETCH
+  // REAL DATA FETCH (Update this path to your Super Admin endpoint)
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const res = await authFetch(`${API_URL}/api/clinic/general/notifications/get-notifications.php`);
+      const res = await authFetch(`${API_URL}/api/super-admin/notifications/get-notifications.php`);
       if (res.success) {
         setData(res.data);
         setUnreadCount(res.unread_count);
       } else {
-        toast.error(res.message || "Failed to load notifications");
+        toast.error("Something went wrong");
       }
     } catch (error) {
       console.error("Failed to load notifications:", error);
-      toast.error("Network error while loading notifications.");
+      toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -71,17 +69,14 @@ export default function Notifications() {
     setModalVisible(true);
 
     if(!notif.isRead) {
-      // Calculate the new count locally
       const newCount = Math.max(0, unreadCount - 1);
-      
-      // Update the page state
       setData(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
       setUnreadCount(newCount);
-
       window.dispatchEvent(new CustomEvent('syncUnreadCount', { detail: newCount }));
 
       try {
-        await authFetch(`${API_URL}/api/clinic/general/notifications/update-notification-status.php`, {
+        // Update this path to your Super Admin endpoint
+        await authFetch(`${API_URL}/api/super-admin/notifications/update-notification-status.php`, {
           method: 'POST',
           body: JSON.stringify({ notification_id: notif.id })
         });
@@ -91,15 +86,14 @@ export default function Notifications() {
     }
   };
 
-  // Mark All Read
   const handleMarkAllRead = async () => {
     setData(prev => prev.map(n => ({ ...n, isRead: true })));
     setUnreadCount(0);
-
     window.dispatchEvent(new CustomEvent('syncUnreadCount', { detail: 0 }));
 
     try {
-      const res = await authFetch(`${API_URL}/api/clinic/general/notifications/update-notification-status.php`, {
+      // Update this path to your Super Admin endpoint
+      const res = await authFetch(`${API_URL}/api/super-admin/notifications/update-notification-status.php`, {
         method: 'POST',
         body: JSON.stringify({ notification_id: 'all' })
       });
@@ -109,7 +103,6 @@ export default function Notifications() {
     }
   };
 
-  // Filtering and Sorting logic
   const filteredAndSorted = useMemo(() => {
     let result = data
       .filter(item => {
@@ -150,16 +143,11 @@ export default function Notifications() {
     setCurrentPage(1);
   }, [activeTab, search, entriesPerPage, sortConfig]);
 
+  // UPDATED FOR SUPER ADMIN CATEGORIES
   const getCategoryBadge = (category) => {
     switch(category?.toLowerCase()) {
-      case 'appointment':
-        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-blue-700 bg-blue-50 border border-blue-200 rounded-lg w-fit mx-auto"><IoCalendarOutline size={12}/> Booking</span>;
-      case 'reservation':
-        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-purple-700 bg-purple-50 border border-purple-200 rounded-lg w-fit mx-auto"><IoBagHandleOutline size={12}/>Reservation</span>;
-      case 'inventory':
-        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-red-700 bg-red-50 border border-red-200 rounded-lg w-fit mx-auto"><LuPackage size={12}/> Inventory</span>;
-      case 'billing':
-        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-(--clr-primary) bg-green-50 border border-green-200 rounded-lg w-fit mx-auto"><IoCardOutline size={12}/> Billing</span>;
+      case 'clinic_application_request':
+        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-blue-700 bg-blue-50 border border-blue-200 rounded-lg w-fit mx-auto"><TbFileCertificate size={12}/> New Clinic Request</span>;
 
       // subs
       case 'subscription':
@@ -169,28 +157,10 @@ export default function Notifications() {
       case 'subscription_expired':
         return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-red-700 bg-red-50 border border-red-200 rounded-lg w-fit mx-auto"><TbAlertTriangle size={12}/> Subscription</span>;
 
-      case 'clinic_application_request':
-        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-orange-700 bg-orange-50 border border-orange-200 rounded-lg w-fit mx-auto"><TbFileCertificate size={12}/> Branch Request</span>;
-
       default:
         return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-700 bg-gray-100 border border-gray-300 rounded-lg w-fit mx-auto"><HiOutlineInformationCircle size={12}/> System</span>;
     }
   };
-
-  const getSubtitle = (role) => {
-    switch(role?.toLowerCase()) {
-      case 'veterinarian':
-      case 'groomer':
-        return "Stay updated on your upcoming appointments and patient alerts.";
-      case 'branch_admin':
-      case 'clinic_admin':
-        return "Monitor clinic operations, low stock warnings, and daily events.";
-      case 'staff':
-        return "Track incoming bookings, shop reservations, and daily tasks.";
-      default:
-        return "Review your latest system alerts, booking requests, and updates.";
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -201,15 +171,15 @@ export default function Notifications() {
         {/* Page Titles */}
         <div className="flex flex-col mb-6">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">Your Inbox</h1>
+            <h1 className="text-2xl font-bold tracking-tight">System Inbox</h1>
             {unreadCount > 0 && (
               <span className="bg-(--clr-primary) text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
-                {unreadCount} New
+                {unreadCount} Action Needed
               </span>
             )}
           </div>
           <p className="mt-1 text-sm font-medium text-gray-500">
-            {getSubtitle(user?.role)}
+            Monitor clinic applications, branch verifications, and platform revenue.
           </p>
         </div>
 
@@ -268,7 +238,6 @@ export default function Notifications() {
             </div>
           </div>
 
-          {/* Render the Extracted Table Component */}
           <NotificationTable 
             isLoading={isLoading}
             paginated={paginated}
@@ -295,7 +264,6 @@ export default function Notifications() {
         </div>
       </section>
 
-      {/* Render the Extracted Modal Component */}
       <NotificationModal 
         isOpen={modalVisible} 
         onClose={() => setModalVisible(false)} 

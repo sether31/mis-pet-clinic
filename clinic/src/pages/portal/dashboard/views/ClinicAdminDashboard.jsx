@@ -50,20 +50,6 @@ export default function ClinicAdminDashboard() {
     fetchClinicStats();
   }, [timeFilter]);
 
-  useEffect(() => {
-    const checkSubs = async () => {
-      try {
-        await authFetch(`${API_URL}/api/clinic/general/notifications/check-expiring-subs.php`);
-      } catch(error) {
-        console.error("Failed to check subscription statuses", error);
-      }
-    };
-    
-    if (user) {
-      checkSubs();
-    }
-  }, [user]);
-
   const maintenanceBranches = branchPerformance.filter(
     b => b.status === 'Maintenance' && b.sub_status == 'Active'
   );

@@ -7,6 +7,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../service/Otp.php';
 require_once __DIR__ . '/../../helper/log_audit.php';
+require_once __DIR__ . '/../../helper/send_notification.php';
 
 try {
   $pdo = (new Database())->pdo;
@@ -15,16 +16,16 @@ try {
   $tempUserId = $_POST['temp_user_id'] ?? null;
   $otp = $_POST['otp'] ?? null;
 
-  if(!$tempUserId || !$otp) {
+  if (!$tempUserId || !$otp) {
     throw new Exception("User ID and OTP are required");
   }
 
-  // check otp
-  if(!verifyOtp($tempUserId, $otp, 'register')) {
+  // 1. Verify OTP
+  if (!verifyOtp($tempUserId, $otp, 'register')) {
     throw new Exception("Invalid or expired OTP");
   }
 
-  // create user
+  // 2. Create Clinic Admin User (Role 2)
   $stmtUser = $pdo->prepare(
     "INSERT INTO user_tb 
     (email, password, first_name, last_name, role_id)
@@ -42,170 +43,135 @@ try {
 
   $userId = $pdo->lastInsertId();
 
-  // create clinic
+  // 3. Create Clinic
   $stmtClinic = $pdo->prepare(
-    "INSERT INTO clinics_tb (name, created_by)
-    VALUES (:name, :created_by)"
+      "INSERT INTO clinics_tb (name, created_by)
+      VALUES (:name, :created_by)"
   );
 
   $stmtClinic->execute([
-    ':name' =>$_POST['clinicName'],
-    ':created_by' => $userId
+      ':name' => $_POST['clinicName'],
+      ':created_by' => $userId
   ]);
 
   $clinicId = $pdo->lastInsertId();
 
-  // create clinic branch
+  // 4. Create First Branch
   $stmtBranch = $pdo->prepare(
-    "INSERT INTO clinic_branches_tb (
-      clinic_id,
-      name,
-      description,
-      address,
-      municipality,
-      province,
-      zip_code,
-      est,
-      contact_number,
-      website,
-      facebook,
-      tin_id_number,
-      business_permit_number
-    ) VALUES (
-      :clinicId,
-      :name,
-      :description,
-      :address,
-      :municipality,
-      :province,
-      :zipCode,
-      :est,
-      :contactNumber,
-      :website,
-      :facebook,
-      :tinNumber,
-      :businessPermitNumber
-    )"
+      "INSERT INTO clinic_branches_tb (
+          clinic_id, name, description, address, municipality, 
+          province, zip_code, est, contact_number, website, 
+          facebook, tin_id_number, business_permit_number
+      ) VALUES (
+          :clinicId, :name, :description, :address, :municipality, 
+          :province, :zipCode, :est, :contactNumber, :website, 
+          :facebook, :tinNumber, :businessPermitNumber
+      )"
   );
 
   $stmtBranch->execute([
-    ':clinicId' => $clinicId,
-    ':name' => $_POST['clinicName'],
-    ':description' => $_POST['clinicDescription'] ?: null,
-    ':address' => $_POST['completeAddress'],
-    ':municipality' => $_POST['municipality'],
-    ':province' => $_POST['province'],
-    ':zipCode' => $_POST['zipCode'],
-    ':est' => $_POST['est'] ?: null,
-    ':contactNumber' => $_POST['contactNumber'] ?? null,
-    ':website' => $_POST['website'] ?: null,
-    ':facebook' => $_POST['facebook'] ?: null,
-    ':tinNumber' => $_POST['tinNumber'],
-    ':businessPermitNumber' => $_POST['businessPermitNumber']
+      ':clinicId' => $clinicId,
+      ':name' => $_POST['clinicName'],
+      ':description' => $_POST['clinicDescription'] ?: null,
+      ':address' => $_POST['completeAddress'],
+      ':municipality' => $_POST['municipality'],
+      ':province' => $_POST['province'],
+      ':zipCode' => $_POST['zipCode'],
+      ':est' => $_POST['est'] ?: null,
+      ':contactNumber' => $_POST['contactNumber'] ?? null,
+      ':website' => $_POST['website'] ?: null,
+      ':facebook' => $_POST['facebook'] ?: null,
+      ':tinNumber' => $_POST['tinNumber'],
+      ':businessPermitNumber' => $_POST['businessPermitNumber']
   ]);
 
   $branchId = $pdo->lastInsertId();
 
-  // services
+  // 5. Assign Services to Branch
   $services = $_POST['services'] ?? '[]';
   $servicesArray = json_decode($services, true);
 
-  if(!empty($servicesArray)) {
-    $stmtService = $pdo->prepare(
-      "INSERT INTO branch_service_tb (
-        branch_id, 
-        service_id, 
-        assigned_role,
-        custom_name, 
-        custom_description, 
-        price, 
-        duration
-      ) 
-      SELECT 
-        :branch_id, 
-        service_id, 
-        'veterinarian', 
-        name,        
-        description,    
-        price,       
-        duration   
-      FROM service_tb 
-      WHERE service_id = :service_id"
-    );
+  if (!empty($servicesArray)) {
+      $stmtService = $pdo->prepare(
+          "INSERT INTO branch_service_tb (
+              branch_id, service_id, assigned_role, custom_name, 
+              custom_description, price, duration
+          ) 
+          SELECT :branch_id, service_id, 'veterinarian', name, description, price, duration   
+          FROM service_tb 
+          WHERE service_id = :service_id"
+      );
 
-    foreach($servicesArray as $id) {
-      $stmtService->execute([
-        ':branch_id' => $branchId, 
-        ':service_id' => $id
-      ]);
-    }
+      foreach ($servicesArray as $id) {
+          $stmtService->execute([':branch_id' => $branchId, ':service_id' => $id]);
+      }
   }
 
-
-  // file upload
+  // 6. Handle Document Uploads
   function uploadPermit($file, $branchId, $type) {
-    if(!isset($file) || $file['error'] !== 0) {
-      return null;
-    }
+      if (!isset($file) || $file['error'] !== 0) return null;
 
-    $baseDir = dirname(__DIR__, 2) . "/uploads/clinic/$branchId/$type/";
-    if(!is_dir($baseDir)) {
-      mkdir($baseDir, 0755, true);
-    }
+      $baseDir = dirname(__DIR__, 2) . "/uploads/clinic/$branchId/$type/";
+      if (!is_dir($baseDir)) mkdir($baseDir, 0755, true);
 
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = $type . "_" . uniqid() . "." . $ext;
-    $fullPath = $baseDir . $filename;
+      $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+      $filename = $type . "_" . uniqid() . "." . $ext;
+      $fullPath = $baseDir . $filename;
 
-    move_uploaded_file($file['tmp_name'], $fullPath);
-
-    return "uploads/clinic/$branchId/$type/$filename";
+      move_uploaded_file($file['tmp_name'], $fullPath);
+      return "uploads/clinic/$branchId/$type/$filename";
   }
 
   $tinPicPath = uploadPermit($_FILES['tinNumberPic'] ?? null, $branchId, 'tin_id');
   $businessPermitPath = uploadPermit($_FILES['businessPermitPic'] ?? null, $branchId, 'business_permit');
 
-  if(!$tinPicPath || !$businessPermitPath) {
-    throw new Exception("Failed to upload required documents. Please check file sizes and formats.");
+  if (!$tinPicPath || !$businessPermitPath) {
+      throw new Exception("Required documents are missing or failed to upload.");
   }
 
-  // update clinic branch permit picture
-  $stmtUpdate = $pdo->prepare(
-    "UPDATE clinic_branches_tb
-    SET
-      tin_id_picture = ?,
-      business_permit_picture = ?
-    WHERE branch_id = ?"
-  );
+  // Update branch with file paths
+  $stmtUpdate = $pdo->prepare("UPDATE clinic_branches_tb SET tin_id_picture = ?, business_permit_picture = ? WHERE branch_id = ?");
+  $stmtUpdate->execute([$tinPicPath, $businessPermitPath, $branchId]);
 
-  $stmtUpdate->execute([
-    $tinPicPath,
-    $businessPermitPath,
-    $branchId
-  ]);
-
-  // log create user
+  // 7. Audit Logging
   log_audit($pdo, $userId, $clinicId, $branchId, 'CREATE', 'USER', $userId);
-
-  // log create clinic
   log_audit($pdo, $userId, $clinicId, $branchId, 'CREATE', 'CLINIC', $clinicId);
-
-  // log create branch
   log_audit($pdo, $userId, $clinicId, $branchId, 'CREATE', 'BRANCH', $branchId);
 
   $pdo->commit();
 
-  // delete temp id in otp
+  // 8. Final Cleanup and Notifications
   cleanupOtp($tempUserId, 'register');
+
+  // --- NEW: NOTIFY ALL SUPER ADMINS ---
+  try {
+    $stmtSAs = $pdo->prepare("SELECT user_id FROM user_tb WHERE role_id = 1");
+    $stmtSAs->execute();
+    $superAdminIds = $stmtSAs->fetchAll(PDO::FETCH_COLUMN);
+
+    // Clean up names
+    $formattedClinicName = ucwords(strtolower($_POST['clinicName']));
+    $ownerName = ucwords(strtolower($_POST['firstName'] . " " . $_POST['lastName']));
+
+    $notifTitle = "New Registration: $formattedClinicName"; 
+    // Adding the owner name here adds that extra professional touch
+    $notifMessage = "$ownerName has submitted a new clinic application ($formattedClinicName). It is now ready for your review and approval.";
+    $notifCategory = "clinic_application_request";
+
+    foreach ($superAdminIds as $saId) {
+      send_notification($pdo, $saId, $notifCategory, $notifTitle, $notifMessage);
+    }
+  } catch (Exception $e) {
+    error_log("Failed to notify Super Admins: " . $e->getMessage());
+  }
 
   echo json_encode([
     "success" => true,
     "message" => "Registration completed. Please wait for admin approval."
   ]);
 
-} catch(Exception $e) {
-  echo json_encode([
-    "success" => false,
-    "message" => $e->getMessage()
-  ]);
+} catch (Exception $e) {
+  if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
+  http_response_code(400);
+  echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }

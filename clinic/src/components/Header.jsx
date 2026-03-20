@@ -110,7 +110,7 @@ export default function Header() {
           </Link>
           <Link 
             to={`/clinic/${branchId}/portal/settings`}
-            className={`p-2 transition-all rounded-lg hover:bg-black hover:text-white ${
+            className={`p-1 transition-all rounded-lg hover:bg-black hover:text-white ${
               isSettingsActive ? 'bg-black text-white' : 'text-gray-800'
             }`}
           >

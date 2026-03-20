@@ -20,6 +20,7 @@ import SubscriptionPlans from "../pages/portal/subscription-management/Subscript
 import ServiceManagement from "../pages/portal/service-management/ServiceManagement";
 import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
   // other links
+import Notifications from "../pages/Navigation/notifications/Notifications";
 import Settings from "../pages/Navigation/Settings/Settings";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import GeneralSettings from "../pages/Navigation/Settings/components/GeneralSettings";
@@ -64,6 +65,7 @@ export const routes = createBrowserRouter([
           { path: "service-management", element: <ServiceManagement />},
           { path: "platform-analytics", element: <PlatformAnalytics /> },
           // other links
+          { path: "notifications", element: <Notifications /> },
           { 
             path: "settings", 
             element: <Settings />,

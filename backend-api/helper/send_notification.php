@@ -7,8 +7,7 @@ function send_notification($pdo, $userId, $category, $title, $message) {
     );
     return $stmt->execute([$userId, $category, $title, $message]);
   } catch (PDOException $e) {
-    error_log("Failed to send notification: " . $e->getMessage());
-    return false;
+    die("Database Error: " . $e->getMessage());
   }
 }
 ?>
