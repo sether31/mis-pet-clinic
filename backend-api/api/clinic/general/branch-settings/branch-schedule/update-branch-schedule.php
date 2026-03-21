@@ -57,7 +57,7 @@ try {
       $maintenanceChanged = true;
   }
   
-  if ($markConfigured === 1 && (int)$branch['is_configured'] !== 1) {
+  if ((int)$branch['is_configured'] !== 1) {
       $hasChanges = true;
   }
 

@@ -1,5 +1,6 @@
-import{ useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useLocation, useNavigate } from 'react-router-dom'; 
 // components
 import ClinicApplicationModal from './ClinicApplicationModal';
 // icons
@@ -8,9 +9,11 @@ import {
 } from 'react-icons/hi';
 import { CiSearch } from 'react-icons/ci';
 
-const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ClinicApplicationTable({ data = [], onAccept, onReject }) {
+  const location = useLocation();   
+  const navigate = useNavigate();     
+
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState('asc');
@@ -21,7 +24,25 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [adminFeedback, setAdminFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  // --- NEW: Auto-open modal if navigated from notification ---
+  useEffect(() => {
+    // Check if we have data AND an incoming branch ID in the navigation state
+    if (data.length > 0 && location.state?.openBranchId) {
+      const targetId = location.state.openBranchId;
+      const targetBranch = data.find(b => b.branch_id === targetId);
+
+      if (targetBranch) {
+        // Open the modal
+        setSelectedBranch(targetBranch);
+        setAdminFeedback(targetBranch.feedback || "");
+
+        // Clear the state from the URL so it doesn't re-open if the user refreshes the page
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [data, location.state, navigate, location.pathname]);
+  // -----------------------------------------------------------
 
   // filtering with memo 
   const filtered = useMemo(() => {
@@ -43,15 +64,11 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
     });
   }, [data, activeTab, search, sortOrder]); 
 
-  // like if pending is 6 then divide by entries page
   const totalPages = Math.ceil(filtered.length / entriesPerPage);
-  // take a copy of filtered then compute it giving it a start and end cutting the filtered array
-  // if current page is 1 then start will return 0 while end will return the max of entries successfully giving the entry page cut
   const paginated = filtered.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
-  // so at every mount it will be set to current page one
+  
   useEffect(() => { setCurrentPage(1); }, [activeTab, search, entriesPerPage]);
 
-  // handle the action props
   const handleAction = async (id, newStatus, feedback) => {
     setIsSubmitting(true);
     try {
@@ -74,19 +91,6 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
       toast.error("Something went wrong");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  // format time
-  const formatTime = (timeString) => {
-    if(!timeString) return "---";
-    try {
-      const [hours, minutes] = timeString.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
-      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-    } catch(e) {
-      return timeString;
     }
   };
 
@@ -154,25 +158,19 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
 
           {/* table body */}
           <tbody className="divide-y divide-gray-200">
-            {/* check if theres a data exist smth */}
             {paginated.length > 0 ? 
-              // table row with map data
               paginated.map(branch => (
                 <tr key={branch.branch_id} className="hover:bg-gray-200/50 even:bg-gray-200/50">
-                  {/* Changed border color to gray-300 and text to your variable */}
                   <td className="px-6 py-4 border-r border-gray-300">
                     <div className="text-sm font-bold text-(--clr-text-primary)">{branch.name}</div>
                     <div className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">ID: {branch.branch_id}</div>
                   </td>
-                  {/* branch name */}
                   <td className="px-6 py-4 border-r border-gray-300 text-sm font-medium text-(--clr-text-primary)">
                     {branch.first_name} {branch.last_name}
                   </td>
-                  {/* municipality */}
                   <td className="px-6 py-4 border-r border-gray-300 text-sm text-center font-medium text-(--clr-text-primary)">
                     {branch.municipality}
                   </td>
-                  {/* branch date */}
                   <td className="px-6 py-4 border-r border-gray-300 text-sm font-medium text-(--clr-text-primary)">
                     {new Date(branch.created_at).toLocaleDateString('en-Us', {
                       month: 'short',
@@ -180,7 +178,6 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                       year: 'numeric'
                     })}
                   </td>
-                  {/* branch status  */}
                   <td className="px-6 py-4 border-r border-gray-300 text-center uppercase font-black text-[9px]">
                     <span className={`px-2 py-1 rounded border 
                       ${branch.status === 'approved' 
@@ -191,7 +188,6 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
                             {branch.status}
                     </span>
                   </td>
-                  {/* branch action */}
                   <td className="px-6 py-4 text-center">
                     <button onClick={() => { setSelectedBranch(branch); setAdminFeedback(branch.feedback || ""); }} 
                       className="p-2 transition-all border border-gray-300 rounded-lg cursor-pointer hover:text-(--clr-primary) hover:border-(--clr-primary)">
@@ -234,17 +230,11 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
         <span className="text-[11px] text-gray-500 font-black uppercase">Total: {filtered.length}</span>
 
         <div className="flex items-center gap-2">
-          {/* prev page */}
           <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg disabled:opacity-20"><HiChevronLeft/></button>
-          {/* show total and current page */}
           <span className="px-4 text-xs font-black">{currentPage} / {totalPages || 1}</span>
-          {/* next page */}
           <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border rounded-lg disabled:opacity-20"><HiChevronRight/></button>
         </div>
       </div>
-
-
-
 
       {/* view details modal */}
       {selectedBranch && (

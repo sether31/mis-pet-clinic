@@ -1,23 +1,23 @@
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'react-toastify';
-// hooks
-import { useUser } from '../../../hooks/useUser';
 // utils
 import { authFetch } from '../../../utils/authFetch';
 // components
 import Header from '../../../components/Header';
 import NotificationModal from './components/NotificationModal'; 
 import NotificationTable from './components/NotificationTable'; 
-// icons (Updated for Super Admin context)
+// icons 
 import { HiSearch } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiOutlineInformationCircle } from 'react-icons/hi2';
-import { IoCardOutline, IoBusinessOutline } from 'react-icons/io5';
+import { IoCardOutline } from 'react-icons/io5';
 import { TbAlertTriangle, TbFileCertificate } from 'react-icons/tb';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function SuperAdminNotifications() {
-  const { user } = useUser();
+  const location = useLocation(); 
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -33,20 +33,24 @@ export default function SuperAdminNotifications() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState(null);
 
-  // REAL DATA FETCH (Update this path to your Super Admin endpoint)
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
       const res = await authFetch(`${API_URL}/api/super-admin/notifications/get-notifications.php`);
       if (res.success) {
-        setData(res.data);
+        const normalizedData = res.data.map(n => ({
+          ...n,
+          // Make sure we use the right ID mapping here too
+          id: n.notification_id || n.id, 
+          isRead: n.isRead || n.is_read == 1
+        }));
+        
+        setData(normalizedData);
         setUnreadCount(res.unread_count);
-      } else {
-        toast.error("Something went wrong");
+        return res.unread_count; // <--- Add this return
       }
     } catch (error) {
       console.error("Failed to load notifications:", error);
-      toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +60,53 @@ export default function SuperAdminNotifications() {
     fetchNotifications();
   }, []);
 
+  useEffect(() => {
+    // Only run if we aren't loading, we have data, and there's a highlightId
+    if (!isLoading && data.length > 0 && location.state?.highlightId) {
+      const targetId = location.state.highlightId;
+      
+      // FIX: Use == instead of === to ignore string vs number differences
+      const targetNotif = data.find(n => String(n.id) === String(targetId));
+
+      if (targetNotif) {
+        handleView(targetNotif);
+        // Clear state so it doesn't pop up again on refresh
+        navigate(location.pathname, { replace: true, state: {} });
+      } else {
+        console.warn("Notification ID not found in current data set:", targetId);
+      }
+    }
+  }, [isLoading, data, location.state, navigate, location.pathname]);
+
+  const handleView = async (notif) => {
+    setSelectedNotif(notif);
+    setModalVisible(true);
+
+    // Use the mapped isRead property
+    const isUnread = !notif.isRead && notif.is_read != 1;
+
+    if (isUnread) {
+      try {
+        const res = await authFetch(`${API_URL}/api/super-admin/notifications/update-notification-status.php`, {
+          method: 'POST',
+          body: JSON.stringify({ notification_id: notif.notification_id || notif.id })
+        });
+
+        if (res.success) {
+          // Wait for the fetch to finish and get the new count
+          const newCount = await fetchNotifications();
+
+          // Pass the newCount into the detail object
+          window.dispatchEvent(new CustomEvent('syncUnreadCount', { 
+            detail: newCount 
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to update status:", error);
+      }
+    }
+  };
+
   const handleSort = (key) => {
     let direction = 'desc'; 
     if (sortConfig.key === key && sortConfig.direction === 'desc') {
@@ -64,27 +115,6 @@ export default function SuperAdminNotifications() {
     setSortConfig({ key, direction });
   };
 
-  const handleView = async (notif) => {
-    setSelectedNotif(notif);
-    setModalVisible(true);
-
-    if(!notif.isRead) {
-      const newCount = Math.max(0, unreadCount - 1);
-      setData(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
-      setUnreadCount(newCount);
-      window.dispatchEvent(new CustomEvent('syncUnreadCount', { detail: newCount }));
-
-      try {
-        // Update this path to your Super Admin endpoint
-        await authFetch(`${API_URL}/api/super-admin/notifications/update-notification-status.php`, {
-          method: 'POST',
-          body: JSON.stringify({ notification_id: notif.id })
-        });
-      } catch (error) {
-        console.error("Failed to mark as read", error);
-      }
-    }
-  };
 
   const handleMarkAllRead = async () => {
     setData(prev => prev.map(n => ({ ...n, isRead: true })));
@@ -150,6 +180,9 @@ export default function SuperAdminNotifications() {
         return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-blue-700 bg-blue-50 border border-blue-200 rounded-lg w-fit mx-auto"><TbFileCertificate size={12}/> New Clinic Request</span>;
 
       // subs
+      case 'billing': 
+        return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-(--clr-primary) bg-green-50 border border-green-200 rounded-lg w-fit mx-auto"><IoCardOutline size={12}/> Billing</span>;
+
       case 'subscription':
         return <span className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-200 rounded-lg w-fit mx-auto"><IoCardOutline size={12}/> Subscription</span>;
       case 'subscription_warn':
@@ -174,7 +207,7 @@ export default function SuperAdminNotifications() {
             <h1 className="text-2xl font-bold tracking-tight">System Inbox</h1>
             {unreadCount > 0 && (
               <span className="bg-(--clr-primary) text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
-                {unreadCount} Action Needed
+                {unreadCount} New
               </span>
             )}
           </div>
