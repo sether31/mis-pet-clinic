@@ -1,165 +1,171 @@
-import { useEffect, useState } from 'react'; // Added useEffect and useState
+import { useEffect, useState } from 'react'; 
 // hooks
 import { useUser } from '../../../hooks/useUser';
+// utils 
+import { authFetch } from '../../../utils/authFetch'; 
 // components
 import Header from '../../../components/Header';
 import DashboardCard from '../../../components/DashboardCard';
+import LoaderV2 from '../../../components/LoaderV2';
 // icons
+import { RiMoneyDollarCircleLine } from 'react-icons/ri';
 import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { IoDocumentTextOutline } from "react-icons/io5";
-import { FiUsers } from "react-icons/fi";
-import { BsGraphUpArrow } from "react-icons/bs";
-// utils (assuming you have an authFetch or similar)
-import { authFetch } from '../../../utils/authFetch'; 
+import { MdOutlineSubscriptions } from "react-icons/md";
+// sub omponents
+import { 
+  ApplicationRequests, 
+  NotificationOverview, 
+  PlatformTopEarnersChart 
+} from './components/DashboardComponents';
 
-export default function Dashboard() {
+export default function SuperAdminDashboard() {
   const { user } = useUser();
-  const [isChecking, setIsChecking] = useState(false);
+  const [timeFilter, setTimeFilter] = useState('month'); 
+  
+  // Updated state for platform-wide stats
+  const [stats, setStats] = useState({
+    total_approved_clinics: 0,
+    pending_applications: 0,
+    total_subscribed_clinics: 0, 
+    total_active_subscribed_clinics: 0,
+    platform_revenue: 0
+  });
+  
+  const [platformData, setPlatformData] = useState({
+    applications: [],
+    notifications: [],
+    topEarners: []
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const runSubscriptionCheck = async () => {
+    const fetchSuperAdminData = async () => {
       try {
-        setIsChecking(true);
+        setIsLoading(true);
+        // 1. Run subscription check
         await authFetch(`${import.meta.env.VITE_API_URL}/api/super-admin/notifications/check-all-expiring-subscriptions.php`);
-        console.log("Subscription scan complete.");
+        
+        // 2. Fetch Dashboard Stats (You will need to create this endpoint)
+        const response = await authFetch(`${import.meta.env.VITE_API_URL}/api/super-admin/dashboard/get-overview.php?filter=${timeFilter}`);
+        
+        if (response.success) {
+          setStats(response.data.stats);
+          setPlatformData({
+            applications: response.data.applications || [],
+            notifications: response.data.notifications || [],
+            topEarners: response.data.topEarners || []
+          });
+        }
       } catch (err) {
-        console.error("Failed to run subscription check:", err);
+        console.error("Failed to load super admin data:", err);
       } finally {
-        setIsChecking(false);
+        setIsLoading(false);
       }
     };
 
     if (user?.role === 'super_admin') {
-      runSubscriptionCheck();
+      fetchSuperAdminData();
     }
-  }, [user]);
+  }, [user, timeFilter]);
+
+  const dashboardCards = [
+    {
+      title: "Total approved clinics",
+      data: stats?.total_approved_clinics || "0",
+      icon: HiOutlineBuildingOffice2,
+      iconColor: "text-gray-800"
+    },
+    {
+      title: "Pending Applications",
+      data: stats?.pending_applications || "0",
+      icon: IoDocumentTextOutline,
+      iconColor: "text-amber-500"
+    },
+    {
+      title: "Total subscribed clinics",
+      data: stats?.total_subscribed_clinics || "0",
+      icon: MdOutlineSubscriptions,
+      iconColor: "text-purple-600"
+    },
+    {
+      title: "Total active subscribe clinics",
+      data: stats?.total_active_subscribed_clinics || "0",
+      icon: HiOutlineBuildingOffice2,
+      iconColor: "text-(--clr-primary)"
+    },
+    {
+      title: `Platform Revenue (${timeFilter})`,
+      data: stats?.platform_revenue ? `₱${Number(stats.platform_revenue).toLocaleString()}` : `₱0.00`,
+      icon: RiMoneyDollarCircleLine,
+      iconColor: "text-(--clr-primary)"
+    }
+  ];
 
   return (
-    <div className='min-h-screen bg-gray-100'>
+    <div className="min-h-screen bg-gray-100">
       <Header />
-      
-      <section className='my-6 container-xl'>
-        {/* greet header */}
-        <header className='mb-6'>
-          <h1 className='text-2xl font-semibold'>
-            Welcome Back, {user?.name}!
-          </h1>
-          <p className='text-sm capitalize opacity-70'>
-            {user?.role?.replace('_', ' ')}
-          </p>
-        </header>
 
-        {/* dashboard cards */}
-        <div className='grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4'>
-          <DashboardCard
-            title='Total Clinics'
-            data='124'
-            icon={HiOutlineBuildingOffice2}
-            className='border-2 border-gray-300'
-          />
-
-          <DashboardCard
-            title='Pending Applications'
-            data='21'
-            icon={IoDocumentTextOutline}
-            iconColor='text-(--clr-accent)'
-          />
-      
-          <DashboardCard
-            title='Total Users'
-            data='1,247'
-            icon={FiUsers}
-            iconColor='text-blue-500'
-          />
-          
-          <DashboardCard
-            title='Platform Revenue'
-            data='438k'
-            icon={BsGraphUpArrow}
-            iconColor='text-green-700'
-          />
-        </div>
-
-        {/* recent activity */}
-        <div className='grid grid-cols-1 gap-6 mt-6 lg:grid-cols-2'>
-          <div className='border-2 border-gray-300 rounded-xl bg-(--clr-bg-card) p-4'>
-            <h1 className='mb-6 text-lg font-medium'>Recent Activity</h1>
-
-            <div>
-              <div className='py-2 border-b border-gray-300 indent-2'>
-                <h3 className='font-medium'>New clinic application received</h3>
-                <p className='text-xs opacity-80'>Psalms Veterinary Clinic - 2 hours ago</p>
-              </div>
-
-              <div className='py-2 border-b border-gray-300 indent-2'>
-                <h3 className='font-medium'>Clinic approved</h3>
-                <p className='text-xs opacity-80'>Arevalos veterinary Clinic - 7 hours ago</p>
-              </div>
-              
-              <div className='py-2 indent-2'>
-                <h3 className='font-medium'>New clinic application received</h3>
-                <p className='text-xs opacity-80'>Seth Pet Clinic - 1 hour ago</p>
-              </div>
-            </div>
+      <section className='px-6 my-6 container-xl'>     
+        <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-end">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {user ? `Welcome, ${user.fname || 'Super Admin'}!` : "Platform Overview"}
+            </h1>
+            <p className="text-sm font-medium text-gray-500">
+              Monitor clinic applications, platform revenue, and system alerts.
+            </p>
           </div>
 
-          {/* top performing clinics */}
-          <div className='border-2 border-gray-300 rounded-xl bg-(--clr-bg-card) p-4'>
-            <h1 className='mb-6 text-lg font-medium'>Top Performing Clinics</h1>
-
-            <div>
-              <div className='flex items-center gap-4 py-2 border-b border-gray-300 indent-2 space-between'>
-                <div className='flex-1'>
-                  <h3 className='font-medium'>Psalms Veterinary Clinic</h3>
-                  <p className='text-xs opacity-80'>486 patients</p>
-                </div>
-
-                <div className='pr-2'>
-                  <h3 className='text-lg font-medium text-green-700'>215k</h3>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className='flex items-center gap-4 py-2 border-b border-gray-300 indent-2 space-between'>
-                <div className='flex-1'>
-                  <h3 className='font-medium'>Seth Pet Clinic</h3>
-                  <p className='text-xs opacity-80'>302 patients</p>
-                </div>
-
-                <div className='pr-2'>
-                  <h3 className='text-lg font-medium text-green-700'>161k</h3>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className='flex items-center gap-4 py-2 border-b border-gray-300 indent-2 space-between'>
-                <div className='flex-1'>
-                  <h3 className='font-medium'>Fidel Veterinary Clinic</h3>
-                  <p className='text-xs opacity-80'>100 patients</p>
-                </div>
-
-                <div className='pr-2'>
-                  <h3 className='text-lg font-medium text-green-700'>100k</h3>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className='flex items-center gap-4 py-2 indent-2 space-between'>
-                <div className='flex-1'>
-                  <h3 className='font-medium'>Arevalos Veterinary Clinic</h3>
-                  <p className='text-xs opacity-80'>40 patients</p>
-                </div>
-
-                <div className='pr-2'>
-                  <h3 className='text-lg font-medium text-green-700'>27k</h3>
-                </div>
-              </div>
-            </div>
+          {/* TOP PAGE FILTER */}
+          <div className="flex flex-col w-full gap-1 md:w-auto">
+            <label className="text-[10px] font-black tracking-widest text-gray-500 uppercase">
+              Time Period
+            </label>
+            <select 
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="border border-gray-300 text-gray-700 text-sm font-bold rounded-lg focus:ring focus:ring-(--clr-primary) focus:border-(--clr-primary) block w-full md:w-48 px-4 py-2.5 outline-none cursor-pointer hover:border-gray-400 transition-all"
+            >
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="year">This Year</option>
+              <option value="all">All Time</option>
+            </select>
           </div>
         </div>
+
+        {isLoading ? (
+          <LoaderV2 />
+        ) : (
+          <div className="space-y-8 duration-500 animate-in fade-in">
+            
+            {/* Row 1: The Big Numbers */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {dashboardCards.map((stat, index) => (
+                <DashboardCard key={index} {...stat} />
+              ))}
+            </div>
+
+            {/* Row 2: Applications & Notifications */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <ApplicationRequests applications={platformData.applications} />
+              <NotificationOverview notifications={platformData.notifications} />
+            </div>
+
+            {/* Row 3: Top Earners Chart */}
+            <div className="w-full">
+              <PlatformTopEarnersChart 
+                data={platformData.topEarners} 
+                isLoading={isLoading} 
+                timeFilter={timeFilter} 
+              />
+            </div>
+
+          </div>
+        )}
       </section>
     </div>
   );
