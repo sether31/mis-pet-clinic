@@ -41,12 +41,15 @@ export const ApplicationRequests = ({ applications = [] }) => {
               <div className="flex items-center flex-1 min-w-0 gap-3">
                 
                 {/* Clinic Logo or Placeholder */}
-                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 border border-gray-200 shrink-0 rounded-xl overflow-hidden">
-                  {app.logo_picture ? (
-                    <img src={`${API_URL}/${app.logo_picture}`} alt="Logo" className="object-cover w-full h-full" />
-                  ) : (
-                    <TbBuildingHospital className="text-2xl text-gray-400" />
-                  )}
+                <div className="flex items-center justify-center w-12 h-12 overflow-hidden bg-gray-100 border border-gray-200 shrink-0 rounded-xl">
+                  <img 
+                    src={app.logo_picture ? `${API_URL}/${app.logo_picture}` 
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(app.name)}&background=d1fae5&color=42756C&bold=true`} 
+                    alt="Logo" 
+                    className="object-cover w-full h-full" 
+                    // Fallback to UI Avatar if the image fails to load from server
+                    onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${app.name}`; }}
+                  />
                 </div>
                 
                 <div className="flex flex-col justify-center flex-1 min-w-0 gap-0.5">
@@ -102,7 +105,7 @@ export const NotificationOverview = ({ notifications = [] }) => {
         </h2>
         <button 
           onClick={() => navigate(`/notifications`)}
-          className="text-xs font-bold text-gray-400 capitalize tracking-widest hover:text-blue-600 cursor-pointer transition-colors"
+          className="text-xs font-bold tracking-widest text-gray-400 capitalize transition-colors cursor-pointer hover:text-blue-600"
         >
           View All
         </button>
@@ -149,7 +152,7 @@ export const NotificationOverview = ({ notifications = [] }) => {
                 </div>
 
                 {/* Chevron Icon - matches the Clinic Application style */}
-                <div className="flex items-center justify-center w-7 h-7 rounded-lg duration-300 shrink-0 ml-2 bg-gray-900 group-hover:bg-blue-600">
+                <div className="flex items-center justify-center ml-2 duration-300 bg-gray-900 rounded-lg w-7 h-7 shrink-0 group-hover:bg-blue-600">
                   <LuChevronRight size={14} className="text-white" />
                 </div>
               </div>
@@ -157,7 +160,7 @@ export const NotificationOverview = ({ notifications = [] }) => {
           })
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl bg-gray-50/50">
-            <LuBellRing className="text-4xl text-gray-300 mb-2" />
+            <LuBellRing className="mb-2 text-4xl text-gray-300" />
             <p className="text-xs font-black text-gray-400 uppercase">System Quiet</p>
           </div>
         )}
@@ -199,7 +202,7 @@ export const PlatformTopEarnersChart = ({ data = [], isLoading, timeFilter }) =>
       <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-300 shrink-0">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-black tracking-wider text-gray-800 uppercase">
-            <LuTrendingUp className="text-green-600 text-lg" />
+            <LuTrendingUp className="text-lg text-green-600" />
             Top 10 Clinics by Revenue
           </h2>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
@@ -212,7 +215,7 @@ export const PlatformTopEarnersChart = ({ data = [], isLoading, timeFilter }) =>
         {isLoading ? (
           <div className="flex items-center justify-center h-[300px]">
             <div className="flex flex-col items-center gap-2 animate-pulse">
-              <div className="w-10 h-10 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin"></div>
+              <div className="w-10 h-10 border-4 border-gray-200 rounded-full border-t-green-600 animate-spin"></div>
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Loading Analytics...</span>
             </div>
           </div>

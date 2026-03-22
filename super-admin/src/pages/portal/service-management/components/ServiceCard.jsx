@@ -26,7 +26,7 @@ export default function ServiceCard({ data }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
       {serviceStats.map((stat, index) => (
         <DashboardCard key={index} {...stat} />
       ))}

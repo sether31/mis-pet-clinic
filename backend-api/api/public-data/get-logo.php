@@ -14,7 +14,7 @@ require_once __DIR__ . '/../../config/Database.php';
 
 try {
   $pdo = (new Database())->pdo;
-  $stmt = $pdo->prepare("SELECT platform_logo, platform_name FROM platform_settings_tb WHERE ps_id = 1");
+  $stmt = $pdo->prepare("SELECT platform_logo, platform_name, platform_email, contact_phone FROM platform_settings_tb WHERE ps_id = 1");
   $stmt->execute();
   
   $settings = $stmt->fetch();
@@ -23,7 +23,9 @@ try {
     "success" => true,
     "data" => $settings ?: [
       "platform_name" => "Pet Clinic", 
-      "platform_logo" => null
+      "platform_logo" => null,
+      "platform_email" => null,
+      "contact_phone" => null
     ]
   ]);
 } catch(Exception $e) {

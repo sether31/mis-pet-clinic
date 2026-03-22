@@ -25,14 +25,16 @@ export default function ClinicApplications() {
       const response = await authFetch(`${API_URL}/api/super-admin/clinic-application/clinic-application.php`);
       
       if(response.success && Array.isArray(response.data)) {
-        const formattedData = response.data.map(item => ({
-          ...item,
-          feedback: item.feedback || "",
-          status: item.status || "pending"
-        }));
+        const formattedData = response.data
+          .map(item => ({
+            ...item,
+            feedback: item.feedback || "",
+            status: item.status || "pending"
+          }))
+          // Filter out approved and suspended here
+          .filter(item => item.status !== 'approved' && item.status !== 'suspended');
+          
         setClinics(formattedData);
-      } else {
-        setClinics([]); 
       }
     } catch (error) {
       console.error("Network Error:", error);
@@ -91,10 +93,9 @@ export default function ClinicApplications() {
           <LoaderV2 />
         ) : (
             <>
-              <div className='grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4'>
+              <div className='grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-3'>
                 <DashboardCard title='Total Applications' data={clinics.length} icon={HiOutlineBuildingOffice2} />
                 <DashboardCard title='Pending Review' data={clinics.filter(c => c.status === 'pending').length} icon={IoDocumentTextOutline} iconColor='text-amber-500' />
-                <DashboardCard title='Approved' data={clinics.filter(c => c.status === 'approved').length} icon={IoDocumentTextOutline} iconColor='text-green-700' />
                 <DashboardCard title='Rejected' data={clinics.filter(c => c.status === 'rejected').length} icon={IoDocumentTextOutline} iconColor='text-red-500' />
               </div>
 

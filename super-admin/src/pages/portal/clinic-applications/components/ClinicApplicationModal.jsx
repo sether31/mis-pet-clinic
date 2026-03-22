@@ -18,18 +18,6 @@ export default function ClinicApplicationModal({
 }) {
   if (!selectedBranch) return null;
 
-  const formatTime = (timeString) => {
-    if (!timeString) return "---";
-    try {
-      const [hours, minutes] = timeString.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
-      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-    } catch (e) {
-      return timeString;
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center bg-(--clr-text-primary)/80 backdrop-blur-sm p-4 text-left">
       <div className="bg-white w-full max-w-5xl max-h-[95vh] rounded-2xl overflow-hidden flex flex-col">
@@ -52,7 +40,7 @@ export default function ClinicApplicationModal({
               {selectedBranch.status}
             </span>
           </div>
-          <button onClick={onClose} className="text-gray-400 cursor-pointer hover:text-red-500 transition-colors" disabled={isSubmitting}>
+          <button onClick={onClose} className="text-gray-400 transition-colors cursor-pointer hover:text-red-500" disabled={isSubmitting}>
             <HiXCircle size={32}/>
           </button>
         </div>
@@ -61,8 +49,8 @@ export default function ClinicApplicationModal({
         <div className="p-8 space-y-12 overflow-y-auto">
           {/* Documents */}
           <section>
-            <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest mb-6 flex items-center gap-2">
-              <HiOutlineDocumentText className="text-(--clr-text-header)" size={18}/> Verification Documents
+            <h3 className="text-xs font-black text-(--clr-text-primary) uppercase tracking-widest mb-6 flex items-center gap-1">
+              <HiOutlineDocumentText size={20}/> Verification Documents
             </h3>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               <DocCard label="Business Permit" img={`${API_URL}/${selectedBranch.business_permit_picture}`} id={selectedBranch.business_permit_number} />
@@ -72,25 +60,24 @@ export default function ClinicApplicationModal({
 
           {/* Contact Info */}
           <section className="pt-10 space-y-8 border-t border-gray-100">
-            <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-2">
-              <RiInformation2Line className="text-(--clr-text-header)" size={18} /> Contact Information
+            <h3 className="text-xs font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-1">
+              <RiInformation2Line size={20} /> Contact Information
             </h3>
-            <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-wrap gap-x-15 gap-y-6">
               <Detail label="Clinic Owner" icon={<HiOutlineUser />} value={`${selectedBranch.first_name} ${selectedBranch.last_name}`} />
+              <Detail label="Email" icon={<HiOutlineUser />} value={`${selectedBranch.owner_email}`} />
               <Detail label="Contact Number" icon={<LuPhone />} value={selectedBranch.contact_number} />
-              <Detail label="Operating Start" icon={<LuClock />} value={formatTime(selectedBranch.operating_hours_start_time)} />
-              <Detail label="Operating End" icon={<LuClock />} value={formatTime(selectedBranch.operating_hours_end_time)} />
 
-              <Detail label="Full Street Address" icon={<HiOutlineLocationMarker />} value={selectedBranch.address} />
               <Detail label="Municipality" icon={<HiOutlineLocationMarker />} value={selectedBranch.municipality} />
               <Detail label="Province/City" icon={<HiOutlineLocationMarker />} value={selectedBranch.province} />
+              <Detail label="Full Street Address" icon={<HiOutlineLocationMarker />} value={selectedBranch.address} />
             </div>
           </section>
 
           {/* Services */}
           <section className="pt-10 space-y-4 border-t border-gray-100">
-            <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-2">
-              <LuBriefcaseBusiness className="text-(--clr-text-header)" size={18} /> Services Offered
+            <h3 className="text-xs font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-1">
+              <LuBriefcaseBusiness size={18} /> Services Offered
             </h3>
             <div className="flex flex-wrap gap-2">
               {selectedBranch.services_list ? (
@@ -106,8 +93,8 @@ export default function ClinicApplicationModal({
           {/* Feedback */}
           <section className="pt-10 pb-6 space-y-6 border-t border-gray-100">
             <div className="flex items-center justify-between">
-              <h3 className="text-[11px] font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-2">
-                <HiOutlineChatAlt className="text-(--clr-text-header)" size={18}/> Evaluation Feedback
+              <h3 className="text-xs font-black text-(--clr-text-primary) uppercase tracking-widest flex items-center gap-1">
+                <HiOutlineChatAlt size={18}/> Evaluation Feedback
               </h3>
               {selectedBranch.status === 'approved' && (
                 <span className="flex items-center gap-1 text-[9px] font-black text-gray-400 uppercase tracking-widest">
@@ -118,7 +105,7 @@ export default function ClinicApplicationModal({
             <div className={`rounded-2xl p-6 border ${selectedBranch.status === 'pending' ? "bg-(--clr-bg-page) border-gray-300" : "bg-gray-50 border-gray-200"}`}>
               <textarea 
                 className={`w-full p-4 rounded-xl text-sm h-32 outline-none transition-all border ${
-                  selectedBranch.status === 'approved' ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200" : "bg-white focus:ring-2 focus:ring-green-500/20 border-gray-300"
+                  selectedBranch.status === 'approved' ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200" : "bg-white focus:ring border-gray-300 focus:ring-gray-700"
                 }`}
                 placeholder={selectedBranch.status === 'approved' ? "Feedback locked for approved records." : "State the reason for approval or rejection..."} 
                 value={adminFeedback} 
@@ -171,7 +158,7 @@ function DocCard({ label, img, id }) {
 function Detail({ label, value, icon }) {
   return (
     <div className="space-y-1">
-      <span className="text-[10px] font-black uppercase text-(--clr-text-primary) block tracking-widest">{label}</span>
+      <span className="text-[10px] font-black uppercase text-(--clr-text-primary) block tracking-wider">{label}</span>
       <span className="text-sm font-bold text-(--clr-text-primary) flex items-center gap-1">
         {icon} {value || "---"}
       </span>
