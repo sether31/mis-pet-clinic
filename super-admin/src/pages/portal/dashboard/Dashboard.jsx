@@ -9,7 +9,7 @@ import DashboardCard from '../../../components/DashboardCard';
 import LoaderV2 from '../../../components/LoaderV2';
 // icons
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
-import { HiOutlineBuildingOffice2 } from "react-icons/hi2";
+import { HiCalendar, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import { IoDocumentTextOutline } from "react-icons/io5";
 import { MdOutlineSubscriptions } from "react-icons/md";
 // sub omponents
@@ -119,20 +119,19 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* TOP PAGE FILTER */}
-          <div className="flex flex-col w-full gap-1 md:w-auto">
-            <label className="text-[10px] font-black tracking-widest text-gray-500 uppercase">
-              Time Period
-            </label>
+          <div className="relative inline-block w-full md:w-48">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-(--clr-primary) pointer-events-none">
+              <HiCalendar size={18} />
+            </div>
             <select 
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
-              className="border border-gray-300 text-gray-700 text-sm font-bold rounded-lg focus:ring focus:ring-(--clr-primary) focus:border-(--clr-primary) block w-full md:w-48 px-4 py-2.5 outline-none cursor-pointer hover:border-gray-400 transition-all"
+              className="block w-full py-2 pl-10 pr-4 text-sm font-medium text-gray-700 border border-gray-400 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring focus:ring-gray-700"
             >
               <option value="today">Today</option>
               <option value="week">This Week</option>
               <option value="month">This Month</option>
               <option value="year">This Year</option>
-              <option value="all">All Time</option>
             </select>
           </div>
         </div>

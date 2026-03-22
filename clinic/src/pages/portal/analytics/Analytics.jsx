@@ -1,20 +1,20 @@
-import Header from "../../../components/Header";
-
-const API_URL = import.meta.env.VITE_API_URL;
+// views
+import BranchAdminView from "./views/BranchAdminView";
+import ClinicAdminView from "./views/ClinicAdminView";
+// hooks (assuming you have a custom hook for user data)
+import { useUser } from "../../../hooks/useUser"; 
 
 export default function Analytics() {
+  const { user } = useUser();
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Header />
-      <section className='px-6 my-6 container-xl'>
-        <div className="flex flex-col justify-between gap-4 mb-6 md:flex-row md:items-center">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-            <p className="text-gray-500"></p>
-          </div>
-        </div>
-      </section>
-    </div>
+    <>
+      {/* Conditionally render based on role */}
+      {user?.role_name === 'clinic_admin' ? (
+        <ClinicAdminView />
+      ) : (
+        <BranchAdminView />
+      )}
+    </>
   );
 }

@@ -23,8 +23,8 @@ try {
   // 1. Create the Order (Guest = user_id is null)
   // 👇 Added updated_at and explicitly passing $adminId to last_updated_by
   $stmtOrder = $pdo->prepare("
-      INSERT INTO order_tb (user_id, branch_id, order_status, total_amount, last_updated_by, created_at, updated_at) 
-      VALUES (NULL, ?, 'completed', ?, ?, NOW(), NOW())
+      INSERT INTO order_tb (user_id, branch_id, order_status, total_amount, last_updated_by, pickup_date, created_at, updated_at) 
+      VALUES (NULL, ?, 'completed', ?, ?, NOW(), NOW(), NOW())
   ");
   $stmtOrder->execute([$branchId, $totalAmount, $adminId]);
   $orderId = $pdo->lastInsertId();
