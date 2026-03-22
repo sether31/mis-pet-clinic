@@ -12,7 +12,16 @@ const API_URL = import.meta.env.VITE_API_URL;
 export default function ShopModal({ order, onClose, onUpdate }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 👇 Fixed Overdue Logic: Safely handle Guest Sales which have NO pickup_date
+  const getAvatarUrl = (name) => {
+    const isGuest = !name || name.trim() === "";
+    const displayName = isGuest ? 'G' : name;
+  
+    const bg = 'd1fae5';
+    const color = '42756C';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=${bg}&color=${color}&bold=true`;
+  };
+
+  //  Safely handle Guest Sales which have NO pickup_date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -105,10 +114,15 @@ export default function ShopModal({ order, onClose, onUpdate }) {
           {/* Customer Info */}
           <div className="flex items-center justify-between p-5 border border-blue-100 bg-blue-50/50 rounded-2xl">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 overflow-hidden bg-white border-2 border-white rounded-full shrink-0">
+              <div className="w-12 h-12 overflow-hidden bg-white rounded-2xl shrink-0">
                 <img 
-                  src={order.profile_picture ? `${API_URL}/${order.profile_picture}` : noImage} 
-                  alt={order.owner_name || "Guest"}
+                  src={order.profile_picture 
+                    ? `${API_URL}/${order.profile_picture}` 
+                    : getAvatarUrl(order.owner_name)} 
+                  onError={(e) => {
+                    e.target.src = noImage; 
+                  }}
+                  alt="Customer"
                   className="object-cover w-full h-full"
                 />
               </div>
@@ -130,7 +144,7 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                       </span>
                     </>
                   ) : (
-                    <span className="text-blue-500 font-black">Direct Cash Sale (Walk-in)</span>
+                    <span className="font-black text-blue-500">Direct Cash Sale (Walk-in)</span>
                   )}
                 </p>
               </div>

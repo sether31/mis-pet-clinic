@@ -80,18 +80,20 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
         <div className="p-8 overflow-y-auto max-h-[80vh]">
           <div className="flex justify-center mb-4">
             <div className="flex-none overflow-hidden border border-gray-300 w-28 h-28 rounded-3xl">
-              <img 
-                src={selectedAppointment?.pet_picture 
-                  ? `${API_URL}/${selectedAppointment.pet_picture}` 
-                  : noImage
-                } 
-                className="object-cover w-full h-full" 
-                alt="pet" 
-                onError={(e) => {
-                  e.target.onerror = null; 
-                  e.target.src = noImage;
-                }}
-              />
+              <div className="flex-none overflow-hidden w-28 h-28 rounded-2xl bg-[#d1fae5] flex items-center justify-center">
+                <img 
+                  src={selectedAppointment?.pet_picture 
+                    ? `${API_URL}/${selectedAppointment.pet_picture}` 
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAppointment?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`
+                  } 
+                  className="object-cover w-full h-full" 
+                  alt="pet" 
+                  onError={(e) => {
+                    e.target.onerror = null; 
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAppointment?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`;
+                  }}
+                />
+              </div>
             </div>
           </div>
 

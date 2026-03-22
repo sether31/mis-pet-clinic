@@ -295,8 +295,19 @@ console.log(auditData, activeTask)
             {activeTab === 'overview' ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-center gap-6">
-                  <div className="flex-none w-20 h-20 overflow-hidden bg-gray-100 border-4 border-white rounded-3xl">
-                    <img src={activeTask?.pet_image ? `${API_URL}/uploads/pets/${activeTask.pet_image}` : noImage} className="object-cover w-full h-full" alt="pet" />
+                  <div className="flex-none w-20 h-20 overflow-hidden bg-[#d1fae5] rounded-2xl flex items-center justify-center">
+                    <img 
+                      src={activeTask?.pet_picture 
+                        ? `${API_URL}/${activeTask.pet_picture}` 
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(activeTask?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`
+                      } 
+                      className="object-cover w-full h-full" 
+                      alt="pet" 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeTask?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`;
+                      }}
+                    />
                   </div>
                   <div>
                     <span className="block mb-1 text-[10px] font-black text-gray-400 uppercase">Patient Name</span>
