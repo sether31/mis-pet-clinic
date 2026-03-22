@@ -19,8 +19,8 @@ try {
   $stmt = $pdo->prepare(
     "SELECT 
       b.branch_id AS id,
+      b.logo_picture AS clinic_logo,
       b.created_at,
-      c.name AS clinic_name,
       b.name AS branch_name,
       s.name AS plan_name,
       bs.status,

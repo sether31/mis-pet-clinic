@@ -41,7 +41,7 @@ export default function TransactionModal({ transaction, onClose }) {
           {/* clinic info */}
           <div className="grid grid-cols-2 gap-6 p-4 border border-gray-300 rounded-xl bg-gray-100/50">
             <div>
-              <label className="text-[9px] font-black text-gray-700 uppercase tracking-wider">Clinic & Branch</label>
+              <label className="text-[9px] font-black text-gray-700 uppercase tracking-wider">Clinic Name</label>
               <p className="font-bold capitalize">{transaction.clinic_name}</p>
               <p className="text-xs font-medium text-gray-700 capitalize">Branch: {transaction.branch_name}</p>
               

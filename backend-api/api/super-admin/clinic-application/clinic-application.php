@@ -12,6 +12,7 @@ try {
     u.first_name, 
     u.last_name, 
     u.email as owner_email,
+    u.profile_picture as owner_photo,
     (SELECT GROUP_CONCAT(s.name SEPARATOR ', ') 
       FROM branch_service_tb bs 
       JOIN service_tb s ON bs.service_id = s.service_id 
