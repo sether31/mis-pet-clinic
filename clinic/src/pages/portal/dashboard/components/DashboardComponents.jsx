@@ -105,14 +105,22 @@ export const TodaysSchedule = ({ appointments, branchId }) => {
   const navigate = useNavigate();
   const now = new Date();
 
-  const renderPetAvatar = (pictureUrl) => {
-    const imageSrc = pictureUrl ? `${API_URL}/${pictureUrl}` : NoImage;
+  const renderPetAvatar = (pictureUrl, petName) => {
     return (
-      <img 
-        src={imageSrc} 
-        alt="Pet" 
-        className="object-cover border border-gray-300 w-14 h-14 rounded-xl bg-gray-50 shrink-0" 
-      />
+      <div className="flex-shrink-0 w-14 h-14 overflow-hidden border border-gray-300 rounded-xl bg-[#d1fae5] flex items-center justify-center">
+        <img 
+          src={pictureUrl 
+            ? `${API_URL}/${pictureUrl}` 
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(petName || 'Pet')}&background=d1fae5&color=42756C&bold=true`
+          } 
+          alt="Pet" 
+          className="object-cover w-full h-full"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(petName || 'Pet')}&background=d1fae5&color=42756C&bold=true`;
+          }}
+        />
+      </div>
     );
   };
 

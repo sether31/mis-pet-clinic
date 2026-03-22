@@ -94,7 +94,7 @@ export default function ShopTable({ data = [], onReview }) {
       
       <div className="flex flex-col justify-between gap-4 p-4 bg-white border-b border-gray-300 xl:flex-row">
         {/* tabs */}
-        <div className="flex justify-center w-full p-1 bg-gray-100 rounded-lg xl:w-fit overflow-x-auto scrollbar-hide">
+        <div className="flex justify-center w-full p-1 overflow-x-auto bg-gray-100 rounded-lg xl:w-fit scrollbar-hide">
           {[
             { id: "all", label: "All Orders" }, 
             { id: "pending", label: "Pending" }, 
@@ -201,9 +201,16 @@ export default function ShopTable({ data = [], onReview }) {
                 <td className="px-6 py-4 border-r border-gray-300">
                   <div className="flex items-center gap-3">
                     <img 
-                      src={getMediaUrl(order.profile_picture)} 
-                      className="object-cover w-8 h-8 border border-gray-200 rounded-full bg-gray-100" 
-                      onError={(e) => e.target.src = NoImage} 
+                      src={order.profile_picture 
+                        ? getMediaUrl(order.profile_picture) 
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(order.owner_name || "GU")}&background=d1fae5&color=42756C&bold=true
+`
+                      } 
+                      className="object-cover w-10 h-10 border border-gray-200 rounded-full bg-blue-50" 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = NoImage;
+                      }} 
                       alt=""
                     />
                     <div>
@@ -273,7 +280,7 @@ export default function ShopTable({ data = [], onReview }) {
                     <div className="p-4 rounded-full bg-gray-50">
                       <CiSearch className="text-gray-300" size={40} />
                     </div>
-                    <h3 className="font-bold text-gray-800 mt-2">
+                    <h3 className="mt-2 font-bold text-gray-800">
                       No {activeTab === "all" ? "" : activeTab} orders found
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">

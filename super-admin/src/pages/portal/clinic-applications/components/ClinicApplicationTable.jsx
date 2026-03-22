@@ -121,12 +121,12 @@ export default function ClinicApplicationTable({ data = [], onAccept, onReject }
 
       {/* table */}
       <div className="overflow-x-auto min-h-[460px]">
-        <table className="w-full text-left table-fixed">
+        <table className="w-full text-left border-collapse min-w-[1100px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-              <th className="w-[35%] px-6 py-4 border-r border-gray-300">Clinic Details</th>
-              <th className="w-[25%] px-6 py-4 border-r border-gray-300">Owner</th>
-              <th className="w-[10%] px-6 py-4 border-r border-gray-300 text-center">Municipality</th>
+              <th className="w-[30%] px-6 py-4 border-r border-gray-300">Clinic Details</th>
+              <th className="w-[28%] px-6 py-4 border-r border-gray-300">Owner</th>
+              <th className="w-[12%] px-6 py-4 border-r border-gray-300 text-center">Municipality</th>
               <th 
                 className="w-[12%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors group"
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
