@@ -8,163 +8,196 @@ $branch_id = $_GET['branch_id'] ?? null;
 $period = $_GET['period'] ?? 'week';
 
 if (!$branch_id) {
-  http_response_code(400);
-  echo json_encode(["success" => false, "message" => "Branch ID is required."]);
-  exit;
+    http_response_code(400);
+    echo json_encode(["success" => false, "message" => "Branch ID is required."]);
+    exit;
 }
 
 try {
-  $pdo = (new Database())->pdo;
+    $pdo = (new Database())->pdo;
 
-  // Date Constraint Logic
-  function getSqlDateConstraint($period, $alias = '') {
-    $col = $alias ? "$alias.created_at" : "created_at";
-    switch ($period) {
-        case 'today': return "AND DATE($col) = CURDATE()";
-        case 'month': 
-            // This filters for ONLY the current calendar month
-            return "AND MONTH($col) = MONTH(CURDATE()) AND YEAR($col) = YEAR(CURDATE())";
-        case 'year':  return "AND YEAR($col) = YEAR(CURDATE())"; 
-        case 'week':
-        default:      return "AND $col >= DATE_SUB(NOW(), INTERVAL 6 DAY)";
+    $virtualDate = "COALESCE(
+        (SELECT MIN(a.start_time) FROM appointments_tb a WHERE a.order_id = p.order_id), 
+        p.created_at
+    )";
+
+    // Helper for Date Constraints
+    function getSqlDateConstraint($period, $column) {
+        switch ($period) {
+            case 'today': return "AND DATE($column) = CURDATE()";
+            case 'month': return "AND MONTH($column) = MONTH(CURDATE()) AND YEAR($column) = YEAR(CURDATE())";
+            case 'year':  return "AND YEAR($column) = YEAR(CURDATE())"; 
+            case 'week':
+            default:      return "AND YEARWEEK($column, 1) = YEARWEEK(CURDATE(), 1)"; 
+        }
     }
-}
 
-  $dateClause = getSqlDateConstraint($period);
-  $dateClauseAliasO = getSqlDateConstraint($period, 'o');
-  $dateClauseAliasP = getSqlDateConstraint($period, 'p'); // Added for payments_tb alias
+    // --- 1. KPI CARD DATA ---
 
-  // 1. KPI CARD DATA (Locks to Payment created_at - fixes the March 20/21 issue)
-  $revStmt = $pdo->prepare("
-      SELECT COALESCE(SUM(amount), 0) 
-      FROM payments_tb 
-      WHERE branch_id = :bid 
-      AND LOWER(payment_status) IN ('paid', 'completed', 'success')
-      AND subscription_id IS NULL
-      $dateClause 
-  ");
-  $revStmt->execute([':bid' => $branch_id]);
-  $revenue = $revStmt->fetchColumn();
-
-  $prodCountStmt = $pdo->prepare("SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items_tb oi JOIN order_tb o ON oi.order_id = o.order_id WHERE o.branch_id = :bid AND oi.product_id IS NOT NULL AND LOWER(o.order_status) IN ('completed', 'paid') $dateClauseAliasO");
-  $prodCountStmt->execute([':bid' => $branch_id]);
-  $productsSold = $prodCountStmt->fetchColumn();
-
-  $apptStmt = $pdo->prepare("
-      SELECT COUNT(*) 
-      FROM appointments_tb 
-      WHERE branch_id = :bid 
-      AND status IN ('confirmed', 'completed') 
-      $dateClause
-  ");
-  $apptStmt->execute([':bid' => $branch_id]);
-  $appointments = $apptStmt->fetchColumn();
-
-  // 2. REVENUE TREND (Line Chart - strictly uses payment created_at)
-  $revenueTrend = [];
-
-  if ($period === 'year') {
-      $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      $trendStmt = $pdo->prepare("
-          SELECT MONTH(created_at) as m, SUM(amount) as total 
-          FROM payments_tb 
-          WHERE branch_id = :bid 
-          AND YEAR(created_at) = YEAR(CURDATE()) 
-          AND LOWER(payment_status) IN ('paid', 'completed', 'success') 
-          AND subscription_id IS NULL
-          GROUP BY m
-      ");
-      $trendStmt->execute([':bid' => $branch_id]);
-      $results = $trendStmt->fetchAll(PDO::FETCH_KEY_PAIR);
-
-      foreach ($months as $index => $name) {
-          $revenueTrend[] = ["name" => $name, "revenue" => (float)($results[$index + 1] ?? 0)];
-      }
-  } elseif ($period === 'week' || $period === 'month') {
-    if ($period === 'week') {
-        $daysToLookBack = 6;
-        $startDate = strtotime("-6 days");
-        $endDate = strtotime("today");
-    } else {
-        // Start from the 1st day of the current month
-        $startDate = strtotime(date('Y-m-01'));
-        $endDate = strtotime("today");
-        // Calculate difference in days to know how many iterations we need
-        $daysToLookBack = (int)date('j') - 1; 
-    }
+    $revDateClause = getSqlDateConstraint($period, $virtualDate);
     
-    // Loop from the Start Date forward to Today
-    for ($i = 0; $i <= $daysToLookBack; $i++) {
-        $currentTimestamp = strtotime("+$i days", $startDate);
-        $label = ($period === 'week') ? date('D', $currentTimestamp) : date('M d', $currentTimestamp); 
-        $sqlDate = date('Y-m-d', $currentTimestamp);
-        
-        $trendStmt = $pdo->prepare("
-            SELECT SUM(amount) 
-            FROM payments_tb 
-            WHERE branch_id = :bid 
-            AND DATE(created_at) = :d 
-            AND LOWER(payment_status) IN ('paid', 'completed', 'success')
-            AND subscription_id IS NULL
-        ");
-        $trendStmt->execute([':bid' => $branch_id, ':d' => $sqlDate]);
-        $val = $trendStmt->fetchColumn();
-        
-        $revenueTrend[] = ["name" => $label, "revenue" => (float)($val ?? 0)];
-    }
-} else {
-      $trendStmt = $pdo->prepare("
-          SELECT DATE_FORMAT(created_at, '%h %p') as name, SUM(amount) as revenue 
-          FROM payments_tb 
-          WHERE branch_id = :bid 
-          AND DATE(created_at) = CURDATE() 
-          AND LOWER(payment_status) IN ('paid', 'completed', 'success') 
-          AND subscription_id IS NULL
-          GROUP BY name 
-          ORDER BY created_at ASC
-      ");
-      $trendStmt->execute([':bid' => $branch_id]);
-      $revenueTrend = $trendStmt->fetchAll(PDO::FETCH_ASSOC);
-  }
-
-  // 3. TOP SERVICES
-  $svcStmt = $pdo->prepare("SELECT bs.custom_name as name, COUNT(oi.order_item_id) as count FROM order_items_tb oi JOIN branch_service_tb bs ON oi.service_id = bs.branch_service_id JOIN order_tb o ON oi.order_id = o.order_id WHERE o.branch_id = :bid AND oi.service_id IS NOT NULL $dateClauseAliasO GROUP BY bs.branch_service_id ORDER BY count DESC LIMIT 5");
-  $svcStmt->execute([':bid' => $branch_id]);
-  $topServices = $svcStmt->fetchAll(PDO::FETCH_ASSOC);
-
-  // 4. TOP PRODUCTS
-  $pStmt = $pdo->prepare("SELECT pr.name, SUM(oi.quantity) as sales FROM order_items_tb oi JOIN products_tb pr ON oi.product_id = pr.product_id JOIN order_tb o ON oi.order_id = o.order_id WHERE o.branch_id = :bid AND LOWER(o.order_status) IN ('completed', 'paid') $dateClauseAliasO GROUP BY pr.product_id ORDER BY sales DESC LIMIT 5");
-  $pStmt->execute([':bid' => $branch_id]);
-  $topProducts = $pStmt->fetchAll(PDO::FETCH_ASSOC);
-
-  // 5. REVENUE BREAKDOWN (Pie Chart) - The Final Fix!
-  $breakdownStmt = $pdo->prepare("
-        SELECT 
-            CASE WHEN o.pickup_date IS NULL THEN 'Services' ELSE 'Products' END as category, 
-            SUM(p.amount) as value 
+    // Realized Revenue (Paid/Successful)
+    $revStmt = $pdo->prepare("
+        SELECT COALESCE(SUM(p.amount), 0) 
         FROM payments_tb p
-        JOIN order_tb o ON p.order_id = o.order_id
         WHERE p.branch_id = :bid 
-        AND LOWER(p.payment_status) IN ('paid', 'completed', 'success')
+        AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed')
         AND p.subscription_id IS NULL
-        $dateClauseAliasP
+        $revDateClause 
+    ");
+    $revStmt->execute([':bid' => $branch_id]);
+    $revenue = (float)$revStmt->fetchColumn();
+
+    // Pending Revenue (Added)
+    $pendingStmt = $pdo->prepare("
+        SELECT COALESCE(SUM(p.amount), 0) 
+        FROM payments_tb p
+        WHERE p.branch_id = :bid 
+        AND LOWER(p.payment_status) IN ('pending', 'unpaid', 'partially paid')
+        AND p.subscription_id IS NULL
+        $revDateClause 
+    ");
+    $pendingStmt->execute([':bid' => $branch_id]);
+    $pendingRevenue = (float)$pendingStmt->fetchColumn();
+
+    // Appointments Count (Strictly Completed)
+    $apptDateClause = getSqlDateConstraint($period, 'a.start_time');
+    $apptStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM appointments_tb a
+        WHERE a.branch_id = :bid AND LOWER(a.status) = 'completed' $apptDateClause
+    ");
+    $apptStmt->execute([':bid' => $branch_id]);
+    $appointments = (int)$apptStmt->fetchColumn();
+
+    // Products Sold
+    $orderDateClause = getSqlDateConstraint($period, 'o.updated_at');
+    $prodCountStmt = $pdo->prepare("
+        SELECT COALESCE(SUM(oi.quantity), 0) 
+        FROM order_items_tb oi 
+        JOIN order_tb o ON oi.order_id = o.order_id 
+        WHERE o.branch_id = :bid AND oi.product_id IS NOT NULL 
+        AND LOWER(o.order_status) IN ('completed', 'paid') $orderDateClause
+    ");
+    $prodCountStmt->execute([':bid' => $branch_id]);
+    $productsSold = (int)$prodCountStmt->fetchColumn();
+
+
+    // --- 2. REVENUE TREND --- (Stays the same, but uses expanded status list)
+    $revenueTrend = [];
+    if ($period === 'year') {
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        for ($m = 1; $m <= 12; $m++) {
+            $tStmt = $pdo->prepare("
+                SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p 
+                WHERE p.branch_id = :bid AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed') 
+                AND p.subscription_id IS NULL
+                AND MONTH($virtualDate) = :m AND YEAR($virtualDate) = YEAR(CURDATE())
+            ");
+            $tStmt->execute([':bid' => $branch_id, ':m' => $m]);
+            $revenueTrend[] = ["name" => $months[$m-1], "revenue" => (float)$tStmt->fetchColumn()];
+        }
+    } elseif ($period === 'today') {
+        $slots = [['8AM','00:00','08:59'], ['12PM','09:00','12:59'], ['4PM','13:00','16:59'], ['8PM','17:00','23:59']];
+        foreach ($slots as $s) {
+            $tStmt = $pdo->prepare("
+                SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p 
+                WHERE p.branch_id = :bid AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed') 
+                AND p.subscription_id IS NULL
+                AND DATE($virtualDate) = CURDATE() AND TIME($virtualDate) BETWEEN :st AND :en
+            ");
+            $tStmt->execute([':bid' => $branch_id, ':st' => $s[1], ':en' => $s[2]]);
+            $revenueTrend[] = ["name" => $s[0], "revenue" => (float)$tStmt->fetchColumn()];
+        }
+    } else {
+        $startTs = ($period === 'week') ? strtotime('monday this week') : strtotime(date('Y-m-01'));
+        $iterations = ($period === 'week') ? 6 : (int)date('t') - 1; 
+        for ($i = 0; $i <= $iterations; $i++) {
+            $curr = strtotime("+$i days", $startTs);
+            $tStmt = $pdo->prepare("
+                SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p 
+                WHERE p.branch_id = :bid AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed') 
+                AND p.subscription_id IS NULL
+                AND DATE($virtualDate) = :d
+            ");
+            $tStmt->execute([':bid' => $branch_id, ':d' => date('Y-m-d', $curr)]);
+            $revenueTrend[] = ["name" => date(($period === 'week' ? 'D' : 'M d'), $curr), "revenue" => (float)$tStmt->fetchColumn()];
+        }
+    }
+
+
+    // --- 3. TOP SERVICES & PRODUCTS (With ucwords) ---
+    $orderVirtualDate = "COALESCE((SELECT MIN(a.start_time) FROM appointments_tb a WHERE a.order_id = o.order_id), o.created_at)";
+    
+    $svcStmt = $pdo->prepare("
+        SELECT bs.custom_name as name, COUNT(oi.order_item_id) as count 
+        FROM order_items_tb oi 
+        JOIN branch_service_tb bs ON oi.service_id = bs.branch_service_id 
+        JOIN order_tb o ON oi.order_id = o.order_id 
+        WHERE o.branch_id = :bid AND oi.service_id IS NOT NULL 
+        " . getSqlDateConstraint($period, $orderVirtualDate) . " 
+        GROUP BY bs.branch_service_id ORDER BY count DESC LIMIT 5
+    ");
+    $svcStmt->execute([':bid' => $branch_id]);
+    $topServices = array_map(function($item) {
+        $item['name'] = ucwords(strtolower($item['name']));
+        return $item;
+    }, $svcStmt->fetchAll(PDO::FETCH_ASSOC));
+
+    $pStmt = $pdo->prepare("
+        SELECT pr.name, SUM(oi.quantity) as sales 
+        FROM order_items_tb oi 
+        JOIN products_tb pr ON oi.product_id = pr.product_id 
+        JOIN order_tb o ON oi.order_id = o.order_id 
+        WHERE o.branch_id = :bid AND LOWER(o.order_status) IN ('completed', 'paid') 
+        $orderDateClause GROUP BY pr.product_id ORDER BY sales DESC LIMIT 5
+    ");
+    $pStmt->execute([':bid' => $branch_id]);
+    $topProducts = array_map(function($item) {
+        $item['name'] = ucwords(strtolower($item['name']));
+        return $item;
+    }, $pStmt->fetchAll(PDO::FETCH_ASSOC));
+
+
+    // --- 5. REVENUE BREAKDOWN ---
+    $breakdownStmt = $pdo->prepare("
+        SELECT 
+            CASE 
+                WHEN oi.product_id IS NOT NULL THEN 'Products' 
+                WHEN oi.service_id IS NOT NULL THEN 'Services'
+                ELSE 'Other' 
+            END as category, 
+            SUM(oi.subtotal) as value 
+        FROM order_items_tb oi
+        WHERE oi.order_id IN (
+            SELECT p.order_id 
+            FROM payments_tb p 
+            WHERE p.branch_id = :bid 
+            AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed')
+            AND p.subscription_id IS NULL
+            $revDateClause
+        )
         GROUP BY category
     ");
     $breakdownStmt->execute([':bid' => $branch_id]);
     $revenueBreakdown = $breakdownStmt->fetchAll(PDO::FETCH_ASSOC);
 
-  echo json_encode([
-      "success" => true,
-      "data" => [
-          "cardData" => ["revenue" => (float)$revenue, "productsSold" => (int)$productsSold, "appointments" => (int)$appointments],
-          "revenueTrend" => $revenueTrend,
-          "topServices" => $topServices,
-          "topProducts" => $topProducts,
-          "revenueBreakdown" => $revenueBreakdown
-      ]
-  ]);
+    echo json_encode([
+        "success" => true,
+        "data" => [
+            "cardData" => [
+                "revenue" => $revenue, 
+                "pendingRevenue" => $pendingRevenue, 
+                "productsSold" => $productsSold, 
+                "appointments" => $appointments
+            ],
+            "revenueTrend" => $revenueTrend,
+            "topServices" => $topServices,
+            "topProducts" => $topProducts,
+            "revenueBreakdown" => $revenueBreakdown
+        ]
+    ]);
 
 } catch (Exception $e) {
-  http_response_code(500);
-  echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    http_response_code(500);
+    echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }

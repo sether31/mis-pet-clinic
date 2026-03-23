@@ -15,6 +15,7 @@ import Header from '../../../../components/Header';
 import DashboardCard from '../../../../components/DashboardCard'; 
 import { LuPackage, LuStethoscope, LuWallet } from 'react-icons/lu';
 import { FiShoppingCart } from 'react-icons/fi';
+import { PiWarning } from 'react-icons/pi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const CATEGORY_COLORS = {
@@ -85,13 +86,12 @@ export default function BranchAdminView() {
         {/* TOP ACTION BAR */}
         <div className="flex flex-col items-start justify-between mb-8 gap-y-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-800">Analytics Overview</h1>
-            <p className="text-gray-500">View and download clinic performance data</p>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-800">Branch Performance Overview</h1>
+            <p className="text-gray-500 text-sm">Monitor real-time activity and download branch reports.</p>
           </div>
-
           <div className="flex items-center gap-3">
             <div className="relative inline-block w-48">
-              <HiCalendar className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
+              <HiCalendar className="absolute text-(--clr-primary) -translate-y-1/2 left-3 top-1/2" size={18} />
               <select 
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(e.target.value)}
@@ -114,12 +114,18 @@ export default function BranchAdminView() {
         </div>
 
         {/* KPI GRID */}
-        <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
           <DashboardCard 
             title={`Total Revenue (${getFilterLabel(timeFilter)})`} 
             data={`₱${Number(data.cardData.revenue).toLocaleString()}`} 
             icon={LuWallet} 
             iconColor="text-black"
+          />
+          <DashboardCard 
+            title={`Pending Revenue (${getFilterLabel(timeFilter)})`} 
+            data={`₱${Number(data.cardData.pendingRevenue).toLocaleString()}`} 
+            icon={PiWarning} 
+            iconColor="text-yellow-600"
           />
           <DashboardCard 
             title={`Appointments (${getFilterLabel(timeFilter)})`} 

@@ -32,7 +32,7 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     { id: 3, label: 'Branch Manager' },
     { id: 4, label: 'Veterinarian' },
     { id: 5, label: 'Groomer' },
-    { id: 6, label: 'Support Staff' }
+    { id: 6, label: 'Staff' }
   ];
 
   const availableRoles = userRoles.filter(role => {
@@ -51,12 +51,13 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
     { id: "transaction_management", label: "Transaction Management"},
     { id: "staff_management", label: "Staff Management"},
     { id: "service_management", label: "Service Management"},
+    { id: "analytics", label: "Analytics"},
     { id: "branch_settings", label: "Branch Settings"},
   ];
 
   const defaultRolePermissions = {
     // Branch Manager
-    3: ["role_dashboard", "appointment_management", "shop_management", "staff_management", "transaction_management", "medical_record_management", "inventory_management", "service_management", "branch_settings"],
+    3: ["role_dashboard", "appointment_management", "shop_management", "staff_management", "transaction_management", "medical_record_management", "inventory_management", "service_management", "analytics", "branch_settings"],
     
     // Veterinarian
     4: ["role_dashboard", "appointment_management", "shop_management", "transaction_management", "medical_record_management"], 
@@ -388,6 +389,10 @@ export default function AddStaffModal({ initialData, branchSchedule = [], onClos
 
                     // Groomer and vet shouldn't touch inventory
                     if((roleId === 4 || roleId === 5) && ["inventory_management"].includes(perm.id)) {
+                      return false;
+                    }
+
+                    if((roleId === 4 || roleId === 5 || roleId === 6) && ["analytics"].includes(perm.id)) {
                       return false;
                     }
                     

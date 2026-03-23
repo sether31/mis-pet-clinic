@@ -36,7 +36,7 @@ export default function ServiceCard({ data }) {
       iconColor: "text-(--clr-primary)"
     },
     {
-      title: "Support Staff",
+      title: "Staff",
       data: data?.staff || "0",
       icon: LuUser,
       iconColor: "text-gray-500"
