@@ -139,7 +139,7 @@ export default function BranchPerformanceTable({ data = [], isLoading, timeFilte
                 <td className="px-6 py-4 border-r border-gray-300">
                   <div className="flex items-center gap-3">
                     {/* Brand-Colored Avatar Container */}
-                    <div className="flex-shrink-0 overflow-hidden border rounded-lg w-10 h-10 bg-green-100 border-green-200">
+                    <div className="flex-shrink-0 overflow-hidden border rounded-lg w-9 h-9 bg-emerald-100/70 border-emerald-200">
                       {branch.logo_picture ? (
                         <img 
                           src={`${API_URL}/${branch.logo_picture}`} 
@@ -170,7 +170,7 @@ export default function BranchPerformanceTable({ data = [], isLoading, timeFilte
                 </td>
                 <td className="px-6 py-4 text-center border-r border-gray-300">
                   <span className={`px-2 py-1 text-[9px] font-black tracking-wide uppercase rounded border ${
-                    branch.sub_status === 'Active' ? 'bg-green-50 text-(--clr-primary) border-green-200' : 'bg-red-50 text-red-500 border-red-200'
+                    branch.sub_status?.toLowerCase()=== 'active' ? 'bg-green-50 text-(--clr-primary) border-green-200' : 'bg-red-50 text-red-500 border-red-200'
                   }`}>
                     {branch.sub_status}
                   </span>

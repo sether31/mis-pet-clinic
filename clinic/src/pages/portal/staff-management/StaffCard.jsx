@@ -44,7 +44,7 @@ const staffData = [
       iconColor: "text-(--clr-text-header)"
     },
     {
-      title: "Support Staff",
+      title: "Staff",
       data: data?.staff || "0",
       icon: LuUsers,
       iconColor: "text-gray-700"

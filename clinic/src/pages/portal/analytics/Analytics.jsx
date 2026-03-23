@@ -10,7 +10,7 @@ export default function Analytics() {
   return (
     <>
       {/* Conditionally render based on role */}
-      {user?.role_name === 'clinic_admin' ? (
+      {user?.role == 'clinic_admin' ? (
         <ClinicAdminView />
       ) : (
         <BranchAdminView />

@@ -16,12 +16,12 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
   const getAvatarUrl = (staff) => {
     // 1. If we have a real image in the DB, use it
     if (staff.profile_picture) {
-      if (staff.profile_picture.startsWith('http')) return staff.profile_picture;
       return `${API_URL}/${staff.profile_picture}`;
     }
 
-    // 2. Dynamic Avatar fallback based on name
-    const fullName = `${staff.fname} ${staff.lname}`.trim() || "Staff";
+    // 2. Dynamic Avatar fallback
+    const fullName = `${staff.fname || ""} ${staff.lname || ""}`.trim() || "Staff";
+
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=d1fae5&color=42756C&bold=true`;
   };
 
@@ -113,8 +113,22 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
                     <div className="relative shrink-0">
                       <img
                         src={getAvatarUrl(staff)}
-                        className="object-cover w-10 h-10 rounded-full bg-gray-50"
-                        onError={(e) => e.target.src = NoImage}
+                        className="object-cover w-10 h-10 rounded-lg bg-gray-50"
+                        onError={(e) => {
+                          const fullName = `${staff.fname || ""}`.trim() || "Staff";
+                          const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=d1fae5&color=42756C&bold=true`;
+
+                          // 🧠 Step 1: If DB image fails → switch to avatar
+                          if (!e.target.dataset.fallback) {
+                            e.target.dataset.fallback = "avatar";
+                            e.target.src = avatarUrl;
+                          } 
+                          // 🧠 Step 2: If avatar ALSO fails → use NoImage
+                          else {
+                            e.target.onerror = null;
+                            e.target.src = NoImage;
+                          }
+                        }}
                         alt="staff"
                       />
                     </div>
@@ -131,7 +145,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
                 
                 {/* staff role */}
                 <td className="px-6 py-4 border-r border-gray-300">
-                 <span className={`px-2 py-1 text-[9px] font-black rounded uppercase border ${
+                  <span className={`px-2 py-1 text-[9px] font-black rounded uppercase border ${
                     staff.role_name?.toLowerCase() === 'branch_admin' 
                       ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
                       : staff.role_name?.toLowerCase() === 'veterinarian'
@@ -144,7 +158,7 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
                       staff.role_name === 'branch_admin' 
                       ? 'Branch Manager'
                       : staff.role_name === 'support_staff' 
-                      ? 'Support Staff'
+                      ? 'Staff'
                       : (staff.role_name || 'error')
                     } 
                   </span>

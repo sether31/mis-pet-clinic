@@ -167,6 +167,7 @@ export const routes = createBrowserRouter([
                     element: (
                       <ProtectedRoute 
                         allowedRoles={['clinic_admin', 'branch_admin']}
+                        requiredPermission="analytics"
                       >
                         <Analytics />
                       </ProtectedRoute>
