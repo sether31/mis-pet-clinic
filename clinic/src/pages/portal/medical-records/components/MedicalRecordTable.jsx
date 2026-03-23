@@ -3,6 +3,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { HiSearch, HiEye, HiClipboardList, HiFilter, HiLocationMarker } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 import { CiSearch } from 'react-icons/ci';
+import NoImage from '../../../../assets/images/no-image.jpg'
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function MedicalRecordTable({ data = [], onView }) {
   const [activeTab, setActiveTab] = useState("all"); 
@@ -12,6 +15,12 @@ export default function MedicalRecordTable({ data = [], onView }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: 'start_time', direction: 'desc' });
+
+  const getAvatarUrl = (name) => {
+    const bg = 'd1fae5';
+    const color = '42756C';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '?')}&background=${bg}&color=${color}&bold=true`;
+  };
 
   // Dynamic Branch List with ID to handle same-name branches
   const branches = useMemo(() => {
@@ -186,11 +195,42 @@ export default function MedicalRecordTable({ data = [], onView }) {
           <tbody className="divide-y divide-gray-200">
             {paginated.length > 0 ? paginated.map(record => (
               <tr key={record.appointment_id} className="transition-colors hover:bg-gray-50/80 even:bg-gray-50/30">
-                <td className="px-6 py-4 border-r border-gray-300 font-black text-gray-800 uppercase text-[11px]">{record.pet_name}</td>
-                <td className="px-6 py-4 border-r border-gray-300 flex flex-col gap-0.5">
-                  <p className="text-[10px] font-black uppercase text-gray-800 truncate">{record.owner_name}</p>
-                  <span className="text-[9px] text-gray-400 font-bold italic truncate">{record.phone_number || 'No Phone Number'}</span>
+                <td className="px-6 py-4 border-r border-gray-300">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={record.pet_picture 
+                        ? `${API_URL}/${record.pet_picture}` 
+                        : getAvatarUrl(record.pet_name)
+                      } 
+                      className="object-cover w-10 h-10 border rounded-lg border-emerald-100 bg-emerald-50"
+                      onError={(e) => { e.target.onerror = null; e.target.src = NoImage; }}
+                      alt=""
+                    />
+                    <div>
+                      <p className="font-black text-slate-900 uppercase text-[11px] leading-tight">{record.pet_name}</p>
+                      <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">{record.pet_species || 'Patient'}</span>
+                    </div>
+                  </div>
                 </td>
+                
+                <td className="px-6 py-4 border-r border-gray-300">
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={record.owner_picture 
+                        ? `${API_URL}/${record.owner_picture}` 
+                        : getAvatarUrl(record.owner_name)
+                      } 
+                      className="object-cover w-10 h-10 border border-gray-200 rounded-full bg-gray-50"
+                      onError={(e) => { e.target.onerror = null; e.target.src = NoImage; }}
+                      alt=""
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <p className="text-[10px] font-black uppercase text-gray-800 truncate">{record.owner_name}</p>
+                      <span className="text-[9px] text-gray-400 font-bold italic truncate">{record.phone_number || 'No Phone'}</span>
+                    </div>
+                  </div>
+                </td>
+
                 <td className="px-6 py-4 text-center text-gray-600 border-r border-gray-300 text-[10px] font-black uppercase">
                   {new Date(record.start_time).toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' })}
                 </td>

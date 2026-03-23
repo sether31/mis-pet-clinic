@@ -9,20 +9,23 @@ import wait from '../utils/wait'
 // icons
 import { RxHamburgerMenu } from "react-icons/rx"
 import { MdOutlineClose, MdOutlineHomeRepairService } from "react-icons/md"
-import { RiDashboardLine } from "react-icons/ri"
+import { RiDashboardLine, RiPieChart2Line } from "react-icons/ri"
 import { CgFileDocument } from "react-icons/cg"
 import { LuBuilding2, LuWallet } from "react-icons/lu"
-import { TbGraph, TbLogout } from "react-icons/tb"
+import { TbLogout } from "react-icons/tb"
 import { MdOutlineSubscriptions } from "react-icons/md";
 
 const sidebarItems = [
   { label: 'Dashboard', path: '/dashboard', icon: RiDashboardLine },
+  
   { label: 'Clinic Applications', path: '/clinic-applications', icon: CgFileDocument },
   { label: 'Registered Clinics', path: '/registered-clinics', icon: LuBuilding2 },
-  { label: 'Subscription Plans', path: '/subscription-plans', icon: MdOutlineSubscriptions},
+
+  { label: 'Subscription Management', path: '/subscription-management', icon: MdOutlineSubscriptions},
   { label: 'Transaction Management', path: '/transaction-management', icon: LuWallet},
+  
   { label: 'Service Management', path: '/service-management', icon: MdOutlineHomeRepairService},
-  { label: 'Platform Analytics', path: '/platform-analytics', icon: TbGraph }
+  { label: 'Platform Analytics', path: '/platform-analytics', icon: RiPieChart2Line }, 
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -103,7 +106,7 @@ export default function Sidebar({className, open, setOpen}) {
           <div className='mt-auto mb-30'>
             <button 
               onClick={logout}
-              className="flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) hover:text-white text-(--clr-black) overflow-hidden text-sm"
+              className="flex gap-2 items-center w-full px-2 py-2 transition-colors rounded font-medium hover:bg-(--clr-black) hover:text-white text-(--clr-black) overflow-hidden text-sm cursor-pointer"
             >
               <div className="shrink-0"><TbLogout size={22} /></div>
               {open && (

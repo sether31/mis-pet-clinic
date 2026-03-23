@@ -19,6 +19,7 @@ try {
   $stmt = $pdo->prepare(
     "SELECT 
       u.user_id, 
+      u.profile_picture,
       u.first_name as fname, 
       u.last_name as lname, 
       u.email, 

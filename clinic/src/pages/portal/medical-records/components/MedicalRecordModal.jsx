@@ -40,6 +40,12 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
     doc_2: null
   });
 
+  const getAvatarUrl = (name) => {
+    const bg = 'd1fae5';
+    const color = '42756C';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '?')}&background=${bg}&color=${color}&bold=true`;
+  };
+
   // check if authorized to edit
   const isClinicAdmin = user?.role === 'clinic_admin';
   const isUnauthorizedBranch = !isClinicAdmin && Number(user?.branch_id) !== Number(record.branch_id);
@@ -243,7 +249,7 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
           {/* patient info */}
           <div className="flex flex-col p-4 rounded-2xl">
             {/* pet & owner */}
-            <div className="flex items-center gap-4 pr-2 border-b border-gray-300 pb-4 col-span-2 px-2">
+            <div className="flex items-center col-span-2 gap-4 px-2 pb-4 pr-2 border-b border-gray-300">
               <a 
                 href={record.pet_picture ? `${API_URL}/${record.pet_picture}` : ''} 
                 target="_blank" 
@@ -253,10 +259,18 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
                 title="View full image"
               >
                 <img 
-                  src={(!record.pet_picture || petImgError) ? NoImage : `${API_URL}/${record.pet_picture}`} 
-                  className="object-cover bg-white border-2 border-white rounded-full w-14 h-14"
-                  onError={() => setPetImgError(true)}
-                  alt="pet image"
+                  src={record.pet_picture && !petImgError
+                    ? `${API_URL}/${record.pet_picture}` 
+                    : getAvatarUrl(record.pet_name, 'pet')
+                  } 
+                  className="object-cover w-16 h-16 bg-white rounded-2xl"
+                  onError={(e) => {
+                    if(!petImgError) {
+                      setPetImgError(true);
+                      e.target.src = NoImage;
+                    }
+                  }}
+                  alt="pet"
                 />
               </a>
               <div>
@@ -267,7 +281,7 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
             </div>
 
             {/* service and staff */}
-            <div className="grid grid-cols-2 gap-4 py-4 border-b border-gray-300 px-2">
+            <div className="grid grid-cols-2 gap-4 px-2 py-4 border-b border-gray-300">
               <div className="flex flex-col justify-center">
                 <span className="text-[9px] font-black text-gray-700 uppercase leading-none mb-1">Service & Branch</span>
                 <p className="text-[11px] font-black uppercase leading-tight">

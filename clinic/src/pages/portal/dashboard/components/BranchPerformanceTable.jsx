@@ -5,6 +5,8 @@ import { CiSearch } from 'react-icons/ci';
 import { HiSearch } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiChevronUp, HiChevronDown, HiOutlineBuildingOffice2 } from 'react-icons/hi2';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function BranchPerformanceTable({ data = [], isLoading, timeFilter }) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,7 +135,32 @@ export default function BranchPerformanceTable({ data = [], isLoading, timeFilte
             {paginated.length > 0 ? paginated.map(branch => (
               <tr key={branch.branch_id} className="transition-colors hover:bg-gray-50/80 even:bg-gray-50/30">
                 <td className="px-6 py-4 text-xs font-bold text-gray-500 border-r border-gray-300">#{branch.branch_id}</td>
-                <td className="px-6 py-4 font-bold text-gray-800 border-r border-gray-300">{branch.name}</td>
+                
+                <td className="px-6 py-4 border-r border-gray-300">
+                  <div className="flex items-center gap-3">
+                    {/* Brand-Colored Avatar Container */}
+                    <div className="flex-shrink-0 overflow-hidden border rounded-lg w-9 h-9 bg-emerald-100/70 border-emerald-200">
+                      {branch.logo_picture ? (
+                        <img 
+                          src={`${API_URL}/${branch.logo_picture}`} 
+                          alt="" 
+                          className="object-cover w-full h-full"
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(branch.name)}&background=d1fae5&color=42756C&bold=true`;
+                          }}
+                        />
+                      ) : (
+                        /* DIRECT BRAND FALLBACK */
+                        <div className="flex items-center justify-center w-full h-full text-[11px] font-black uppercase text-(--clr-primary)">
+                          {(branch.name || "??").substring(0, 2)}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <span className="font-bold text-gray-800">{branch.name}</span>
+                  </div>
+                </td>
+
                 <td className="px-6 py-4 font-medium text-center text-gray-600 border-r border-gray-300">{branch.appts}</td>
                 <td className="px-6 py-4 font-medium text-center text-gray-600 border-r border-gray-300 bg-purple-50/20">
                   {branch.reservations}

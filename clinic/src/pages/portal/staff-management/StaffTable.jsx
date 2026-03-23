@@ -2,12 +2,28 @@ import { useState, useMemo, useEffect } from 'react';
 import { CiSearch } from 'react-icons/ci';
 import {  HiSearch, HiPencilAlt, HiPlus, HiArchive,  HiRefresh } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight } from 'react-icons/hi2';
+// images
+import NoImage from '../../../assets/images/no-image.jpg';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate }) {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10); 
+
+  const getAvatarUrl = (staff) => {
+    // 1. If we have a real image in the DB, use it
+    if (staff.profile_picture) {
+      if (staff.profile_picture.startsWith('http')) return staff.profile_picture;
+      return `${API_URL}/${staff.profile_picture}`;
+    }
+
+    // 2. Dynamic Avatar fallback based on name
+    const fullName = `${staff.fname} ${staff.lname}`.trim() || "Staff";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=d1fae5&color=42756C&bold=true`;
+  };
 
   const filtered = useMemo(() => {
     let result = data
@@ -92,8 +108,25 @@ export default function StaffTable({ data = [], onEdit, onToggleStatus, onCreate
             {paginated.length > 0 ? paginated.map(staff => (
               <tr key={staff.user_id} className="hover:bg-gray-200/50 even:bg-gray-200/50">
                 {/* staff name */}
-                <td className="px-6 py-4 font-bold text-gray-800 capitalize border-r border-gray-300">
-                  {staff.fname} {staff.lname}
+                <td className="px-6 py-4 border-r border-gray-300">
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <img
+                        src={getAvatarUrl(staff)}
+                        className="object-cover w-10 h-10 rounded-full bg-gray-50"
+                        onError={(e) => e.target.src = NoImage}
+                        alt="staff"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-bold leading-tight text-gray-800 capitalize">
+                        {staff.fname} {staff.lname}
+                      </p>
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5 block">
+                        ID: #{staff.user_id}
+                      </span>
+                    </div>
+                  </div>
                 </td>
                 
                 {/* staff role */}

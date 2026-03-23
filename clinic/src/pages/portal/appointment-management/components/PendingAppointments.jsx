@@ -59,7 +59,7 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
                     </p>
                   </div>
                   
-                  <h3 className={`text-sm font-black truncate ${isPast ? "text-amber-900" : "group-hover:text-(--clr-text-header)"}`}>
+                  <h3 className={`text-sm font-black truncate ${isPast ? "text-amber-900" : ""}`}>
                     {app.pet_name}
                   </h3>
                   
@@ -82,14 +82,13 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
                       e.stopPropagation();
                       onSelect(app)
                     }}
-                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all active:scale-95
+                    className={`p-2 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all active:scale-95
                       ${isPast 
                         ? 'bg-amber-600 text-white hover:bg-amber-700' 
                         : 'bg-(--clr-black) text-white hover:bg-(--clr-primary)'
                       }`}
                   >
-                    View
-                    <HiOutlineChevronRight size={10} />
+                    <HiOutlineChevronRight size={12} />
                   </button>
                 </div>
               </div>

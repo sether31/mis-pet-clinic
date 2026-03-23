@@ -17,10 +17,19 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
   const [sortConfig, setSortConfig] = useState({ key: 'transaction_date', direction: 'desc' });
 
   // 👇 Media Helper
-  const getMediaUrl = (path) => {
-    if (!path) return NoImage;
-    if (path.startsWith('http')) return path;
-    return `${API_URL}/${path}`;
+  const getAvatarUrl = (trx) => {
+    const path = trx.pet_image || trx.user_image;
+    
+    // 1. If we have a real image in the DB, use it
+    if (path) {
+      if (path.startsWith('http')) return path;
+      return `${API_URL}/${path}`;
+    }
+
+    // 2. If no image, generate an avatar based on Owner Name or Pet Name
+    const seedName = trx.owner_name || trx.pet_name || "Guest";
+    // Using UI-Avatars for a clean, colorful look
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(seedName)}&background=d1fae5&color=42756C&bold=true`;
   };
 
   // sorting
@@ -187,22 +196,21 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
                 )}
 
                 <td className="px-6 py-4 border-r border-gray-300">
-                  {/* 👇 ADDED IMAGES HERE */}
                   <div className="flex items-center gap-3">
-                    <img 
-                      src={getMediaUrl(trx.pet_image || trx.user_image)} 
-                      className="object-cover w-10 h-10 border-2 border-gray-100 rounded-full bg-gray-50 shrink-0" 
-                      onError={(e) => e.target.src = NoImage} 
-                      alt=""
-                    />
+                    <div className="shrink-0">
+                      <img 
+                        src={getAvatarUrl(trx)} 
+                        className="object-cover w-10 h-10 rounded-full bg-gray-50" 
+                        onError={(e) => e.target.src = NoImage} 
+                        alt="avatar"
+                      />
+                    </div>
                     <div>
-                      <p className={`font-bold leading-tight capitalize ${trx.owner_name ? 'text-gray-800' : 'text-gray-500 italic'}`}>
+                      <p className={`font-bold leading-tight capitalize ${trx.owner_name ? 'text-gray-800' : 'text-gray-400'}`}>
                         {trx.owner_name || "Guest Walk-in"}
                       </p>
                       {trx.pet_name && (
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5 block">
-                          Pet: {trx.pet_name}
-                        </span>
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-0.5 block">Pet: {trx.pet_name}</span>
                       )}
                     </div>
                   </div>
@@ -288,9 +296,9 @@ export default function TransactionTable({ data = [], loading, onViewDetails, is
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
         <span className="text-[11px] text-gray-500 font-black uppercase tracking-widest">Total: {filteredAndSorted.length}</span>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border border-gray-300 rounded-lg disabled:opacity-20 cursor-pointer active:scale-95 transition-all"><HiChevronLeft/></button>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer disabled:opacity-20 active:scale-95"><HiChevronLeft/></button>
           <span className="px-4 text-xs font-black">{currentPage} / {totalPages || 1}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border border-gray-300 rounded-lg disabled:opacity-20 cursor-pointer active:scale-95 transition-all"><HiChevronRight/></button>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 transition-all bg-white border border-gray-300 rounded-lg cursor-pointer disabled:opacity-20 active:scale-95"><HiChevronRight/></button>
         </div>
       </div>
     </div>

@@ -7,11 +7,11 @@ import DashboardCard from '../../../../components/DashboardCard';
 import BranchPerformanceTable from '../components/BranchPerformanceTable'; 
 import { BranchTopEarnersChart } from '../components/DashboardComponents';
 // icons
-import { TbUsers, TbCalendarTime, TbAlertTriangle } from 'react-icons/tb';
+import { TbUsers, TbCalendarTime } from 'react-icons/tb';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
 import { FiShoppingCart } from 'react-icons/fi';
-import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
-import { HiOutlineInformationCircle } from 'react-icons/hi2';
+import { HiCalendar } from "react-icons/hi";
+import { HiOutlineBuildingOffice2, HiOutlineInformationCircle  } from 'react-icons/hi2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -49,20 +49,6 @@ export default function ClinicAdminDashboard() {
 
     fetchClinicStats();
   }, [timeFilter]);
-
-  useEffect(() => {
-    const checkSubs = async () => {
-      try {
-        await authFetch(`${API_URL}/api/clinic/general/notifications/check-expiring-subs.php`);
-      } catch(error) {
-        console.error("Failed to check subscription statuses", error);
-      }
-    };
-    
-    if (user) {
-      checkSubs();
-    }
-  }, [user]);
 
   const maintenanceBranches = branchPerformance.filter(
     b => b.status === 'Maintenance' && b.sub_status == 'Active'
@@ -138,14 +124,14 @@ export default function ClinicAdminDashboard() {
           </div>
 
           {/* TOP PAGE FILTER - DROPDOWN */}
-          <div className="flex flex-col w-full gap-1 md:w-auto">
-            <label className="text-[10px] font-black tracking-widest text-(--clr-text-primary) uppercase">
-              Time Period
-            </label>
+          <div className="relative inline-block w-full md:w-48">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-(--clr-primary) pointer-events-none">
+              <HiCalendar size={18} />
+            </div>
             <select 
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
-              className="border border-gray-300 text-gray-700 text-sm font-bold rounded-lg focus:ring focus:ring-(--clr-primary) focus:border-(--clr-primary) block w-full md:w-48 px-4 py-2.5 outline-none cursor-pointer hover:border-gray-400 transition-all"
+              className="block w-full py-2 pl-10 pr-4 text-sm font-medium text-gray-700 border border-gray-400 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring focus:ring-gray-700"
             >
               <option value="today">Today</option>
               <option value="week">This Week</option>

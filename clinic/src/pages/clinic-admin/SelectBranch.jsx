@@ -8,15 +8,15 @@ import { usePlatform } from '../../hooks/usePlatform';
 // utils
 import wait from '../../utils/wait';
 import { clearSession } from '../../utils/clearSession';
-// components
 import { authFetch } from '../../utils/authFetch';
-
-import Button from '../../components/Button';
-// icons
-import { HiOutlineBuildingOffice2, HiPlus, HiArrowRight } from "react-icons/hi2";
-import { IoLogOut } from "react-icons/io5";
+// components
 import AddBranchModal from '../../components/AddBranchModal';
 import BranchStatusModal from '../../components/BranchStatusModal';
+import Button from '../../components/Button';
+// icons
+import { HiOutlineBuildingOffice2, HiPlus, HiArrowRight, HiLockClosed, HiOutlineEnvelope } from "react-icons/hi2";
+import { IoLogOut } from "react-icons/io5";
+import { HiOutlinePhone } from "react-icons/hi";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -29,6 +29,7 @@ export default function SelectBranch() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [isSelectedBranchModalOpen, setIsSelectedBranchModalOpen] = useState(false);
+  const [isSuspendedModalOpen, setIsSuspendedModalOpen] = useState(false);
 
   const tabs = [
     { id: 'approved', label: 'Active' },
@@ -76,10 +77,9 @@ export default function SelectBranch() {
   const filteredBranches = branches.filter(b => (b.status || b.branch_status) === activeTab);
 
   const handleSelect = async (branch) => {
-    // approve branch
+    // approved
     if(activeTab === 'approved') {
-      showLoader("Checking...")
-
+      showLoader("Checking...");
       try {
         const res = await authFetch(`${API_URL}/api/clinic/clinic-admin/subscription/check-subscription-history.php`, {
           method: 'POST',
@@ -87,43 +87,37 @@ export default function SelectBranch() {
         });
 
         if(res && res.hasSubHistory === true) {
-          // check if first time
           const isNew = Number(res.is_configured) === 0;
-
-          if(isNew) {
-            toast.info("Welcome! Let's get your branch set up.");
-          } else {
-            toast.info("Welcome back!");
-          }
-
-          navigate(`/clinic/${branch.branch_id}/portal/dashboard`, {  replace: true });
+          isNew ? toast.info("Welcome! Let's get your branch set up.") : toast.info("Welcome back!");
+          navigate(`/clinic/${branch.branch_id}/portal/dashboard`);
         } else {
           toast.info("Please select a subscription plan to get started.");
-          navigate(`/clinic/${branch.branch_id}/select-plan`, { replace: true });
+          navigate(`/clinic/${branch.branch_id}/select-plan`);
         }
-      } catch(error) {
-        toast.error("Failed to verify branch status.");
-        hideLoader();
+      } catch (error) {
+        toast.error("Failed to verify branch status");
       } finally {
         hideLoader();
       }
-
-      // suspended
-    } else if(activeTab === 'suspended') {
-      toast.info("This branch is suspended. Please contact support.");
-      return;
-
-      // pending rejected
-    } else {
-      setSelectedBranch(branch);
-      setIsSelectedBranchModalOpen(true);
       return;
     }
-  }
+
+    // suspended
+    if(activeTab === 'suspended') {
+      toast.info("This branch is suspended");
+      setSelectedBranch(branch);
+      setIsSuspendedModalOpen(true);
+      return;
+    }
+
+    // pending/rejected
+    setSelectedBranch(branch);
+    setIsSelectedBranchModalOpen(true);
+  };
 
   const handleLogout = async () => {
     showLoader("Logging out...");
-    await wait(500);
+    await wait(1500);
     clearSession();
     navigate('/clinic/login', { replace: true });
     hideLoader();
@@ -149,7 +143,7 @@ export default function SelectBranch() {
                 {platformData?.platform_name || "LOGO"}
               </h1>
           </div>
-           
+
             <button 
               type="button" 
               onClick={handleLogout}
@@ -204,73 +198,87 @@ export default function SelectBranch() {
 
           {/* branches */}
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredBranches.map((branch) => (
-              <div
-                key={branch.branch_id}
-                onClick={() => handleSelect(branch)}
-                className={`group relative bg-(--clr-bg-card) border border-gray-300 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 cursor-pointer hover:border-(--clr-primary)`}
-              >
-                <div className="flex flex-col h-full">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="w-14 h-14 bg-emerald-50 text-(--clr-primary) rounded-2xl flex items-center justify-center group-hover:bg-(--clr-primary) group-hover:text-white transition-colors duration-300">
-                      <HiOutlineBuildingOffice2 size={32} />
-                    </div>
-                    <span className={`text-[10px] uppercase font-bold px-3 py-1 rounded-full ${
-                      activeTab === 'approved' ? 'bg-green-100 text-(--clr-text-header)' :
-                      activeTab === 'pending' ? 'bg-amber-100 text-amber-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {branch.status || branch.branch_status}
-                    </span>
-                  </div>
+            {filteredBranches.map((branch) => {
+              const isSuspended = activeTab === 'suspended';
 
-                  {activeTab === 'approved' && (
-                    <div className="mt-2 mb-4">
-                      {!branch.end_date ? (
-                        // new branch no subscription yet
-                        <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-gray-100 text-gray-600 border border-gray-200">
-                          NO ACTIVE SUBSCRIPTION
-                        </span>
-                        
-                        // days left
-                      ) : branch.days_left >= 0 ? (          
-                        <span className={`text-[11px] font-bold px-2 py-1 rounded-md border ${
-                          branch.days_left <= 7 
-                            ? 'bg-orange-50 text-orange-600 border-orange-200' 
-                            : 'bg-green-100 text-(--clr-text-header) border-green-200'
-                        }`}>
-                          {/* if today then expires today */}
-                          {branch.days_left === 0 
-                            ? 'EXPIRES TODAY' 
-                            : `${branch.days_left} ${branch.days_left === 1 ? 'DAY' : 'DAYS'} LEFT`
-                          }
-                        </span>
-
-                        // expired subscription (days_left is -1 or lower)
-                      ) : (
-                        <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-red-50 text-red-600 border border-red-200">
-                          SUBSCRIPTION EXPIRED
-                        </span>
-                      )}
+              return (
+                <div
+                  key={branch.branch_id}
+                  onClick={() => handleSelect(branch)}
+                  className={`relative bg-(--clr-bg-card) border border-gray-300 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 cursor-pointer 
+                  ${isSuspended ? '' : 'group hover:border-(--clr-primary)'}`}
+                >
+                  {isSuspended && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center transition-opacity bg-white/40 backdrop-blur-[2px] rounded-2xl group-hover:bg-white/20">
+                      <div className="p-3 mb-2 text-red-600 bg-white border border-red-100 shadow-xl rounded-2xl">
+                        <HiLockClosed size={28} />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-red-700">Access Locked</span>
                     </div>
                   )}
-                  
-                  <h3 className="mb-2 text-2xl font-bold leading-tight text-gray-900">{branch.name || branch.branch_name}</h3>
-                  <p className="flex-1 text-sm leading-relaxed text-gray-500">
-                    {branch.address}, {branch.municipality}
-                  </p>
+      
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-14 h-14 bg-emerald-50 text-(--clr-primary) rounded-2xl flex items-center justify-center group-hover:bg-(--clr-primary) group-hover:text-white transition-colors duration-300">
+                        <HiOutlineBuildingOffice2 size={32} />
+                      </div>
+                      <span className={`text-[10px] uppercase font-bold px-3 py-1 rounded-full ${
+                        activeTab === 'approved' ? 'bg-green-100 text-(--clr-text-header)' :
+                        activeTab === 'pending' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {branch.status || branch.branch_status}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center justify-between pt-5 mt-5 border-t border-gray-100">
-                    <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">ID: {branch.branch_id}</span>
                     {activeTab === 'approved' && (
-                      <div className="text-(--clr-primary) transform group-hover:translate-x-2 transition-transform duration-300">
-                        <HiArrowRight size={24} />
+                      <div className="mt-2 mb-4">
+                        {!branch.end_date ? (
+                          // new branch no subscription yet
+                          <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-gray-100 text-gray-600 border border-gray-200">
+                            NO ACTIVE SUBSCRIPTION
+                          </span>
+                          
+                          // days left
+                        ) : branch.days_left >= 0 ? (          
+                          <span className={`text-[11px] font-bold px-2 py-1 rounded-md border ${
+                            branch.days_left <= 7 
+                              ? 'bg-orange-50 text-orange-600 border-orange-200' 
+                              : 'bg-green-100 text-(--clr-text-header) border-green-200'
+                          }`}>
+                            {/* if today then expires today */}
+                            {branch.days_left === 0 
+                              ? 'EXPIRES TODAY' 
+                              : `${branch.days_left} ${branch.days_left === 1 ? 'DAY' : 'DAYS'} LEFT`
+                            }
+                          </span>
+
+                          // expired subscription (days_left is -1 or lower)
+                        ) : (
+                          <span className="text-[11px] font-bold px-2 py-1 rounded-md bg-red-50 text-red-600 border border-red-200">
+                            SUBSCRIPTION EXPIRED
+                          </span>
+                        )}
                       </div>
                     )}
+                    
+                    <h3 className="mb-2 text-2xl font-bold leading-tight text-gray-900">{branch.name || branch.branch_name}</h3>
+                    <p className="flex-1 text-sm leading-relaxed text-gray-500">
+                      {branch.address}, {branch.municipality}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-5 mt-5 border-t border-gray-100">
+                      <span className="text-xs font-bold tracking-widest text-gray-400 uppercase">ID: {branch.branch_id}</span>
+                      {activeTab === 'approved' && (
+                        <div className="text-(--clr-primary) transform group-hover:translate-x-2 transition-transform duration-300">
+                          <HiArrowRight size={24} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* if empty */}
@@ -303,6 +311,67 @@ export default function SelectBranch() {
             }}
             onSuccess={updateBranchSuccess} 
           />
+        )}
+
+
+        {isSuspendedModalOpen && selectedBranch && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md overflow-hidden bg-white border border-red-100 shadow-2xl rounded-2xl"
+            >
+              <div className="p-8 text-center">
+                <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 text-red-500 rounded-full bg-red-50">
+                  <HiLockClosed size={40} />
+                </div>
+                
+                <h2 className="mb-2 text-2xl font-black tracking-tight text-gray-900 uppercase">
+                  Access Restricted
+                </h2>
+                
+                <p className="mb-6 leading-relaxed text-gray-500">
+                  The branch <span className="font-bold text-gray-900">{selectedBranch.name || selectedBranch.branch_name}</span> has been suspended. 
+                  Please contact the platform administrator to resolve this issue.
+                </p>
+
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => {
+                      setIsSuspendedModalOpen(false);
+                      setSelectedBranch(null);
+                    }}
+                    className="w-full py-4 text-xs font-black tracking-widest text-white uppercase transition-all bg-gray-900 cursor-pointer rounded-xl hover:bg-black active:scale-95"
+                  >
+                    I Understand
+                  </button>
+                  
+                  <div className="flex gap-4 pt-4 border-t border-gray-100">
+                    {/* Email Support Link */}
+                    <a 
+                      href={`mailto:${platformData?.platform_email}`} 
+                      className="flex items-center justify-center gap-2 w-full py-3 text-[11px] font-bold text-gray-500 uppercase transition-all hover:text-gray-900 active:scale-95 group"
+                    >
+                      <HiOutlineEnvelope size={18} className="text-gray-400 transition-colors group-hover:text-red-500" />
+                      Email Support
+                    </a>
+
+                    {/* Phone Support Link */}
+                    {platformData?.contact_phone && (
+                      <a 
+                        href={`tel:${platformData.contact_phone}`} 
+                        className="flex items-center justify-center gap-2 w-full py-3 text-[11px] font-bold text-gray-500 uppercase transition-all hover:text-gray-900 active:scale-95 group"
+                      >
+                        <HiOutlinePhone size={18} className="text-gray-400 transition-colors group-hover:text-(--clr-primary)" />
+                        Call Us
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>

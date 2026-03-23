@@ -12,19 +12,21 @@ import DashboardLayout from "../layouts/DashboardLayout";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/auth/Login";
   // main
-import Dashboard from "../pages/dashboard/Dashboard";
-import ClinicApplications from "../pages/dashboard/ClinicApplications";
-import RegisteredClinics from "../pages/dashboard/RegisteredClinics";
-import PlatformAnalytics from "../pages/dashboard/PlatformAnalytics";
-import NotFoundDashboard from "../pages/dashboard/NotFoundDashboard";
-import SubscriptionPlans from "../pages/subscription/SubscriptionPlans"
-import ServiceManagement from "../pages/service-management/ServiceManagement";
+import Dashboard from "../pages/portal/dashboard/Dashboard";
+import ClinicApplications from "../pages/portal/clinic-applications/ClinicApplications";
+import RegisteredClinics from "../pages/portal/registered-clinics/RegisteredClinics";
+import PlatformAnalytics from "../pages/portal/platform-analytics/PlatformAnalytics";
+import SubscriptionPlans from "../pages/portal/subscription-management/SubscriptionPlans"
+import ServiceManagement from "../pages/portal/service-management/ServiceManagement";
+import TransactionManagement from "../pages/portal/transaction-management/TransactionManagement";
   // other links
+import Notifications from "../pages/Navigation/notifications/Notifications";
 import Settings from "../pages/Navigation/Settings/Settings";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import GeneralSettings from "../pages/Navigation/Settings/components/GeneralSettings";
 import SecuritySettings from "../pages/Navigation/Settings/components/SecuritySettings";
-import TransactionManagement from "../pages/transaction-management/TransactionManagement";
+import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
+
 
 export const routes = createBrowserRouter([
   {
@@ -58,11 +60,12 @@ export const routes = createBrowserRouter([
           { path: "dashboard", element: <Dashboard /> },
           { path: "clinic-applications", element: <ClinicApplications /> },
           { path: "registered-clinics", element: <RegisteredClinics /> },
-          { path: "subscription-plans", element: <SubscriptionPlans />},
+          { path: "subscription-management", element: <SubscriptionPlans />},
           { path: "transaction-management", element: <TransactionManagement />},
           { path: "service-management", element: <ServiceManagement />},
           { path: "platform-analytics", element: <PlatformAnalytics /> },
           // other links
+          { path: "notifications", element: <Notifications /> },
           { 
             path: "settings", 
             element: <Settings />,

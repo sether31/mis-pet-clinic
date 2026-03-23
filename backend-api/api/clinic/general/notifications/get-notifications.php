@@ -17,7 +17,7 @@ try {
   $unreadCount = $countStmt->fetchColumn();
 
   // 3. Optional Limit: Defaults to 100 for the main table, but can be smaller for a dropdown bell
-  $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
+  $limit = 250;
 
   // 4. Fetch the notifications
   $stmt = $pdo->prepare(

@@ -11,6 +11,7 @@ import InputImage from '../../../../components/InputImage';
 // icons
 import { RiGlobalLine, RiDatabase2Line, RiMailLine, RiPhoneLine } from 'react-icons/ri';
 import { HiSave } from 'react-icons/hi';
+import LoaderV2 from '../../../../components/LoaderV2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -25,6 +26,7 @@ export default function GeneralSettings() {
     logo: null,
     currentLogoUrl: null
   });
+  const [loading, setLoading] = useState(false);
 
   const inputLabels = {
     platform_name: "Platform Name",
@@ -34,7 +36,7 @@ export default function GeneralSettings() {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      showLoader();
+      setLoading(true);
       try {
         const res = await authFetch(`${API_URL}/api/super-admin/platform-settings/get-general-settings.php`);
         if (res?.success && res.data) {
@@ -48,9 +50,9 @@ export default function GeneralSettings() {
           setMaintenanceMode(res.data.is_maintenance === 1);
         }
       } catch(err) {
-        toast.error("Failed to load platform settings");
+        toast.error("Something went wrong");
       } finally {
-        hideLoader();
+        setLoading(false);
       }
     };
     fetchSettings();
@@ -126,100 +128,107 @@ export default function GeneralSettings() {
 
   return (
     <div className="p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2">
-        <div className="space-y-10">       
-          {/* platform info */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-1 pb-2 text-lg font-bold text-gray-900 border-b border-gray-100">
-              <RiGlobalLine size={24} className="text-gray-700" />
-              Platform Information
-            </div>
+      {loading ? (
+        <LoaderV2 />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            <div className="space-y-10">       
+              {/* platform info */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-1 pb-2 text-lg font-bold text-gray-900 border-b border-gray-100">
+                  <RiGlobalLine size={24} className="text-gray-700" />
+                  Platform Information
+                </div>
 
-            <div className="space-y-6">
-              <InputImage 
-                label="Platform Logo"
-                name="logo"
-                required={false}
-                isPreview={true}
-                existingImage={formData.currentLogoUrl}
-                size="120px" 
-                onChange={handleChange}
-                error={errors.logo}
-              />
+                <div className="space-y-6">
+                  <InputImage 
+                    label="Platform Logo"
+                    name="logo"
+                    required={false}
+                    isPreview={true}
+                    existingImage={formData.currentLogoUrl}
+                    size="120px" 
+                    onChange={handleChange}
+                    error={errors.logo}
+                  />
 
-              <div className="space-y-4">
-                <Input 
-                  label="Platform Name"
-                  name="platform_name"
-                  isImportant={true}
-                  value={formData.platform_name}
-                  onChange={handleChange}
-                  error={errors.platform_name}
-                  placeholder="Enter platform name"
-                  icon={<RiGlobalLine size={18} className="text-gray-400" />}
-                />
-                <Input 
-                  label="Support Email"
-                  name="support_email"
-                  isImportant={true}
-                  type="email"
-                  value={formData.support_email}
-                  onChange={handleChange}
-                  error={errors.support_email}
-                  placeholder="e.g. support@platform.com"
-                  icon={<RiMailLine size={18} className="text-gray-400" />}
-                />
-                <Input 
-                  label="Contact Phone"
-                  name="contact_phone"
-                  isImportant={true}
-                  value={formData.contact_phone}
-                  onChange={handleChange}
-                  error={errors.contact_phone}
-                  placeholder="e.g. +63 912 345 6789"
-                  icon={<RiPhoneLine size={18} className="text-gray-400" />}
-                />
+                  <div className="space-y-4">
+                    <Input 
+                      label="Platform Name"
+                      name="platform_name"
+                      isImportant={true}
+                      value={formData.platform_name}
+                      onChange={handleChange}
+                      error={errors.platform_name}
+                      placeholder="Enter platform name"
+                      icon={<RiGlobalLine size={18} className="text-gray-400" />}
+                    />
+                    <Input 
+                      label="Support Email"
+                      name="support_email"
+                      isImportant={true}
+                      type="email"
+                      value={formData.support_email}
+                      onChange={handleChange}
+                      error={errors.support_email}
+                      placeholder="e.g. support@platform.com"
+                      icon={<RiMailLine size={18} className="text-gray-400" />}
+                    />
+                    <Input 
+                      label="Contact Phone"
+                      name="contact_phone"
+                      isImportant={true}
+                      value={formData.contact_phone}
+                      onChange={handleChange}
+                      error={errors.contact_phone}
+                      placeholder="e.g. +63 912 345 6789"
+                      icon={<RiPhoneLine size={18} className="text-gray-400" />}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* operations */}
+              <div className="pt-8 space-y-6 border-t border-gray-100">
+                <div className="flex items-center gap-1 text-lg font-bold text-gray-900">
+                  <RiDatabase2Line size={24} className="text-gray-700" />
+                  Platform Operations
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-gray-900">Maintenance Mode</h4>
+                    <p className="text-sm text-gray-500 italic">Temporarily disable platform access</p>
+                  </div>
+                  
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={maintenanceMode}
+                      onChange={() => setMaintenanceMode(!maintenanceMode)}
+                    />
+                    <div className="w-12 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-start pt-4">
+                <button 
+                  onClick={handleSubmit}
+                  className="flex items-center justify-center gap-2 px-10 py-3 font-bold text-white text-sm rounded-lg cursor-pointer bg-(--clr-primary) hover:opacity-90 transition-all active:scale-95 w-full sm:w-auto"
+                >
+                  <HiSave size={18} />
+                  Save General Settings
+                </button>
               </div>
             </div>
+
+            <div className="hidden lg:block"></div>
           </div>
-
-          {/* operations */}
-          <div className="pt-8 space-y-6 border-t border-gray-100">
-            <div className="flex items-center gap-1 text-lg font-bold text-gray-900">
-              <RiDatabase2Line size={24} className="text-gray-700" />
-              Platform Operations
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-bold text-gray-900">Maintenance Mode</h4>
-                <p className="text-sm text-gray-500 italic">Temporarily disable platform access</p>
-              </div>
-              
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
-                  checked={maintenanceMode}
-                  onChange={() => setMaintenanceMode(!maintenanceMode)}
-                />
-                <div className="w-12 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex justify-start pt-4">
-            <button 
-              onClick={handleSubmit}
-              className="flex items-center justify-center gap-2 px-10 py-3 font-bold text-white text-sm rounded-lg cursor-pointer bg-(--clr-primary) hover:opacity-90 transition-all active:scale-95 w-full sm:w-auto"
-            >
-              <HiSave size={18} />
-              Save General Settings
-            </button>
-          </div>
-        </div>
-
-        <div className="hidden lg:block"></div></div>
+        </>
+      )}
     </div>
   );
 }
