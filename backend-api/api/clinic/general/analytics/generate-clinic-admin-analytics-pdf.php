@@ -199,7 +199,7 @@ try {
             </table>
 
             <div style='text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; margin-top: 20px; padding-top: 15px; letter-spacing: 0.5px;'>
-                <em style='display: block; margin: 8px 0;'>Thank you for trusting us with your pet's care!</em>
+                <em style='display: block; margin: 8px 0;'>Thank you for trusting {$platformName} to power your clinic's growth!</em>
                 <div style='margin-top: 5px; font-size: 8px; color: #bbb;'>
                     Powered by {$platformLogoHtml} <strong style='color: #42756C;'>{$platformName}</strong>
                 </div>
