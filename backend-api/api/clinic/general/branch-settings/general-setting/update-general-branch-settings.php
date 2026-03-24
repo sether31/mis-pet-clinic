@@ -22,7 +22,7 @@ try {
 
   // Get branch data AND the clinic owner's ID for the notification
   $stmt = $pdo->prepare(
-    "SELECT b.*, c.created_by as clinic_owner_id 
+    "SELECT b.*, c.created_by as clinic_owner_id, c.name as main_branding_name 
     FROM clinic_branches_tb b 
     JOIN clinics_tb c ON b.clinic_id = c.clinic_id 
     WHERE b.branch_id = ?"
@@ -38,11 +38,13 @@ try {
   // 👇 SAFE FALLBACKS (Prevents Branch Admin from wiping hidden licensing fields) 👇
   $tinNumber = $_POST['tinNumber'] ?? $branch['tin_id_number'];
   $permitNumber = $_POST['businessPermitNumber'] ?? $branch['business_permit_number'];
+  $newBrandingName = $_POST['mainBrandingName'] ?? $branch['main_branding_name'];
 
   // 👇 CHANGE DETECTOR 👇
   $hasChanges = false;
   
   if (
+      $branch['main_branding_name'] !== $newBrandingName ||
       $branch['name'] !== $_POST['clinicName'] ||
       $branch['contact_number'] !== $_POST['contactNumber'] || 
       $branch['description'] !== $_POST['clinicDescription'] ||
@@ -56,7 +58,12 @@ try {
       $branch['tin_id_number'] !== $tinNumber ||
       $branch['business_permit_number'] !== $permitNumber
   ) {
-      $hasChanges = true;
+    $hasChanges = true;
+  }
+
+  if ($newBrandingName !== $branch['main_branding_name']) {
+      $stmtBrand = $pdo->prepare("UPDATE clinics_tb SET name = ? WHERE clinic_id = ?");
+      $stmtBrand->execute([$newBrandingName, $branch['clinic_id']]);
   }
 
   $fileMapping = [
