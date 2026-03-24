@@ -27,6 +27,8 @@ try {
             case 'today': return "AND DATE($column) = CURDATE()";
             case 'month': return "AND MONTH($column) = MONTH(CURDATE()) AND YEAR($column) = YEAR(CURDATE())";
             case 'year':  return "AND YEAR($column) = YEAR(CURDATE())"; 
+            case 'all':
+                return "1=1";
             case 'week':
             default:      return "AND YEARWEEK($column, 1) = YEARWEEK(CURDATE(), 1)"; 
         }
