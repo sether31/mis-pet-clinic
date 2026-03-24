@@ -31,6 +31,8 @@ try {
             case 'week':  return "YEARWEEK($column, 1) = YEARWEEK(CURDATE(), 1)";
             case 'month': return "MONTH($column) = MONTH(CURDATE()) AND YEAR($column) = YEAR(CURDATE())";
             case 'year':  return "YEAR($column) = YEAR(CURDATE())";
+            case 'all':
+                return "1=1";
             case 'today':
             default:      return "DATE($column) = CURDATE()";
         }

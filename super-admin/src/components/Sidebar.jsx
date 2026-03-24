@@ -25,7 +25,7 @@ const sidebarItems = [
   { label: 'Transaction Management', path: '/transaction-management', icon: LuWallet},
   
   { label: 'Service Management', path: '/service-management', icon: MdOutlineHomeRepairService},
-  // { label: 'Platform Analytics', path: '/platform-analytics', icon: RiPieChart2Line }, 
+  { label: 'Platform Analytics', path: '/platform-analytics', icon: RiPieChart2Line }, 
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;

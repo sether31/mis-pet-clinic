@@ -12,6 +12,7 @@ import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
 import NetworkLeaderboard from '../components/NetworkLeaderBoard';
 import { FiShoppingCart } from 'react-icons/fi';
 import { PiWarning } from 'react-icons/pi';
+import LoaderV2 from '../../../../components/LoaderV2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -95,9 +96,9 @@ const handleExportPDF = () => {
         )}
 
         {/* Header Logic */}
-        <div className="flex flex-col justify-between gap-4 mb-8 md:flex-row md:items-end">
+        <div className="flex flex-col justify-between gap-4 mb-8 lg:flex-row lg:items-end">
           <div>
-            <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Executive Analytics Overview</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Executive Analytics Overview</h1>
             <p className="text-sm font-medium text-gray-500">Monitor performance across all active clinic branches and download branch reports.</p>
           </div>
 
@@ -113,6 +114,7 @@ const handleExportPDF = () => {
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
                 <option value="year">This Year</option>
+                <option value="all">All Time</option>
               </select>
             </div>
             <button 
@@ -126,22 +128,26 @@ const handleExportPDF = () => {
         </div>
 
         {/* Analytics Content */}
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {dashboardCards.map((stat, i) => <DashboardCard key={i} {...stat} />)}
-          </div>
+        {isLoading ? (
+          <LoaderV2 />
+        ) : (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {dashboardCards.map((stat, i) => <DashboardCard key={i} {...stat} />)}
+            </div>
 
-          <NetworkLeaderboard
-            services={data.topServices} 
-            products={data.topProducts} 
-            timeFilter={timeFilter}
-          />
+            <NetworkLeaderboard
+              services={data.topServices} 
+              products={data.topProducts} 
+              timeFilter={timeFilter}
+            />
 
-          <div className="grid grid-cols-1 gap-8">
-            <BranchPerformanceTable data={data.branches} isLoading={isLoading} timeFilter={timeFilter} />
-            <BranchTopEarnersChart data={data.branches} isLoading={isLoading} timeFilter={timeFilter} />
+            <div className="grid grid-cols-1 gap-8">
+              <BranchPerformanceTable data={data.branches} isLoading={isLoading} timeFilter={timeFilter} />
+              <BranchTopEarnersChart data={data.branches} isLoading={isLoading} timeFilter={timeFilter} />
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );
