@@ -15,6 +15,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const initialFormState = {
   logoPic: null, 
+  mainBrandingName: '',
   clinicName: '',
   contactNumber: '',
   completeAddress: '',
@@ -46,9 +47,11 @@ export default function GeneralBranchSettings() {
   const [errors, setErrors] = useState({});
 
   const isBranchAdmin = user?.role === 'branch_admin';
+  const isClinicAdmin = user?.role === 'clinic_admin';
 
   const inputLabels = {
     logoPic: "Clinic Logo",
+    mainBrandingName: "Main Branding Name",
     clinicName: "Clinic Name",
     contactNumber: "Contact Number", 
     completeAddress: "Complete Address",
@@ -76,6 +79,7 @@ export default function GeneralBranchSettings() {
       if(res.success && res.data) {
         setForm(prev => ({
           ...prev,
+          mainBrandingName: res.data.main_branding_name || '',
           clinicName: res.data.name || '',
           contactNumber: res.data.contact_number || '',
           completeAddress: res.data.address || '',
@@ -129,12 +133,15 @@ export default function GeneralBranchSettings() {
   const validateForm = () => {
     const newErrors = {};
     
-    // 👇 Added contactNumber to base required fields 👇
     const requiredInputFields = [
       "clinicName", "contactNumber", "completeAddress", "municipality", "province",
       "zipCode", "est", "clinicDescription"
     ];
     const requiredImages = ["logoPic"];
+
+    if (isClinicAdmin) {
+      requiredInputFields.push("mainBrandingName");
+    }
 
     if (!isBranchAdmin) {
       requiredInputFields.push("tinNumber", "businessPermitNumber");
@@ -222,7 +229,7 @@ export default function GeneralBranchSettings() {
                 <CiImageOn className='text-(--clr-text-header)' />
                 <span>Clinic Logo</span>
               </h1>
-              <div className='grid grid-cols-1 lg:grid-cols-2'>
+              <div className='grid grid-cols-1 place-content-center'>
                 <InputImage 
                   label="Upload Logo" 
                   name="logoPic" 
@@ -233,6 +240,23 @@ export default function GeneralBranchSettings() {
                   existingImage={existingPaths.logoPic} 
                 />
               </div>
+
+              {isClinicAdmin && (
+                <div className="flex flex-col justify-end mt-6">
+                  <Input
+                    value={form.mainBrandingName} 
+                    label="Main Branding Name" 
+                    name="mainBrandingName" 
+                    placeholder="Enter the main brand name"
+                    isImportant={true} 
+                    onChange={handleChange} 
+                    error={errors.mainBrandingName} 
+                  />
+                  <p className="mt-2 text-xs text-gray-400">
+                    This updates the core brand name for your entire clinic network.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* clinic information */}
