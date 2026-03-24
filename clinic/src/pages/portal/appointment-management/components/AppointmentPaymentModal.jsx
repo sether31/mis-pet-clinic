@@ -265,14 +265,29 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   };
 
   // search filter
-  const filteredProducts = availableProducts.filter(p => {
-    const isActive = parseInt(p.is_active) === 1;
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          p.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    return isActive && matchesSearch;
-  });
+  // 1. Group and filter by earliest non-expired expiry date
+  const filteredProducts = Object.values(
+    availableProducts.reduce((acc, p) => {
+      const expired = isExpired(p.expiry_date);
+      const isActive = parseInt(p.is_active) === 1;
+      const hasStock = parseInt(p.stock_level) > 0;
 
-console.log(auditData, activeTask)  
+      // Skip if inactive, expired, or out of stock
+      if (!isActive || expired || !hasStock) return acc;
+
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            p.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!matchesSearch) return acc;
+
+      // Grouping logic: If we haven't seen this product_id, or this batch expires sooner
+      if (!acc[p.product_id] || new Date(p.expiry_date) < new Date(acc[p.product_id].expiry_date)) {
+        acc[p.product_id] = p;
+      }
+
+      return acc;
+    }, {})
+  );
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-10000 bg-black/70 backdrop-blur-sm">
@@ -402,34 +417,46 @@ console.log(auditData, activeTask)
                           {/* list */}
                           <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
                             {filteredProducts.length > 0 ? (
-                              filteredProducts.map(p => {
-                                const expired = isExpired(p.expiry_date);
-                                const noStock = parseInt(p.stock_level) <= 0;
-                                const isDisabled = expired || noStock;
-
-                                return (
-                                  <div 
-                                    key={p.inventory_id} 
-                                    onClick={() => !isDisabled && handleAddItem(p)}
-                                    className={`p-4 border-b last:border-none flex flex-col gap-1 transition-colors ${isDisabled ? 'bg-gray-50 opacity-60 cursor-not-allowed' : 'hover:bg-green-50 cursor-pointer'}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <span className={`text-[10px] font-black uppercase ${expired ? 'text-red-500' : 'text-gray-700'}`}>
-                                        {p.name} {expired && "(EXPIRED)"} {noStock && "(OUT OF STOCK)"}
-                                      </span>
-                                      <span className="text-[10px] font-black text-(--clr-primary)">₱{parseFloat(p.price).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex gap-3 text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
-                                      <span>Dist: {p.supplier_name || 'N/A'}</span>
-                                      <span>Exp: {formatExpiry(p.expiry_date)}</span>
-                                      <span>Stocks: {p.stock_level}</span>
-                                    </div>
+                              filteredProducts.map(p => (
+                                <div 
+                                  key={p.inventory_id} 
+                                  onClick={() => handleAddItem(p)}
+                                  className="p-4 border-b last:border-none flex flex-col gap-1 hover:bg-green-50 transition-colors cursor-pointer"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-black uppercase text-gray-700">
+                                      {p.name}
+                                    </span>
+                                    <span className="text-[10px] font-black text-(--clr-primary)">
+                                      ₱{parseFloat(p.price).toLocaleString()}
+                                    </span>
                                   </div>
-                                );
-                              })
-                            ) : (
-                              <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">No active items found</div>
-                            )}
+                                  
+                                  <div className="flex flex-wrap gap-3 text-[8px] font-bold uppercase tracking-tighter">
+                                    {/* FIFO Visual Indicator */}
+                                    <span className="text-amber-600 font-black px-1.5 py-0.5 bg-amber-50 rounded border border-amber-100">
+                                      Dispatch Priority
+                                    </span>
+                                    
+                                    <span className="text-gray-400 mt-1">
+                                      Dist: {p.supplier_name || 'N/A'}
+                                    </span>
+        
+        <span className="text-blue-500 mt-1 font-black">
+          Exp: {formatExpiry(p.expiry_date)}
+        </span>
+        
+        <span className="text-gray-400 mt-1">
+          Stock: {p.stock_level}
+        </span>
+      </div>
+    </div>
+  ))
+) : (
+  <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">
+    No active items found
+  </div>
+)}
                           </div>
                         </div>
                       )}

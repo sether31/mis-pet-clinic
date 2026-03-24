@@ -144,10 +144,34 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
   };
 
   // search filter
-  const filteredProducts = availableProducts.filter(p => {
-    return p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           (p.supplier_name && p.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
-  });
+  // Group by product_id and pick the batch that expires first (FIFO)
+  const filteredProducts = useMemo(() => {
+    const grouped = availableProducts.reduce((acc, item) => {
+      // 1. Basic Search Filter
+      const matchesSearch = 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (item.supplier_name && item.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      if (!matchesSearch) return acc;
+
+      const prodId = item.product_id;
+
+      // 2. FIFO Logic: If we haven't added this product yet, or this batch expires SOONER
+      if (!acc[prodId]) {
+        acc[prodId] = item;
+      } else {
+        const currentExpiry = new Date(acc[prodId].expiry_date || '9999-12-31');
+        const nextExpiry = new Date(item.expiry_date || '9999-12-31');
+        
+        if (nextExpiry < currentExpiry) {
+          acc[prodId] = item;
+        }
+      }
+      return acc;
+    }, {});
+
+    return Object.values(grouped);
+  }, [availableProducts, searchTerm]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-10000 bg-black/70 backdrop-blur-sm">
@@ -212,14 +236,18 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
                               ₱{parseFloat(p.price).toLocaleString()}
                             </span>
                           </div>
-                          <div className="flex gap-3 text-[8px] font-bold text-gray-400 uppercase tracking-tighter">
-                            <span>Dist: {p.supplier_name || 'N/A'}</span>
-                            <span>Exp: {formatExpiry(p.expiry_date)}</span>
-                            <span>Stocks: {p.stock_level}</span>
+                          <div className="flex flex-wrap gap-3 text-[8px] font-bold uppercase tracking-tighter">
+                            {/* Visual indicator for FIFO batch */}
+                            <span className="text-amber-600 font-black px-1.5 py-0.5 bg-amber-50 rounded border border-amber-100">
+                              Dispatch Priority
+                            </span>
+                            <span className="text-gray-400 mt-1">Dist: {p.supplier_name || 'N/A'}</span>
+                            <span className="text-blue-500 mt-1 font-black">Exp: {formatExpiry(p.expiry_date)}</span>
+                            <span className="text-gray-400 mt-1">Stock: {p.stock_level}</span>
                           </div>
                         </div>
                       ))
-                    ) : (
+                                          ) : (
                       <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">No active items found</div>
                     )}
                   </div>
