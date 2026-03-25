@@ -154,7 +154,7 @@ export default function GeneralSettings() {
                   Platform Information
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <InputImage 
                     label="Platform Logo"
                     name="logo"

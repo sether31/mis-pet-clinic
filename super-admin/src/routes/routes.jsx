@@ -26,6 +26,7 @@ import ForgotPassword from "../pages/auth/ForgotPassword";
 import GeneralSettings from "../pages/Navigation/Settings/components/GeneralSettings";
 import SecuritySettings from "../pages/Navigation/Settings/components/SecuritySettings";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
+import Announcement from "../pages/Navigation/Settings/components/Announcement";
 
 
 export const routes = createBrowserRouter([
@@ -72,6 +73,7 @@ export const routes = createBrowserRouter([
             children: [
               { index: true, element: <GeneralSettings /> },
               { path: "security", element: <SecuritySettings /> }, 
+              { path: "announcement", element: <Announcement /> }
             ]
           },
           { path: "*", element: <NotFoundDashboard /> },

@@ -26,6 +26,10 @@ export default function Settings() {
             <RiShieldKeyholeLine size={20} />
             Security
           </NavLink>
+          <NavLink to="announcement" className={navClass}>
+            <RiShieldKeyholeLine size={20} />
+            Announcement
+          </NavLink>
         </nav>
 
         <main className="my-6 overflow-hidden bg-white border border-gray-300 rounded-xl">
