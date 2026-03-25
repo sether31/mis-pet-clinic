@@ -32,7 +32,7 @@ try {
   // 2. Create the Payment record
   $stmtPay = $pdo->prepare("
       INSERT INTO payments_tb (branch_id, order_id, payment_type, amount, payment_method, payment_status, created_at, updated_at) 
-      VALUES (?, ?, 'product_purchase', ?, 'cash', 'paid', NOW(), NOW())
+      VALUES (?, ?, 'product', ?, 'cash', 'paid', NOW(), NOW())
   ");
   $stmtPay->execute([$branchId, $orderId, $totalAmount]);
 

@@ -15,6 +15,7 @@ import Header from '../../../../components/Header';
 import DashboardCard from '../../../../components/DashboardCard'; 
 import { LuPackage, LuStethoscope, LuWallet } from 'react-icons/lu';
 import { FiShoppingCart } from 'react-icons/fi';
+import { PiWarning } from 'react-icons/pi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const CATEGORY_COLORS = {
@@ -70,12 +71,6 @@ export default function BranchAdminView() {
     window.open(url, '_blank');
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-96">
-      <LoaderV2 />
-    </div>
-  );
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
@@ -83,15 +78,14 @@ export default function BranchAdminView() {
       <section className="w-full px-6 my-6 container-xl">
         
         {/* TOP ACTION BAR */}
-        <div className="flex flex-col items-start justify-between mb-8 gap-y-4 md:flex-row md:items-center">
+        <div className="flex flex-col items-start justify-between mb-8 gap-y-4 lg:flex-row lg:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-800">Analytics Overview</h1>
-            <p className="text-gray-500">View and download clinic performance data</p>
+            <h1 className="text-2xl font-bold tracking-tight">Branch Performance Overview</h1>
+            <p className="text-gray-500 text-sm">Monitor real-time activity and download branch reports.</p>
           </div>
-
           <div className="flex items-center gap-3">
             <div className="relative inline-block w-48">
-              <HiCalendar className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
+              <HiCalendar className="absolute text-(--clr-primary) -translate-y-1/2 left-3 top-1/2" size={18} />
               <select 
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(e.target.value)}
@@ -101,6 +95,7 @@ export default function BranchAdminView() {
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
                 <option value="year">This Year</option>
+                <option value="all">All Time</option>
               </select>
             </div>
             <button 
@@ -113,124 +108,136 @@ export default function BranchAdminView() {
           </div>
         </div>
 
-        {/* KPI GRID */}
-        <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-3">
-          <DashboardCard 
-            title={`Total Revenue (${getFilterLabel(timeFilter)})`} 
-            data={`₱${Number(data.cardData.revenue).toLocaleString()}`} 
-            icon={LuWallet} 
-            iconColor="text-black"
-          />
-          <DashboardCard 
-            title={`Appointments (${getFilterLabel(timeFilter)})`} 
-            data={
-              <>
-                {data.cardData.appointments}
-                {data.cardData.pendingAppointments > 0 && (
-                  <span className="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold animate-pulse inline-block align-middle">
-                    {data.cardData.pendingAppointments} Pending
-                  </span>
-                )}
-              </>
-            } 
-            icon={LuStethoscope} 
-            iconColor="text-blue-600"
-          />
+        {loading ? (
+          <LoaderV2 />
+        ) : (
+          <>
+            {/* KPI GRID */}
+            <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+              <DashboardCard 
+                title={`Total Revenue (${getFilterLabel(timeFilter)})`} 
+                data={`₱${Number(data.cardData.revenue).toLocaleString()}`} 
+                icon={LuWallet} 
+                iconColor="text-black"
+              />
+              <DashboardCard 
+                title={`Pending Revenue (${getFilterLabel(timeFilter)})`} 
+                data={`₱${Number(data.cardData.pendingRevenue).toLocaleString()}`} 
+                icon={PiWarning} 
+                iconColor="text-yellow-600"
+              />
+              <DashboardCard 
+                title={`Appointments (${getFilterLabel(timeFilter)})`} 
+                data={
+                  <>
+                    {data.cardData.appointments}
+                    {data.cardData.pendingAppointments > 0 && (
+                      <span className="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-bold animate-pulse inline-block align-middle">
+                        {data.cardData.pendingAppointments} Pending
+                      </span>
+                    )}
+                  </>
+                } 
+                icon={LuStethoscope} 
+                iconColor="text-blue-600"
+              />
 
-          <DashboardCard 
-            title={`Products Sales (${getFilterLabel(timeFilter)})`} 
-            data={data.cardData.productsSold} 
-            icon={FiShoppingCart} 
-            iconColor="text-purple-600"
-          />
-        </div>
-
-        {/* MAIN CHARTS GRID */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          
-          <ChartContainer 
-            title={`Revenue Trend (${getFilterLabel(timeFilter)})`} 
-            icon={HiOutlineTrendingUp}
-            iconColor="text-blue-600"
-            isEmpty={data.revenueTrend.length === 0}
-          >
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.revenueTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `₱${val}`} />
-                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={4} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-
-          <ChartContainer 
-            title={`Top 5 Booked Services (${getFilterLabel(timeFilter)})`} 
-            icon={HiOutlineClipboardList}
-            iconColor="text-(--clr-primary)"
-            isEmpty={data.topServices.length === 0}
-          >
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.topServices} layout="vertical" margin={{ left: 30 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} width={120} />
-                <Tooltip cursor={{ fill: '#f8fafc' }} />
-                <Bar dataKey="count" fill="#42756C" radius={[0, 6, 6, 0]} barSize={24} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-
-          <ChartContainer 
-            title={`Top 5 Best-Selling Products (${getFilterLabel(timeFilter)})`} 
-            icon={LuPackage}
-            iconColor="text-purple-600"
-            isEmpty={data.topProducts.length === 0}
-          >
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.topProducts}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                <Tooltip cursor={{ fill: '#f8fafc' }} />
-                <Bar dataKey="sales" fill="#9333ea" radius={[6, 6, 0, 0]} barSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-
-          <ChartContainer 
-            title={`Revenue Category (${getFilterLabel(timeFilter)})`} 
-            icon={HiOutlineChartBar}
-            iconColor="text-(--clr-primary)" 
-            isEmpty={pieData.length === 0}
-          >
-            <div className="flex flex-col items-center justify-center">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    innerRadius={70} 
-                    outerRadius={95}
-                    paddingAngle={8} 
-                    dataKey="value" 
-                    nameKey="category"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={CATEGORY_COLORS[entry.category] || '#cbd5e1'} 
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                </PieChart>
-              </ResponsiveContainer>
+              <DashboardCard 
+                title={`Products Sales (${getFilterLabel(timeFilter)})`} 
+                data={data.cardData.productsSold} 
+                icon={FiShoppingCart} 
+                iconColor="text-purple-600"
+              />
             </div>
-          </ChartContainer>
-        </div>
+
+            {/* MAIN CHARTS GRID */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              
+              <ChartContainer 
+                title={`Revenue Trend (${getFilterLabel(timeFilter)})`} 
+                icon={HiOutlineTrendingUp}
+                iconColor="text-blue-600"
+                isEmpty={data.revenueTrend.length === 0}
+              >
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={data.revenueTrend}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `₱${val}`} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                    <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={4} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+
+              <ChartContainer 
+                title={`Top 5 Booked Services (${getFilterLabel(timeFilter)})`} 
+                icon={HiOutlineClipboardList}
+                iconColor="text-(--clr-primary)"
+                isEmpty={data.topServices.length === 0}
+              >
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={data.topServices} layout="vertical" margin={{ left: 30 }}>
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} width={120} />
+                    <Tooltip cursor={{ fill: '#f8fafc' }} />
+                    <Bar dataKey="count" fill="#42756C" radius={[0, 6, 6, 0]} barSize={24} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+
+              <ChartContainer 
+                title={`Top 5 Best-Selling Products (${getFilterLabel(timeFilter)})`} 
+                icon={LuPackage}
+                iconColor="text-purple-600"
+                isEmpty={data.topProducts.length === 0}
+              >
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={data.topProducts}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                    <Tooltip cursor={{ fill: '#f8fafc' }} />
+                    <Bar dataKey="sales" fill="#9333ea" radius={[6, 6, 0, 0]} barSize={40} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+
+              <ChartContainer 
+                title={`Revenue Category (${getFilterLabel(timeFilter)})`} 
+                icon={HiOutlineChartBar}
+                iconColor="text-(--clr-primary)" 
+                isEmpty={pieData.length === 0}
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        innerRadius={70} 
+                        outerRadius={95}
+                        paddingAngle={8} 
+                        dataKey="value" 
+                        nameKey="category"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={CATEGORY_COLORS[entry.category] || '#cbd5e1'} 
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </ChartContainer>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

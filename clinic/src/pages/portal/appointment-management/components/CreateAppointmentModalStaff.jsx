@@ -144,7 +144,11 @@ export default function CreateAppointmentModalStaff({ branchId, staffUser, onClo
     }
 
     if(workingHours && start_time && calculatedEndTime) {
-      if(start_time < workingHours.start || calculatedEndTime > workingHours.end) {
+      // We compare the strings directly in 24h format (HH:mm)
+      const isBeforeShift = start_time < workingHours.start;
+      const isAfterShift = calculatedEndTime > workingHours.end;
+
+      if(isBeforeShift || isAfterShift) {
         errs.shift = `Time is outside shift (${format12Hour(workingHours.start)} - ${format12Hour(workingHours.end)})`;
       }
     }

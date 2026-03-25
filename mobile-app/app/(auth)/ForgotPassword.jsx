@@ -16,7 +16,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function ForgotPassword() {
   const router = useRouter();
-  const { platformData } = usePlatform();
+  const { platformData, refreshPlatform } = usePlatform();
   
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,6 +48,11 @@ export default function ForgotPassword() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       });
+
+      if (response.status === 503) {
+        refreshPlatform('maintenance'); 
+        return; 
+      }
 
       const data = await response.json();
 

@@ -189,16 +189,6 @@ export default function Login() {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100 } },
   };
-
-  if(!platformData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-xl font-medium text-gray-400 animate-pulse">
-          Loading...
-        </div>
-      </div>
-    );
-  }
   
 
   return (

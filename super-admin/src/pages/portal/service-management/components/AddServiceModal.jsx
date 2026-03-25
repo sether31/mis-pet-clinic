@@ -161,14 +161,14 @@ export default function AddServiceModal({ initialData, branchId, onClose, onRefr
             >
               <option value="veterinarian">Veterinarian</option>
               <option value="groomer">Groomer</option>
-              <option value="staff">Support Staff</option>
+              <option value="staff">Staff</option>
             </select>
           </div>
 
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="flex items-center justify-center w-full gap-2 py-4 mt-4 text-xs font-black tracking-widest text-white uppercase transition-all bg-(--clr-primary) cursor-pointer rounded-xl hover:opacity-90 disabled:opacity-50 shadow-lg shadow-(--clr-primary)/20"
+            className="flex items-center justify-center w-full gap-2 py-4 mt-4 text-xs font-black tracking-widest text-white uppercase transition-all bg-(--clr-primary) cursor-pointer rounded-xl hover:opacity-90 disabled:opacity-50"
           >
             <HiSave size={18}/>
             {isSubmitting ? "Saving..." : "Save Service Details"}

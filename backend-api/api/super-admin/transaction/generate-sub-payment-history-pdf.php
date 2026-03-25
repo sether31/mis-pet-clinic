@@ -26,7 +26,7 @@ try {
       $type = pathinfo($logoPath, PATHINFO_EXTENSION);
       $data = file_get_contents($logoPath);
       $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
-      $logoHtml = "<img src='{$base64}' style='max-height: 30px; vertical-align: middle; margin-right: 4px;' />";
+      $logoHtml = "<img src='{$base64}' style='height: 12px; vertical-align: middle; margin-right: 4px;' />";
     }
   }
 
@@ -48,6 +48,8 @@ try {
   );
   $stmt->execute([':id' => $branch_id]);
   $branch = $stmt->fetch();
+  
+  $branchName = $branch['branch_name'];
 
   if (!$branch) die("Branch not found.");
 
@@ -134,8 +136,7 @@ try {
       <div class='container'>
         <div class='header'>
           <div style='text-align: center; margin-bottom: 15px;'>
-            {$logoHtml}
-            <span class='platform-name'>{$platformName}</span>
+            <span class='platform-name'>{$branchName}</span>
           </div>
           <h2 style='margin:0; letter-spacing: 1px;'>OFFICIAL STATEMENT OF ACCOUNT</h2>
           <p style='color:#666; font-size:12px; margin-top: 5px;'>CLINIC ID: #{$branch['branch_id']}</p>
@@ -196,9 +197,12 @@ try {
           </table>
         </div>
 
-        <div style='text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; margin-top: 20px; padding-top: 15px;'>
-          Generated on " . date("F d, Y h:i A") . "<br>
-          <em>Thank you for your continued partnership with {$platformName}!</em>
+          <div style='text-align: center; font-size: 9px; color: #999; border-top: 1px solid #eee; margin-top: 20px; padding-top: 15px; letter-spacing: 0.5px;'>
+            Generated on " . date("F d, Y h:i A") . "<br>
+          <em style='display: block; margin: 8px 0;'>Confidential Platform Data - For Internal Use Only</em>
+          <div style='margin-top: 15px; font-size: 8px; color: #bbb;'>
+            Powered by {$logoHtml} <strong style='color: #42756C;'>{$platformName}</strong>
+          </div>
         </div>
       </div>
     </body>

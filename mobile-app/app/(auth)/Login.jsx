@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, ScrollView, Keyboard, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,12 +16,19 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Login() {
   const router = useRouter();
-  const { platformData } = usePlatform();
+  const params = useLocalSearchParams(); 
+  const { platformData, refreshPlatform } = usePlatform()
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({ email: null, password: null });
+
+  useEffect(() => {
+    if (params?.reason === 'maintenance') {
+      refreshPlatform('maintenance');
+    }
+  }, [params?.reason]);
 
   const validateForm = () => {
     let isValid = true;
@@ -65,6 +72,11 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
+
+      if (response.status === 503) {
+        refreshPlatform('maintenance'); 
+        return; // Stop execution here
+      }
 
       const data = await response.json();
 

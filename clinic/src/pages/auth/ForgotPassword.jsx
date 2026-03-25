@@ -14,6 +14,7 @@ import OTPInput from '../../components/OtpInput';
 // icons
 import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
+import PlatformMaintenance from '../../components/PlatformMaintenance';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -136,13 +137,15 @@ export default function ForgotPassword() {
     }
   };
 
-  if(!platformData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <p className="text-gray-400 animate-pulse">Loading Platform...</p>
-      </div>
-    );
-  }
+  if(platformData.is_maintenance === 1) {
+      return (
+        <PlatformMaintenance
+          message={platformData.maintenance_message} 
+          platformEmail={platformData.platform_email}
+          contactPhone={platformData.contact_phone}
+        />
+      );
+    }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 bg-gray-50">

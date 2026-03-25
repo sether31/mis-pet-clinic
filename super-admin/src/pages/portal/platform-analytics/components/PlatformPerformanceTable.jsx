@@ -7,7 +7,7 @@ import { HiChevronLeft, HiChevronRight, HiChevronUp, HiChevronDown, HiOutlineBui
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function BranchPerformanceTable({ data = [], isLoading, timeFilter }) {
+export default function PlatformPerformanceTable({ data = [], isLoading, timeFilter }) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -71,10 +71,10 @@ export default function BranchPerformanceTable({ data = [], isLoading, timeFilte
         <div>
           <h2 className="flex items-center gap-2 text-sm font-black tracking-wider text-gray-800 uppercase">
             <HiOutlineBuildingOffice2 className="text-lg text-blue-600" />
-            Branch Performance Breakdown
+            Top 100 Registered Clinics ({timeFilter})
           </h2>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-            Detailed Metrics ({timeFilter})
+            Detailed Metrics
           </p>
         </div>
 
@@ -139,7 +139,7 @@ export default function BranchPerformanceTable({ data = [], isLoading, timeFilte
                 <td className="px-6 py-4 border-r border-gray-300">
                   <div className="flex items-center gap-3">
                     {/* Brand-Colored Avatar Container */}
-                    <div className="flex-shrink-0 overflow-hidden border rounded-lg w-10 h-10 bg-green-100 border-green-200">
+                    <div className="flex-shrink-0 overflow-hidden border rounded-lg w-9 h-9 bg-emerald-100/70 border-emerald-200">
                       {branch.logo_picture ? (
                         <img 
                           src={`${API_URL}/${branch.logo_picture}`} 
@@ -170,16 +170,20 @@ export default function BranchPerformanceTable({ data = [], isLoading, timeFilte
                 </td>
                 <td className="px-6 py-4 text-center border-r border-gray-300">
                   <span className={`px-2 py-1 text-[9px] font-black tracking-wide uppercase rounded border ${
-                    branch.sub_status === 'Active' ? 'bg-green-50 text-(--clr-primary) border-green-200' : 'bg-red-50 text-red-500 border-red-200'
+                    // Added optional chaining and lowercase check
+                    branch.sub_status?.toLowerCase() === 'active' 
+                      ? 'bg-green-50 text-(--clr-primary) border-green-200' 
+                      : 'bg-red-50 text-red-500 border-red-200'
                   }`}>
                     {branch.sub_status}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">
                   <span className={`px-2 py-1 text-[9px] font-black tracking-wide uppercase rounded border ${
-                    branch.status.toLowerCase() === 'approved' || branch.status.toLowerCase() === 'active' 
+                    branch.status.toLowerCase() === 'approved'  
                     ? 'bg-blue-50 text-blue-600 border-blue-200' 
-                    : 'bg-amber-50 text-amber-600 border-amber-200'
+                    : branch.status.toLowerCase() === 'pending' 
+                    // 'bg-amber-50 text-amber-600 border-amber-200'
                   }`}>
                     {branch.status}
                   </span>

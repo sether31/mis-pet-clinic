@@ -114,18 +114,29 @@ export default function CreateAppointmentModalAdmin({ branchId, staffList, onClo
     if(appointment_date) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      if (new Date(appointment_date) < today) errs.date = "Cannot book in the past";
+      // Ensure we compare midnight to midnight
+      if (new Date(appointment_date.replace(/-/g, '/')) < today) {
+        errs.date = "Cannot book in the past";
+      }
     }
 
     if(workingHours && start_time && calculatedEndTime) {
-      if(start_time < workingHours.start || calculatedEndTime > workingHours.end) {
-        errs.shift = `Time is outside shift (${format12Hour(workingHours.start)} - ${format12Hour(workingHours.end)})`;
+      // Direct string comparison works only if both are HH:mm (24h)
+      const isTooEarly = start_time < workingHours.start;
+      const isTooLate = calculatedEndTime > workingHours.end;
+
+      if(isTooEarly || isTooLate) {
+        errs.shift = `Outside shift (${format12Hour(workingHours.start)} - ${format12Hour(workingHours.end)})`;
       }
     }
 
     if (start_time && calculatedEndTime) {
-      const conflict = busySlots.find(slot => (start_time < slot.end && calculatedEndTime > slot.start));
-      if (conflict) errs.conflict = `Conflict: Staff busy ${format12Hour(conflict.start)} - ${format12Hour(conflict.end)}`;
+      const conflict = busySlots.find(slot => (
+        start_time < slot.end && calculatedEndTime > slot.start
+      ));
+      if (conflict) {
+        errs.conflict = `Conflict: Staff busy ${format12Hour(conflict.start)} - ${format12Hour(conflict.end)}`;
+      }
     }
     setErrors(errs);
   }, [formData, busySlots, workingHours, calculatedEndTime]);
