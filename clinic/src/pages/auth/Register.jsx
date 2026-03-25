@@ -18,6 +18,7 @@ import { HiMiniExclamationCircle, HiOutlineBuildingOffice2 } from "react-icons/h
 import { IoPersonOutline } from "react-icons/io5";
 import { CiCreditCard1 } from "react-icons/ci";
 import { LiaToolsSolid } from "react-icons/lia";
+import PlatformMaintenance from '../../components/PlatformMaintenance';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const initialFormState = {
@@ -331,6 +332,16 @@ export default function Register() {
 
     hideLoader();
   };
+
+  if(platformData.is_maintenance === 1) {
+      return (
+        <PlatformMaintenance
+          message={platformData.maintenance_message} 
+          platformEmail={platformData.platform_email}
+          contactPhone={platformData.contact_phone}
+        />
+      );
+    }
 
   return (
     <>

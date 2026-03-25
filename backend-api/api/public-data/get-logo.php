@@ -1,5 +1,4 @@
 <?php
-ob_clean(); 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
@@ -14,7 +13,8 @@ require_once __DIR__ . '/../../config/Database.php';
 
 try {
   $pdo = (new Database())->pdo;
-  $stmt = $pdo->prepare("SELECT platform_logo, platform_name, platform_email, contact_phone FROM platform_settings_tb WHERE ps_id = 1");
+  // UPDATED QUERY TO INCLUDE NEW COLUMNS
+  $stmt = $pdo->prepare("SELECT * FROM platform_settings_tb WHERE ps_id = 1");
   $stmt->execute();
   
   $settings = $stmt->fetch();
@@ -25,7 +25,10 @@ try {
       "platform_name" => "Pet Clinic", 
       "platform_logo" => null,
       "platform_email" => null,
-      "contact_phone" => null
+      "contact_phone" => null,
+      "is_maintenance" => 0,
+      "maintenance_message" => null,
+      "login_photo" => null
     ]
   ]);
 } catch(Exception $e) {

@@ -12,6 +12,19 @@ try {
   $pdo = (new Database())->pdo;
   $dataInput = json_decode(file_get_contents("php://input"), true);
 
+  $maintStmt = $pdo->query("SELECT is_maintenance FROM platform_settings_tb LIMIT 1");
+  $platform = $maintStmt->fetch(PDO::FETCH_ASSOC);
+
+  if ($platform && (int)$platform['is_maintenance'] === 1) {
+    // Crucial: 503 tells the app to swap to the maintenance screen
+    http_response_code(503); 
+    echo json_encode([
+      "success" => false, 
+      "message" => "System maintenance is in progress."
+    ]);
+    exit;
+  }
+
   $email = $dataInput["email"] ?? null;
   $password = $dataInput["password"] ?? null;
 

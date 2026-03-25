@@ -10,6 +10,19 @@ require_once __DIR__ . '/../../service/Otp.php';
 
 try {
   $pdo = (new Database())->pdo;
+
+  $maintStmt = $pdo->query("SELECT is_maintenance FROM platform_settings_tb LIMIT 1");
+  $platform = $maintStmt->fetch();
+
+  if ($platform && (int)$platform['is_maintenance'] === 1) {
+    http_response_code(503);
+    echo json_encode([
+      "success" => false,
+      "message" => "System is under maintenance. Please try again later."
+    ]);
+    exit;
+  }
+
   $dataInput = json_decode(file_get_contents("php://input"), true);
 
   $email = trim($dataInput['email'] ?? '');

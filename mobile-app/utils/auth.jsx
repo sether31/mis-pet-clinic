@@ -54,6 +54,14 @@ export const authFetch = async (url, options = {}, allowedRoles = ['pet_owner'])
   try {
     const response = await fetch(url, { ...options, headers });
 
+    if(response.status === 503) {
+      await SecureStore.deleteItemAsync('access_token');
+      
+      // Update this line to pass the 'reason' parameter
+      router.replace({ pathname: '/Login', params: { reason: 'maintenance' } }); 
+      return { error: 'Maintenance', status: 503 };
+    }
+
     if(response.status === 401 || response.status === 403) {
       await SecureStore.deleteItemAsync('access_token');
       Toast.show({
