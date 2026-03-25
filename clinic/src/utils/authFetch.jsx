@@ -15,6 +15,12 @@ export const authFetch = async (url, options = {}) => {
   try {
     const response = await fetch(url, { ...options, headers });
 
+    if (response.status === 503) {
+      sessionStorage.removeItem('access_token');
+      window.location.href = '/clinic/login?reason=maintenance';
+      return { success: false, status: 503, message: "System Maintenance" };
+    }
+
     // check if expired
     if(response.status === 401) {
       sessionStorage.removeItem('access_token');

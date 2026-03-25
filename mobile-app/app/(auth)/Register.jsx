@@ -15,7 +15,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function Register() {
   const router = useRouter();
-  const { platformData } = usePlatform();
+  const { platformData, refreshPlatform } = usePlatform();
   
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -101,6 +101,11 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, role_id: 7 }),
       });
+
+      if (response.status === 503) {
+        refreshPlatform('maintenance'); 
+        return; 
+      }
       
       const data = await response.json();
       
