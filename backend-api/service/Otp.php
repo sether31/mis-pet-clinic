@@ -3,6 +3,7 @@ require_once __DIR__ . '/../config/Database.php';
 
 function generateOtp($userId, $purpose, $expiryMin = 5) {
   $pdo = (new Database())->pdo;
+  cleanupOtp($userId, $purpose);
   $otpCode = rand(100000, 999999);
   $expiresAt = date('Y-m-d H:i:s', strtotime("+$expiryMin minutes"));
 
@@ -37,6 +38,9 @@ function verifyOtp($userId, $otpCode, $purpose) {
 
   $otp = $stmt->fetch();
   if(!$otp || strtotime($otp['expires_at']) < time()) return false;
+
+  $cleanup = $pdo->prepare("DELETE FROM otp_tb WHERE otp_id = ?");
+  $cleanup->execute([$otp['otp_id']]);
 
   return true;
 }

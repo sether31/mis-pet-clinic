@@ -213,6 +213,7 @@ export default function SecuritySettings() {
           />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input 
+              isImportant={true}
               label="First Name" 
               name="firstName" 
               value={profileData.firstName} 
@@ -221,6 +222,7 @@ export default function SecuritySettings() {
               error={errors.firstName}
             />
             <Input 
+              isImportant={true}
               label="Last Name" 
               name="lastName" 
               value={profileData.lastName} 
