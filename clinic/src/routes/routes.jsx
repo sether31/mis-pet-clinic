@@ -40,7 +40,10 @@ import Analytics from "../pages/portal/analytics/Analytics";
 
 
 export const routes = createBrowserRouter([
-  { path: "*", element: <NotFound /> },
+  { 
+    path: "/", 
+    element: <div>LANDING PAGE</div> 
+  },
   {
     path: "/clinic",
     element: (
@@ -206,4 +209,5 @@ export const routes = createBrowserRouter([
       }
     ],
   },
+  { path: "*", element: <NotFound /> },
 ]);

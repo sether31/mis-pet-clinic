@@ -233,7 +233,7 @@ export default function Login() {
             transition={{ duration: 1.2, ease: "easeOut" }}
           >
             <motion.img 
-              src={platformData.login_photo ? `${API_URL}/${platformData.login_photo}` : loginPic} 
+              src={platformData?.login_photo ? `${API_URL}/${platformData.login_photo}` : loginPic} 
               alt="login picture 2 dogs" 
               className='absolute h-[95%] w-full rounded-xl bottom-0 right-0 object-cover'
               initial={{ y: 50, opacity: 0 }}
