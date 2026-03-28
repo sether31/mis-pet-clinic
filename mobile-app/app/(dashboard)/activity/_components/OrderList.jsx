@@ -98,7 +98,7 @@ export default function OrderList({ activeTab }) {
     }
     
     setModalVisible(false);
-    router.push(`/(dashboard)/clinics/product/${item.product_id}?branch_id=${item.branch_id}&from=activity`);
+    router.push(`/clinics/product/${item.product_id}?branch_id=${item.branch_id}&from=activity`);
   };
 
   const filteredOrders = orders.filter(item => {

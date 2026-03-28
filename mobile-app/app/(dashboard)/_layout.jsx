@@ -78,7 +78,7 @@ export default function DashboardLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            router.replace('/(dashboard)/home');
+            router.replace('/home');
           },
         }}
       />
@@ -95,7 +95,7 @@ export default function DashboardLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            router.replace('/(dashboard)/pets');
+            router.replace('/pets');
           },
         }}
       />
@@ -112,7 +112,7 @@ export default function DashboardLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            router.replace('/(dashboard)/clinics');
+            router.replace('/clinics');
           },
         }}
       />
@@ -129,7 +129,7 @@ export default function DashboardLayout() {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            router.replace('/(dashboard)/activity');
+            router.replace('/activity');
           },
         }}
       />

@@ -24,30 +24,39 @@ try {
   $date = $data['appointment_date'];
   $time = $data['appointment_time'];
 
-  // CLINIC CHECK (Maintenance, Status, & Expiry)
-  $clinicStmt = $pdo->prepare(
-    "SELECT 
-      cb.is_maintenance, 
-      cb.status, 
-      (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
-        WHERE bs.branch_id = cb.branch_id 
-          AND LOWER(bs.status) = 'active' 
-          AND bs.end_date >= CURDATE()
-      ) as has_sub
-    FROM clinic_branches_tb cb 
-    WHERE cb.branch_id = ?"
-  );
-  $clinicStmt->execute([$branch_id]);
-  $clinicCheck = $clinicStmt->fetch();
-
-  if (
-    !$clinicCheck || 
-    strtolower($clinicCheck['status']) !== 'approved' || 
-    $clinicCheck['is_maintenance'] == 1 || 
-    $clinicCheck['has_sub'] == 0
-  ) {
-    throw new Exception("This clinic is currently under maintenance or unavailable.");
-  }
+  // CLINIC & SERVICE CHECK (Maintenance, Status, Expiry, & Service Availability)
+    $checkStmt = $pdo->prepare(
+        "SELECT 
+          cb.is_maintenance, 
+          cb.status AS branch_status, 
+          bsrv.status AS service_active, -- Fetch the specific service status
+          (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
+            WHERE bs.branch_id = cb.branch_id 
+              AND LOWER(bs.status) = 'active' 
+              AND bs.end_date >= CURDATE()
+          ) as has_sub
+        FROM clinic_branches_tb cb 
+        JOIN branch_service_tb bsrv ON cb.branch_id = bsrv.branch_id
+        WHERE cb.branch_id = ? AND bsrv.branch_service_id = ?"
+    );
+    
+    $checkStmt->execute([$branch_id, $branch_service_id]);
+    $check = $checkStmt->fetch();
+    
+    // 1. Check if Branch/Clinic is valid
+    if (
+        !$check || 
+        strtolower($check['branch_status']) !== 'approved' || 
+        $check['is_maintenance'] == 1 || 
+        $check['has_sub'] == 0
+    ) {
+        throw new Exception("This clinic is currently under maintenance or unavailable.");
+    }
+    
+    // 2. Check if the specific Service is valid (Fixes your specific error)
+    if ($check['service_active'] == 0) {
+        throw new Exception("This service is currently unavailable.");
+    }
 
   // Convert times
   $start_timestamp = strtotime("$date $time");

@@ -33,7 +33,7 @@ export default function AuthLayout() {
 
   // send back to dashboard
   if(isAuthenticated) {
-    return <Redirect href="/(dashboard)/Home" />;
+    return <Redirect href="/home" />;
   }
 
   // if logout then logout

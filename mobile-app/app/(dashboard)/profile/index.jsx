@@ -58,7 +58,7 @@ export default function ProfileTab() {
           onPress: async () => {
             await SecureStore.deleteItemAsync('access_token');
             if (setUser) setUser(null); 
-            router.replace('/(auth)/Login'); 
+            router.replace('/Login'); 
           }
         }
       ]
@@ -127,7 +127,7 @@ export default function ProfileTab() {
         {/* SUMMARY CARD */}
         <AnimatedWrapper index={2}>
           <Pressable 
-            onPress={() => router.push('/(dashboard)/pets')} 
+            onPress={() => router.push('/pets')} 
           >
             {({ pressed }) => (
               <View style={[styles.summaryCard]}>
