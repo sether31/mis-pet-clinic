@@ -101,7 +101,6 @@ export default function PetsIndex() {
       {loading ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <AppText style={{ marginTop: 12, color: '#6B7280' }}>Loading your pets...</AppText>
         </View>
       ) : pets.length === 0 ? (
         <ScrollView 

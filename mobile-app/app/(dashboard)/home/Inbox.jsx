@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Pressable } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -15,9 +15,20 @@ export default function Inbox() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState([]);
+  const { msgId } = useLocalSearchParams();
   
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMsg, setSelectedMsg] = useState(null);
+
+  useEffect(() => {
+    // If we have messages loaded and a msgId was passed in the URL
+    if (messages.length > 0 && msgId) {
+      // Find the specific message
+      const msgToOpen = messages.find(m => String(m.id) === String(msgId));
+      handlePressMessage(msgToOpen);
+      router.setParams({ msgId: '' }); 
+    }
+  }, [messages, msgId]);
 
   useFocusEffect(
     useCallback(() => {

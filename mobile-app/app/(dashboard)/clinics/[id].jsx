@@ -99,7 +99,7 @@ export default function ClinicOverview() {
 
   const handleBack = () => {
     if (from === 'activity') {
-      router.push('/(dashboard)/activity'); 
+      router.push('/activity'); 
     } else {
       router.back(); 
     }
@@ -232,7 +232,6 @@ export default function ClinicOverview() {
                 isCheckingCapacity ? (
                   <View style={{ paddingVertical: 40, alignItems: 'center' }}>
                     <ActivityIndicator size="small" color={Colors.primary} />
-                    <AppText style={{ marginTop: 10, color: '#6B7280' }}>Checking service availability...</AppText>
                   </View>
                 ) : isClinicFull ? (
                   <AnimatedWrapper index={0}>

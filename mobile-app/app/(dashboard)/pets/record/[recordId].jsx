@@ -147,7 +147,7 @@ export default function MedicalRecordDetail() {
 
   const handleBack = () => {
     if(from === 'activity') {
-      router.push('/(dashboard)/activity'); 
+      router.push('/activity'); 
     } else {
       router.back();
     }
@@ -188,7 +188,7 @@ export default function MedicalRecordDetail() {
       return; 
     }
 
-    router.push(`/(dashboard)/clinics/${record.branch_id}`);
+    router.push(`/clinics/${record.branch_id}`);
   };
 
   if (loading) {

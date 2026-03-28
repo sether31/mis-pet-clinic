@@ -186,7 +186,7 @@ export default function ProductsTab({ branchId }) {
           <View style={styles.emptyContainer}>
             <Ionicons name="bag-remove-outline" size={40} color="#9CA3AF" />
             <AppText style={styles.emptyTitle}>No Products Found</AppText>
-            <AppText style={styles.emptySubtitle}>This clinic has not listed any services yet.</AppText>
+            <AppText style={styles.emptySubtitle}>This clinic has not listed any products yet.</AppText>
           </View>
         ) : (
           filteredProducts.map((item, index) => (
