@@ -148,9 +148,9 @@ export default function PetsIndex() {
                         <AppText numberOfLines={1} style={styles.petName}>{pet.name}</AppText>
                         {parseInt(pet.is_deceased) === 1 && <AppText style={{marginLeft: 4}}>🌈</AppText>}
                         <Ionicons 
-                          name={pet.sex === 'Male' ? "male" : "female"} 
+                          name={pet.sex === 'male' ? "male" : "female"} 
                           size={14} 
-                          color={pet.sex === 'Male' ? "#3B82F6" : "#EC4899"} 
+                          color={pet.sex === 'male' ? "#3B82F6" : "#EC4899"} 
                           style={{ marginLeft: 6 }} 
                         />
                       </View>

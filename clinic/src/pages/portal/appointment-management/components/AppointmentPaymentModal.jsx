@@ -15,6 +15,8 @@ import { FaRectangleList } from "react-icons/fa6";
 import noImage from '../../../../assets/images/no-image.jpg'
 import { IoLockClosedOutline } from 'react-icons/io5';
 import Swal from 'sweetalert2';
+import { formatDateTime } from '../../../../utils/dateFormatter';
+import { HiMiniExclamationCircle } from 'react-icons/hi2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -308,43 +310,126 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
         <div className="p-8 h-[550px] flex flex-col">
           <div className="flex-1 pr-2 overflow-y-auto custom-scrollbar">
             {activeTab === 'overview' ? (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                <div className="flex items-center gap-6">
-                  <div className="flex-none w-20 h-20 overflow-hidden bg-[#d1fae5] rounded-2xl flex items-center justify-center">
-                    <img 
-                      src={activeTask?.pet_picture 
-                        ? `${API_URL}/${activeTask.pet_picture}` 
-                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(activeTask?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`
-                      } 
-                      className="object-cover w-full h-full" 
-                      alt="pet" 
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeTask?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`;
-                      }}
-                    />
+              <div className="space-t-6 animate-in fade-in slide-in-from-bottom-4">
+                {/* Patient Profile Card */}
+                <div className="relative py-6 overflow-hidden border border-gray-100 bg-gray-50/50 rounded-3xl">
+                  <div className="flex flex-col gap-6 sm:flex-row">
+                    {/* Pet Image with Ring */}
+                    <div className="flex-none mx-auto sm:mx-0">
+                      <div className="relative bg-white w-30 h-30 rounded-2xl">
+                        <img 
+                          src={activeTask?.pet_picture 
+                            ? `${API_URL}/${activeTask.pet_picture}` 
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(activeTask?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`
+                          } 
+                          className="object-cover w-full h-full rounded-xl" 
+                          alt="pet" 
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(activeTask?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`;
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Patient Info Details */}
+                    <div className="flex-1 text-center sm:text-left">
+                      <span className="inline-block px-3 py-1 mb-2 text-[9px] font-black tracking-widest text-gray-700 uppercase bg-gray-300 border-gray-300 rounded-sm">
+                        {activeTask?.species || 'Species'}
+                      </span>
+                      <h3 className="text-2xl font-black leading-none tracking-tight text-gray-900 uppercase">
+                        {activeTask?.pet_name}
+                      </h3>
+                      
+                      {/* Main Stats Grid */}
+                      <div className="grid grid-cols-3 gap-4 mt-5">
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Breed</p>
+                          <p className="text-xs font-bold text-gray-700 truncate">{activeTask?.breed || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Sex</p>
+                          <p className="text-xs font-bold text-gray-700">{activeTask?.sex || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Age</p>
+                          <p className="text-xs font-bold text-gray-700">{activeTask?.age || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="block mb-1 text-[10px] font-black text-gray-400 uppercase">Patient Name</span>
-                    <h3 className="text-3xl font-black leading-none tracking-tighter uppercase">{activeTask?.pet_name}</h3>
-                    <p className="mt-2 text-[10px] font-black tracking-widest text-gray-400 uppercase">Owner: <span className="text-(--clr-primary)">{activeTask?.owner_name}</span></p>
+
+                  {/* Relationship Section */}
+                  <div className="flex flex-col gap-2 px-2 mt-6">
+                    <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
+                      Owner: <span className="text-gray-900">{activeTask?.owner_name}</span>
+                    </p>
+                    <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
+                      Assigned Staff: <span className="text-gray-900">{activeTask?.staff_name || 'Not assigned'}</span>
+                    </p>
+                  </div>
+
+                  {/* Medical Conditions - Dedicated Warning Style */}
+                  <div className={`mt-6 flex items-center gap-3 p-4 rounded-2xl border ${
+                    activeTask?.medical_conditions && activeTask.medical_conditions !== 'N/A' && activeTask.medical_conditions !== 'None'
+                    ? 'bg-amber-50 border-amber-100' 
+                    : 'bg-white border-gray-100'
+                  }`}>
+                    <div className={`p-2 rounded-lg ${
+                      activeTask?.medical_conditions && activeTask.medical_conditions !== 'N/A' && activeTask.medical_conditions !== 'None'
+                      ? 'bg-amber-500 text-white' 
+                      : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      <HiInformationCircle size={18} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Medical Notes / Conditions</p>
+                      <p className={`text-sm font-bold leading-tight ${
+                        activeTask?.medical_conditions && activeTask.medical_conditions !== 'N/A' && activeTask.medical_conditions !== 'None'
+                        ? 'text-amber-900' 
+                        : 'text-gray-500 italic'
+                      }`}>
+                        {activeTask?.medical_conditions || 'No known conditions recorded.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 border border-green-100 p-7 bg-green-50 rounded-xl">
+                {/* Service Highlight Card */}
+                <div className="relative p-6 transition-all border-2 border-green-100 bg-green-50 rounded-2xl">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Selected Service</span>
-                      <h4 className="mt-1 text-xl font-black text-(--clr-primary) uppercase">{activeTask?.service_name || 'Medical Checkup'}</h4>
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Service Procedure</span>
+                      <h4 className="text-2xl font-black text-(--clr-primary) uppercase leading-none">
+                        {activeTask?.service_name || 'Service'}
+                      </h4>
                     </div>
                     <div className="text-right">
                       <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Service Fee</span>
-                      <p className="text-xl font-black text-(--clr-primary)">₱{serviceFee.toLocaleString()}</p>
+                      <p className="text-2xl font-black text-(--clr-primary)">₱{serviceFee.toLocaleString()}</p>
                     </div>
                   </div>
-                  <p className="text-sm italic font-medium leading-relaxed ">
-                    "{activeTask?.service_description || "Standard consultation and professional health assessment."}"
-                  </p>
+
+                  {/* Description Section */}
+                  <div className="pt-4 mt-4 border-t border-green-200/50">
+                    <p className="text-sm italic font-medium leading-relaxed text-(--clr-primary)">
+                      "{activeTask?.service_description || "Standard consultation and professional health assessment."}"
+                    </p>
+                  </div>
+
+                  {/* Appointment Time Section - Integrated Inside */}
+                  <div className="pt-4 mt-4 border-t border-green-200/50">
+                    <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest block mb-2">Service Schedule</span>
+                    <div className="flex items-center gap-3 p-3 text-sm font-bold text-blue-800 border bg-white/60 rounded-xl border-green-100/50">
+                      <HiMiniExclamationCircle size={18} className="text-blue-600 shrink-0" />
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Using formatDateTime utility or your preferred date formatter */}
+                        <span>{formatDateTime(activeTask?.start)}</span>
+                        <span className="opacity-30">—</span>
+                        <span>{formatDateTime(activeTask?.end)}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -400,7 +485,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                       </div>
 
                       {isDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl z-[50] shadow-xl overflow-hidden flex flex-col max-h-[300px]">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl z-[50] overflow-hidden flex flex-col max-h-[300px]">
                           {/* search input */}
                           <div className="flex items-center gap-2 p-3 border-b bg-gray-50">
                             <HiSearch className="text-gray-400" />
@@ -421,7 +506,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                                 <div 
                                   key={p.inventory_id} 
                                   onClick={() => handleAddItem(p)}
-                                  className="p-4 border-b last:border-none flex flex-col gap-1 hover:bg-green-50 transition-colors cursor-pointer"
+                                  className="flex flex-col gap-1 p-4 transition-colors border-b cursor-pointer last:border-none hover:bg-green-50"
                                 >
                                   <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-black uppercase text-gray-700">
@@ -438,15 +523,15 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                                       Dispatch Priority
                                     </span>
                                     
-                                    <span className="text-gray-400 mt-1">
+                                    <span className="mt-1 text-gray-400">
                                       Dist: {p.supplier_name || 'N/A'}
                                     </span>
         
-        <span className="text-blue-500 mt-1 font-black">
+        <span className="mt-1 font-black text-blue-500">
           Exp: {formatExpiry(p.expiry_date)}
         </span>
         
-        <span className="text-gray-400 mt-1">
+        <span className="mt-1 text-gray-400">
           Stock: {p.stock_level}
         </span>
       </div>

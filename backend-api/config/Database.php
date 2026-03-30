@@ -27,6 +27,8 @@ class Database {
       $this->pdo = new PDO($dsn, $this->user, $this->password);
       $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
       $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+      $this->pdo->exec("SET time_zone = '+08:00'");
     } catch (PDOException $e) {
       die("Connection failed: " . $e->getMessage());
     }
