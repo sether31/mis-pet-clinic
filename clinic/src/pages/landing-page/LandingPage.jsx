@@ -142,11 +142,7 @@ export default function LandingPage() {
     },
     {
       q: "Can I sell pet supplies through the platform?",
-<<<<<<< HEAD
       a: `Yes. ${platformData?.platform_name} includes a Product Reservation system. This feature is available to clinics on our Company and Enterprise subscription tiers, allowing pet owners to reserve food or medicine for pickup via the mobile app.`
-=======
-      a: `Yes. ${platformData?.platform_name} includes a Product Reservation system. This feature is available to clinics on our Professional and Enterprise subscription tiers, allowing pet owners to reserve food or medicine for pickup via the mobile app.`
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
     },
     {
       q: "Is there an iOS version?",
@@ -168,11 +164,8 @@ export default function LandingPage() {
       <motion.header
         animate={{ y: hidden ? "-100%" : 0 }}
         transition={{ duration: 0.3 }}
-<<<<<<< HEAD
         className="fixed top-0 left-0 z-50 w-full bg-white border-b shadow-sm border-white/20"
-=======
-        className="fixed top-0 left-0 z-50 w-full border-b shadow-sm bg-white/80 backdrop-blur-xl border-white/20"
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
+        className="fixed top-0 left-0 z-50 w-full bg-white border-b shadow-sm border-white/20"
       >
         <nav className="flex items-center justify-between h-20 mx-auto container-xl">
           {/* Logo */}
@@ -351,11 +344,7 @@ export default function LandingPage() {
         <section id="manuals" className="relative bg-gray-100">
           <div className="relative z-10 px-6 pt-24 pb-12 mx-auto text-center container-xl">
             <h2 className="mb-6 text-4xl font-black md:text-5xl text-slate-900">Explore the System</h2>
-<<<<<<< HEAD
             <p className="mb-10 text-lg text-slate-500">Select a manual to see how {platformData?.platform_name} simplifies your workflow.</p>
-=======
-            <p className="mb-10 text-lg text-slate-500">Select a manual to see how SwiftVet simplifies your workflow.</p>
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
             
             <div className="relative inline-flex p-1 mb-4 bg-slate-100 rounded-2xl isolate">
               {['clinic', 'user'].map((tab) => (
@@ -414,11 +403,8 @@ export default function LandingPage() {
             >
               <img 
                 src={MobileImage} 
-<<<<<<< HEAD
                 alt={`${platformData?.platform_name} Mobile app picture`}
-=======
-                alt="SwiftVet Mobile App" 
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
+                alt={`${platformData?.platform_name} Mobile app picture`}
                 className="w-auto h-auto max-h-[500px] md:max-h-[600px] object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] z-10" 
               />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-emerald-400/20 blur-[120px] rounded-full"></div>
@@ -431,11 +417,8 @@ export default function LandingPage() {
               className="order-1 lg:order-2"
             >
               <h2 className="mb-6 text-4xl font-black tracking-tight md:text-6xl">
-<<<<<<< HEAD
                 {platformData?.platform_name} for <span className="text-emerald-300">Pet Owners</span>
-=======
-                SwiftVet for <span className="text-emerald-300">Pet Owners</span>
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
+                {platformData?.platform_name} for <span className="text-emerald-300">Pet Owners</span>
               </h2>
               
               <p className="mb-8 text-lg font-medium text-emerald-50/80 md:text-xl">
@@ -454,23 +437,15 @@ export default function LandingPage() {
                 {/* download btn */}
                 <div className="flex flex-col gap-2">
                   <a 
-<<<<<<< HEAD
                     href="/SwiftVet.apk" 
                     download="SwiftVet.apk"
-=======
-                    href="/SwiftVet-v1.0.2.apk" 
-                    download="SwiftVet-v1.0.2.apk"
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
                     className="inline-flex items-center justify-center gap-3 px-10 py-5 text-xl font-bold text-(--clr-primary) transition-all duration-300 bg-white rounded-2xl hover:bg-emerald-50 hover:-translate-y-1 active:scale-95"
                   >
                     <span>Get the APK</span>
                     <LuDownload size={26} />
                   </a>
-<<<<<<< HEAD
                   <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.4 • Approx. 110.4MB</span>
-=======
-                  <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.2 • Approx. 110.3MB</span>
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
+                  <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.4 • Approx. 110.4MB</span>
                 </div>
 
                 {/* qr*/}
@@ -478,22 +453,14 @@ export default function LandingPage() {
                   <div className="flex items-center justify-center w-16 h-16 p-1 overflow-hidden bg-white rounded-lg">
                     <img 
                       src={QRImage}
-<<<<<<< HEAD
                       alt={`Scan to download ${platformData?.platform_name}`} 
-=======
-                      alt="Scan to download SwiftVet" 
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
                       className="object-contain w-full h-full"
                     />
                   </div>
 
                   {/* Instruction Text */}
                   <p className="text-[10px] leading-tight text-emerald-100/70 max-w-[100px]">
-<<<<<<< HEAD
                     Scan to download <span className="font-bold text-white">{platformData?.platform_name}</span> directly to your Android device
-=======
-                    Scan to download <span className="font-bold text-white">SwiftVet</span> directly to your Android device
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
                   </p>
                 </div>
               </div>
@@ -548,11 +515,7 @@ export default function LandingPage() {
           </div>
           
           <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest font-bold">
-<<<<<<< HEAD
-            <p>&copy; 2026 ${platformData?.platform_name} Platform</p>
-=======
-            <p>&copy; 2026 SwiftVet Platform</p>
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
+            <p>&copy; 2026 {platformData?.platform_name} Platform</p>
             <p>Designed with care for furry friends</p>
           </div>
         </div>

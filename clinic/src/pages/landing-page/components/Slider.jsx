@@ -10,13 +10,10 @@ export default function Slider({ images = [] }) {
   const x = useTransform(scrollYProgress, [0, 1], ["45%", "-85%"]);
   
   return (
-<<<<<<< HEAD
     <div ref={ref} className="h-[300vh] bg-slate-900 relative">
       <div className="sticky top-[40px] flex items-center h-screen overflow-hidden z-10">
-=======
-    <div ref={ref} className="h-[300vh] bg-slate-900 relative z-10">
-      <div className="sticky top-[40px] flex items-center h-screen overflow-hidden">
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
+    <div ref={ref} className="h-[300vh] bg-slate-900 relative">
+      <div className="sticky top-[40px] flex items-center h-screen overflow-hidden z-10">
         <motion.div style={{ x }} className="flex gap-8 px-4">
           {images.map((url, i) => (
             <div 
@@ -33,11 +30,8 @@ export default function Slider({ images = [] }) {
       {/* Normal Modal Section */}
       <AnimatePresence>
         {selectedImg && (
-<<<<<<< HEAD
           <div className="fixed inset-0 flex items-center justify-center p-6 z-9999">
-=======
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
+          <div className="fixed inset-0 flex items-center justify-center p-6 z-9999">
             {/* Backdrop - Click anywhere outside to close */}
             <motion.div
               initial={{ opacity: 0 }}

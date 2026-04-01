@@ -71,7 +71,6 @@ export default function RootLayout() {
   }, []);
 
   return (
-<<<<<<< HEAD
     <SafeAreaProvider>
       <StatusBar style="dark" backgroundColor="transparent" translucent={true} />
 
@@ -89,20 +88,5 @@ export default function RootLayout() {
         </UIProvider>
       </PlatformProvider>
     </SafeAreaProvider>
-=======
-    <PlatformProvider>
-      <UIProvider>
-        <UserProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(dashboard)" />
-            <Stack.Screen name="+not-found" options={{ headerShown: false }} />
-          </Stack>
-          
-          <Toast position="top" config={toastConfig} />  
-        </UserProvider>
-      </UIProvider>
-    </PlatformProvider>
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
   );
 }

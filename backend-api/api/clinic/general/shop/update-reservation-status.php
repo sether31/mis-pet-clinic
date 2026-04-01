@@ -89,7 +89,6 @@ try {
       $pdo->prepare("UPDATE payments_tb SET payment_status = 'cancelled' WHERE order_id = ?")->execute([$order_id]);
   }
 
-<<<<<<< HEAD
   $nameStmt = $pdo->prepare("
       SELECT GROUP_CONCAT(p.name SEPARATOR ', ') as item_list
       FROM order_items_tb oi
@@ -111,14 +110,6 @@ try {
       'rejected'  => ['title' => 'Reservation Rejected', 'msg' => "Sorry, your reservation #$order_id ($order_names) was rejected. Reason: " . ($reason ?? 'No reason provided')],
       'completed' => ['title' => 'Item Picked Up', 'msg' => "Thank you! Your order #$order_id ($order_names) has been marked as completed/picked up."],
       'cancelled' => ['title' => 'Reservation Cancelled', 'msg' => "Your reservation #$order_id ($order_names) has been successfully cancelled."]
-=======
-  // 3. SEND NOTIFICATION TO PET OWNER
-  $notif_data = [
-      'confirmed' => ['title' => 'Reservation Ready for pick up!', 'msg' => "Your reservation #$order_id is ready for pickup at {$currentOrder['branch_name']}."],
-      'rejected'  => ['title' => 'Reservation Rejected', 'msg' => "Sorry, your reservation #$order_id was rejected. Reason: " . ($reason ?? 'No reason provided')],
-      'completed' => ['title' => 'Item Picked Up', 'msg' => "Thank you! Your order #$order_id has been marked as completed/picked up."],
-      'cancelled' => ['title' => 'Reservation Cancelled', 'msg' => "Your reservation #$order_id has been successfully cancelled."]
->>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
   ];
 
   if (isset($notif_data[$status])) {
