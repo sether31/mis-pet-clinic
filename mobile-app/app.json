@@ -2,17 +2,29 @@
   "expo": {
     "name": "SwiftVet",
     "slug": "SwiftVet",
+<<<<<<< HEAD
     "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/new-logo.png",
     "scheme": "swiftvet",
     "userInterfaceStyle": "light",
+=======
+    "version": "1.0.2",
+    "orientation": "portrait",
+    "icon": "./assets/images/new-logo.png",
+    "scheme": "swiftvet",
+    "userInterfaceStyle": "automatic",
+>>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+<<<<<<< HEAD
       "versionCode": 5,
+=======
+      "versionCode": 3,
+>>>>>>> af2bbb1ccfe7552a60bb69af3f4e81879f82728a
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
