@@ -22,7 +22,7 @@ export default function ServicesTab({ services, branchId }) {
 
   const handleBookService = (branchServiceId) => {
     router.push({
-      pathname: `/(dashboard)/clinics/BookAppointment`,
+      pathname: `/clinics/BookAppointment`,
       params: { branch_id: branchId, branch_service_id: branchServiceId }
     });
   };

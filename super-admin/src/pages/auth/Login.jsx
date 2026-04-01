@@ -194,7 +194,7 @@ export default function Login() {
     <>
       <div className="relative flex items-center min-h-screen px-0 bg-gray-50 container-2xl">
         {/* login */}
-        <div className="grid grid-cols-1 place-content-center lg:place-content-stretch lg:grid-cols-[.85fr_1fr] min-h-[695px] flex-1 px-4 lg:px-0">
+        <div className="grid grid-cols-1 place-content-center lg:place-content-stretch lg:grid-cols-[.85fr_1fr] min-h-[729px] flex-1 px-4 lg:px-0">
           {/* image section */}
           <motion.section 
             className="h-full bg-(--clr-primary) relative hidden lg:block overflow-hidden"

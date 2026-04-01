@@ -27,7 +27,7 @@ try {
 
   // 1. Get the order_id AND staff_id AND service_name (This is what was missing!)
   $stmtAppt = $pdo->prepare(
-    "SELECT a.order_id, a.branch_id, a.staff_id, bs.custom_name, p.name as pet_name 
+    "SELECT a.order_id, a.branch_id, a.staff_id, bs.custom_name, p.name as pet_name, p.owner_id
     FROM appointments_tb a
     LEFT JOIN pet_tb p ON a.pet_id = p.pet_id
     LEFT JOIN branch_service_tb bs ON a.service_id = bs.branch_service_id
@@ -35,6 +35,8 @@ try {
   );
   $stmtAppt->execute([$data->appointment_id]);
   $appt = $stmtAppt->fetch();
+
+  $owner_id = $appt['owner_id'];
   
   if (!$appt || !$appt['order_id']) throw new Exception("No order found.");
 
@@ -68,10 +70,20 @@ try {
   if ($invoice['status'] === 'PAID' || $invoice['status'] === 'SETTLED') { 
     
     // 4. Update payments table
-    $pdo->prepare("UPDATE payments_tb SET payment_status = 'paid' WHERE payment_id = ?")->execute([$payRecord['payment_id']]);
+    $pdo->prepare("
+      UPDATE payments_tb 
+      SET payment_status = 'paid', 
+        updated_at = NOW() 
+      WHERE payment_id = ?"
+    )->execute([$payRecord['payment_id']]);
 
-    // 5. Update appointment to 'completed'
-    $pdo->prepare("UPDATE appointments_tb SET status = 'completed' WHERE appointment_id = ?")->execute([$data->appointment_id]);
+    // 5. Update appointment status and its timestamp
+    $pdo->prepare("
+      UPDATE appointments_tb 
+      SET status = 'completed', 
+        updated_at = NOW() 
+      WHERE appointment_id = ?"
+    )->execute([$data->appointment_id]);
 
     // 6. Update order table to 'completed'
     $pdo->prepare("UPDATE order_tb SET order_status = 'completed' WHERE order_id = ?")->execute([$order_id]);
@@ -134,6 +146,13 @@ try {
         // The Groomer/Vet gets "Appointment Completed", the Staff gets "Online Payment Settled"
         $finalTitle = ($targetId == $vetUserId) ? "Appointment Completed" : $notifTitle;
         send_notification($pdo, $targetId, 'billing', $finalTitle, $notifMessage);
+    }
+
+    if (!empty($owner_id)) {
+        $ownerTitle = "Payment Successful!";
+        $ownerMessage = "Hi! We've received your payment of ₱{$amountFormatted} for {$pet_name}'s {$service_name}. See you next time!";
+        
+        send_notification($pdo, $owner_id, 'billing', $ownerTitle, $ownerMessage);
     }
     // ------------------------------------
 

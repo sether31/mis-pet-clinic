@@ -44,9 +44,6 @@ export default function SuperAdminDashboard() {
     const fetchSuperAdminData = async () => {
       try {
         setIsLoading(true);
-        // 1. Run subscription check
-        await authFetch(`${import.meta.env.VITE_API_URL}/api/super-admin/notifications/check-all-expiring-subscriptions.php`);
-        
         // 2. Fetch Dashboard Stats (You will need to create this endpoint)
         const response = await authFetch(`${import.meta.env.VITE_API_URL}/api/super-admin/dashboard/get-overview.php?filter=${timeFilter}`);
         
