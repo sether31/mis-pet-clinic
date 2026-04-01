@@ -25,6 +25,11 @@ try {
       o.order_id,
       o.total_amount,
       
+      -- DOUBLE JOIN LOGIC:
+      -- Appt -> BranchStaff (bs_tb) -> User (u)
+      COALESCE(CONCAT(u.first_name, ' ', u.last_name), 'Staff Not Assigned') as staff_name,
+      u.profile_picture as staff_picture,
+      
       -- GATEKEEPER 
       cb.is_maintenance,
       cb.status as clinic_status,
@@ -41,12 +46,18 @@ try {
     LEFT JOIN branch_service_tb bs ON a.service_id = bs.branch_service_id
     LEFT JOIN medrecord_tb mr ON a.appointment_id = mr.appointment_id 
     LEFT JOIN order_tb o ON a.order_id = o.order_id
+    
+    -- 1. Connect Appointment Staff ID to the Branch Staff Table
+    LEFT JOIN branch_staff_tb bs_tb ON a.staff_id = bs_tb.staff_id
+    -- 2. Connect that Branch Staff's User ID to the actual User Table
+    LEFT JOIN user_tb u ON bs_tb.user_id = u.user_id 
+    
     WHERE a.user_id = ? 
     ORDER BY a.start_time DESC"
   );
   
   $stmt->execute([$user_id]);
-  $appointments = $stmt->fetchAll();
+  $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
   foreach ($appointments as &$appt) {
     if (!empty($appt['order_id'])) {
@@ -62,7 +73,7 @@ try {
         WHERE oi.order_id = ?"
       );
       $stmtItems->execute([$appt['order_id']]);
-      $appt['items'] = $stmtItems->fetchAll();
+      $appt['items'] = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
     } else {
       $appt['items'] = [];
     }

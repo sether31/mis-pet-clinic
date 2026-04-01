@@ -155,11 +155,6 @@ export default function ProductDetailScreen() {
           position: 'top'
         });
         
-        if (from === 'activity') {
-          router.navigate('/(dashboard)/activity');
-        } else {
-          router.replace('/activity');
-        }
       } else {
         if(res?.is_unavailable) {
           setIsModalVisible(false);
@@ -247,7 +242,7 @@ export default function ProductDetailScreen() {
 
   const handleSmartBack = () => {
     if(from === 'activity') {
-      router.navigate('/(dashboard)/activity'); 
+      router.navigate('/activity'); 
     } else {
       router.back();
     }
@@ -292,7 +287,7 @@ export default function ProductDetailScreen() {
               styles.sellerContainer, 
               pressed && styles.sellerContainerPressed
             ]}
-            onPress={() => router.push(`/(dashboard)/clinics/${branch_id}`)}
+            onPress={() => router.push(`/clinics/${branch_id}`)}
           >
             {({ pressed }) => (
               <>

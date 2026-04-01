@@ -196,7 +196,7 @@ export default function SelectClinic() {
   };
 
   const handleSelectClinic = (clinicId) => {
-    router.push({ pathname: `/(dashboard)/clinics/${clinicId}` });
+    router.push({ pathname: `/clinics/${clinicId}` });
   };
 
   const clearFilters = () => {

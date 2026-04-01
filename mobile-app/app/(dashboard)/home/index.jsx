@@ -111,7 +111,7 @@ export default function HomeTab() {
 
         <Pressable 
           style={({ pressed }) => [styles.bellBtn, pressed && styles.bellBtnPressed]} 
-          onPress={() => router.push('/(dashboard)/home/Inbox')}
+          onPress={() => router.push('/home/Inbox')}
         >
           <Ionicons name="notifications-outline" size={24} color="#1F1F1F" />
           {unreadCount > 0 && (
@@ -170,7 +170,7 @@ export default function HomeTab() {
               <View style={styles.sectionHeader}>
                 <AppText style={styles.sectionTitle}>Recent Messages</AppText>
                 <Pressable 
-                  onPress={() => router.push('/(dashboard)/home/Inbox')}
+                  onPress={() => router.push('/home/Inbox')}
                   style={({ pressed }) => pressed && styles.pressedOpacity}
                 >
                   <AppText style={styles.seeAllText}>See All</AppText>
@@ -187,7 +187,10 @@ export default function HomeTab() {
                         index === messages.length - 1 && { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 },
                         pressed && styles.cardPressed
                       ]}
-                      onPress={() => router.push('/(dashboard)/home/Inbox')}
+                      onPress={() => router.push({
+                        pathname: '/home/Inbox',
+                        params: { msgId: msg.id }
+                      })}
                     >
                       <View style={[styles.messageIcon, msg.is_read === 0 && { backgroundColor: '#42756C15' }]}>
                         <Ionicons name={getCategoryIcon(msg.category)} size={20} color={msg.is_read === 0 ? "#42756C" : "#9CA3AF"} />

@@ -88,22 +88,24 @@ try {
   $pdo->beginTransaction();
 
   // Only lock and check the FIRST available batch!
+  // 1. Update the Inventory Query to check for 'is_active'
   $stmtInv = $pdo->prepare(
-    "SELECT inventory_id, stock_level, price 
-    FROM inventory_tb 
-    WHERE product_id = :pid AND branch_id = :bid 
-      AND stock_level > 0 
-      AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
-    ORDER BY expiry_date IS NULL ASC, expiry_date ASC
-    LIMIT 1
-    FOR UPDATE"
+      "SELECT inventory_id, stock_level, price 
+      FROM inventory_tb 
+      WHERE product_id = :pid AND branch_id = :bid 
+        AND stock_level > 0 
+        AND is_active = 1  -- Ensure the product isn't archived/deactivated
+        AND (expiry_date >= CURDATE() OR expiry_date IS NULL)
+      ORDER BY expiry_date IS NULL ASC, expiry_date ASC
+      LIMIT 1
+      FOR UPDATE"
   );
   $stmtInv->execute([':pid' => $productId, ':bid' => $branchId]);
   $inventoryBatch = $stmtInv->fetch();
 
-  // If there is no batch, or the user asks for more than this specific batch holds
+  // 2. Change the Exception Message to be specific
   if(!$inventoryBatch || $reqQty > $inventoryBatch['stock_level']) {
-    throw new Exception("Stock level changed during checkout. Please refresh the product page.");
+    throw new Exception("This product is no longer available or stock has changed.");
   }
 
   // Calculate Price strictly off this single batch
@@ -219,7 +221,7 @@ try {
   }
 
   $msg = $e->getMessage();
-  $isUnavailable = (strpos($msg, 'unavailable') !== false || strpos($msg, 'maintenance') !== false);
+  $isUnavailable = (strpos($msg, 'unavailable') !== false || strpos($msg, 'maintenance') !== false || strpos($msg, 'no longer available') !== false);
 
   http_response_code(400);
   echo json_encode([

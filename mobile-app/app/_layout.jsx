@@ -65,6 +65,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(dashboard)" />
+            <Stack.Screen name="+not-found" options={{ headerShown: false }} />
           </Stack>
           
           <Toast position="top" config={toastConfig} />  

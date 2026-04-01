@@ -24,30 +24,39 @@ try {
   $date = $data['appointment_date'];
   $time = $data['appointment_time'];
 
-  // CLINIC CHECK (Maintenance, Status, & Expiry)
-  $clinicStmt = $pdo->prepare(
-    "SELECT 
-      cb.is_maintenance, 
-      cb.status, 
-      (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
-        WHERE bs.branch_id = cb.branch_id 
-          AND LOWER(bs.status) = 'active' 
-          AND bs.end_date >= CURDATE()
-      ) as has_sub
-    FROM clinic_branches_tb cb 
-    WHERE cb.branch_id = ?"
-  );
-  $clinicStmt->execute([$branch_id]);
-  $clinicCheck = $clinicStmt->fetch();
-
-  if (
-    !$clinicCheck || 
-    strtolower($clinicCheck['status']) !== 'approved' || 
-    $clinicCheck['is_maintenance'] == 1 || 
-    $clinicCheck['has_sub'] == 0
-  ) {
-    throw new Exception("This clinic is currently under maintenance or unavailable.");
-  }
+  // CLINIC & SERVICE CHECK (Maintenance, Status, Expiry, & Service Availability)
+    $checkStmt = $pdo->prepare(
+        "SELECT 
+          cb.is_maintenance, 
+          cb.status AS branch_status, 
+          bsrv.status AS service_active, -- Fetch the specific service status
+          (SELECT COUNT(*) FROM branch_subscriptions_tb bs 
+            WHERE bs.branch_id = cb.branch_id 
+              AND LOWER(bs.status) = 'active' 
+              AND bs.end_date >= CURDATE()
+          ) as has_sub
+        FROM clinic_branches_tb cb 
+        JOIN branch_service_tb bsrv ON cb.branch_id = bsrv.branch_id
+        WHERE cb.branch_id = ? AND bsrv.branch_service_id = ?"
+    );
+    
+    $checkStmt->execute([$branch_id, $branch_service_id]);
+    $check = $checkStmt->fetch();
+    
+    // 1. Check if Branch/Clinic is valid
+    if (
+        !$check || 
+        strtolower($check['branch_status']) !== 'approved' || 
+        $check['is_maintenance'] == 1 || 
+        $check['has_sub'] == 0
+    ) {
+        throw new Exception("This clinic is currently under maintenance or unavailable.");
+    }
+    
+    // 2. Check if the specific Service is valid (Fixes your specific error)
+    if ($check['service_active'] == 0) {
+        throw new Exception("This service is currently unavailable.");
+    }
 
   // Convert times
   $start_timestamp = strtotime("$date $time");
@@ -133,8 +142,7 @@ try {
   log_audit($pdo, $user_id, $clinicId, $branch_id, 'CREATE', 'APPOINTMENT', $targetId);
 
 
-  // --- ADDED: SEND NOTIFICATION TO THE ASSIGNED STAFF ---
-  // Get Pet Name for the message
+  // --- FINALIZED: NOTIFY ASSIGNED STAFF & GENERAL STAFF ONLY ---
   $petStmt = $pdo->prepare("SELECT name FROM pet_tb WHERE pet_id = ?");
   $petStmt->execute([$pet_id]);
   $petName = $petStmt->fetchColumn() ?: 'A pet';
@@ -143,15 +151,40 @@ try {
   $notifTitle = "New Appointment Request";
   $notifMessage = "A new booking request for {$petName} on {$formattedTime}.";
 
-  // Get the user_id of the assigned staff member
+  $notifiedUsers = [];
+
+  // 1. Notify the SPECIFICALLY ASSIGNED user (Vet, Groomer, or Admin)
   $staffUserStmt = $pdo->prepare("SELECT user_id FROM branch_staff_tb WHERE staff_id = ? LIMIT 1");
   $staffUserStmt->execute([$staff_id]);
   $assignedUserId = $staffUserStmt->fetchColumn();
 
   if ($assignedUserId) {
     send_notification($pdo, $assignedUserId, 'appointment', $notifTitle, $notifMessage);
+    $notifiedUsers[] = $assignedUserId;
   }
   
+  // 2. Notify ALL General Staff (The 'staff' role only)
+  // This excludes Branch Admins UNLESS they were the assigned person above.
+  $stmtStaff = $pdo->prepare("
+      SELECT bs.user_id 
+      FROM branch_staff_tb bs
+      JOIN user_tb u ON bs.user_id = u.user_id
+      JOIN roles_tb r ON u.role_id = r.role_id
+      WHERE bs.branch_id = ? AND bs.status = 1 
+      AND r.role_name = 'staff'
+  ");
+  $stmtStaff->execute([$branch_id]);
+  $generalStaff = $stmtStaff->fetchAll(PDO::FETCH_ASSOC);
+
+  foreach ($generalStaff as $s) {
+      $staffUserId = $s['user_id'];
+      
+      // Safety check to prevent double-pinging the assigned vet if they also have 'staff' role
+      if (!in_array($staffUserId, $notifiedUsers)) {
+          send_notification($pdo, $staffUserId, 'appointment', $notifTitle, $notifMessage);
+          $notifiedUsers[] = $staffUserId;
+      }
+  }
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Appointment requested successfully!"]);

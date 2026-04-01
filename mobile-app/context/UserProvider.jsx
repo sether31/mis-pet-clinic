@@ -16,6 +16,7 @@ export default function UserProvider({ children }) {
       
       if (!token) {
         setUser(null);
+        setLoading(false);
         return;
       }
 
@@ -23,6 +24,7 @@ export default function UserProvider({ children }) {
       const decoded = await validRoleToken(['pet_owner']);
       if (!decoded) {
         setUser(null);
+        setLoading(false);
         return;
       }
 
