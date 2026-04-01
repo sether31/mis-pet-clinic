@@ -33,7 +33,6 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
 
   const categories = ["Medication", "Supplies", "Pet Food", "Accessories", "Hygiene"];
 
-  // 👇 FORMAT THE DATE FOR THE FOOTER 👇
   const formattedDateUpdate = initialData?.updated_at 
     ? new Date(initialData.updated_at).toLocaleString('en-US', { 
         dateStyle: 'medium', 
@@ -52,7 +51,8 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     if(type !== "file") {
       const stringVal = String(updatedValue).trim();
       
-      if(!stringVal && name !== 'stock_adjustment') {
+      // 👇 ADDED: Don't show "Required" error for Expiry Date if it's an Accessory
+      if(!stringVal && name !== 'stock_adjustment' && !(name === 'expiry_date' && form.category === 'Accessories')) {
         const labels = {
           name: "Product name",
           description: "Description",
@@ -83,6 +83,15 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     }
 
     setForm(prev => ({ ...prev, [name]: updatedValue }));
+
+    // 👇 ADDED: Clear expiry date error if user switches category to Accessories
+    if (name === 'category' && updatedValue === 'Accessories') {
+        setErrors(prev => {
+            const newErrs = { ...prev };
+            delete newErrs.expiry_date;
+            return newErrs;
+        });
+    }
   };
 
   const validateForm = () => {
@@ -92,7 +101,12 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     if (!form.price || form.price <= 0) newErrors.price = "Valid price is required.";
     if (!form.unit_cost || form.unit_cost <= 0) newErrors.unit_cost = "Unit cost is required.";
     if (form.min_stock_level === '' || form.min_stock_level < 0) newErrors.min_stock_level = "Restock level is required.";
-    if (!form.expiry_date) newErrors.expiry_date = "Expiry date is required.";
+    
+    // 👇 MODIFIED: Skip expiry validation if category is Accessories
+    if (form.category !== 'Accessories' && !form.expiry_date) {
+        newErrors.expiry_date = "Expiry date is required.";
+    }
+
     if (!form.supplier_name.trim()) newErrors.supplier_name = "Supplier name is required.";
     if (!form.supplier_contact.trim()) newErrors.supplier_contact = "Supplier contact is required.";
     
@@ -134,7 +148,12 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
         if (form[key]) fd.append(key, form[key]); 
       } 
       else if(key !== 'stock_adjustment' && form[key] !== null) { 
-        fd.append(key, form[key]); 
+        // 👇 ADDED: Ensure expiry_date is sent as empty string if it's an accessory
+        if (key === 'expiry_date' && form.category === 'Accessories') {
+            fd.append(key, '');
+        } else {
+            fd.append(key, form[key]); 
+        }
       }
     });
     
@@ -261,13 +280,16 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
             />
           </div>
           
-          <div className="grid grid-cols-1">
-             <Input 
-              type="date" value={form.expiry_date} label="Expiry Date" 
-              name="expiry_date" isImportant onChange={handleChange} 
-              error={errors.expiry_date} 
-            />
-          </div>
+          {/* 👇 MODIFIED: Wrapped in conditional check */}
+          {form.category !== 'Accessories' && (
+            <div className="grid grid-cols-1">
+               <Input 
+                type="date" value={form.expiry_date} label="Expiry Date" 
+                name="expiry_date" isImportant onChange={handleChange} 
+                error={errors.expiry_date} 
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1 pb-2">
             <label className="ml-1 text-sm font-medium text-gray-700">Description <span className='text-red-500'>*</span></label>

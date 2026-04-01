@@ -19,11 +19,17 @@ $category = $_POST['category'] ?? 'Medication';
 $stockLevel = (int)($_POST['stock_level'] ?? 0); 
 $unitCost = $_POST['unit_cost'] ?? 0;
 $minStock = $_POST['min_stock_level'] ?? 5;
-$expiryDate = $_POST['expiry_date'] ?? null;
 $supplierName = trim($_POST['supplier_name'] ?? '');
 $supplierContact = trim($_POST['supplier_contact'] ?? '');
 
-if(!$branchId || !$name || !$price || !$unitCost || !$expiryDate) {
+$expiryDate = !empty($_POST['expiry_date']) ? $_POST['expiry_date'] : null;
+
+if ($category === 'Accessories') {
+  $expiryDate = null; // Enforce null in the database
+}
+
+// 👇 NEW: Update validation to allow empty expiry if it's an Accessory
+if(!$branchId || !$name || !$price || !$unitCost || ($category !== 'Accessories' && !$expiryDate)) {
   echo json_encode(["success" => false, "message" => "All required fields must be filled."]);
   exit;
 }

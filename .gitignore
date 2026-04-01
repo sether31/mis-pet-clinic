@@ -1,6 +1,12 @@
-.env
+# Production / Build
 dist/
+node_modules/
 vendor/
+
+# Security & Config
+.env
+.env.local
+
+# Local Data (Don't sync these!)
 uploads/
-test.php
-backend-api-2
+*.apk
