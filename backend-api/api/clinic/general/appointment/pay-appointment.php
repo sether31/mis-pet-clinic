@@ -136,7 +136,7 @@ try {
       foreach ($staffStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
           $uid = $row['user_id'];
           if (!empty($uid)) {
-              send_notification($pdo, $uid, 'billing', "Patient Ready", $sharedInternalMsg);
+              send_notification($pdo, $uid, 'billing', "Appointment Completed", $sharedInternalMsg);
               $notifiedUsers[] = $uid;
           }
       }

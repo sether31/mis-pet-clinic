@@ -24,8 +24,11 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
     return unique.sort();
   }, [data]);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not Set";
+  // 👇 UPDATE THIS FUNCTION
+  const formatDate = (dateString, category) => {
+    if (!dateString) {
+      return category === 'Accessories' ? "—" : "Not Set";
+    }
     const date = new Date(dateString);
     if (isNaN(date)) return dateString;
     return date.toLocaleDateString('en-US', {
@@ -35,9 +38,10 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
     });
   };
 
-  // determine expiry dates
-  const getExpiryStatus = (dateString) => {
-    if (!dateString) return { label: null, color: 'text-gray-600' };
+  const getExpiryStatus = (dateString, category) => {
+    if (!dateString || category === 'Accessories') {
+      return { label: null, color: 'text-gray-400' }; 
+    }
     
     const today = new Date();
     const expiry = new Date(dateString);
@@ -204,7 +208,7 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
           <tbody className="text-sm divide-y divide-gray-200">
             {paginated.length > 0 ? paginated.map(item => {
               const isLow = Number(item.stock_level) <= Number(item.min_stock_level);
-              const expiryStatus = getExpiryStatus(item.expiry_date);
+              const expiryStatus = getExpiryStatus(item.expiry_date, item.category);
               const isArchived = Number(item.is_active) === 0;
               
               return (
@@ -253,7 +257,7 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
                   {/* date */}
                   <td className="px-6 py-4 text-center border-r border-gray-300">
                     <p className={`text-[11px] font-bold uppercase ${expiryStatus.color}`}>
-                      {formatDate(item.expiry_date)}
+                      {formatDate(item.expiry_date, item.category)}
                     </p>
                     {expiryStatus.label && !isArchived && (
                       <p className={`text-[8px] font-bold uppercase flex items-center justify-center gap-1 mt-0.5 ${expiryStatus.color}`}>

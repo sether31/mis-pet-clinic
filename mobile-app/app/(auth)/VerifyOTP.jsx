@@ -73,7 +73,7 @@ export default function VerifyOTP() {
             if (data.user) setUser(data.user);
           }
           Toast.show({ type: 'success', text1: 'Login Successful!' });
-          router.replace('/(dashboard)/home');
+          router.replace('/home');
         } 
         else if (type === 'password_reset') {
           Toast.show({ type: 'success', text1: 'Verified!', text2: 'Set your new password.' });

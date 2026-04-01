@@ -37,10 +37,22 @@ import Settings from "../pages/navigation/settings/Settings";
 import ShopManagement from "../pages/portal/shop-reservation/ShopManagement";
 import Notifications from "../pages/navigation/notifications/Notifications";
 import Analytics from "../pages/portal/analytics/Analytics";
+import LandingPage from "../pages/landing-page/LandingPage";
 
 
 export const routes = createBrowserRouter([
-  { path: "*", element: <NotFound /> },
+  { 
+    path: "/", 
+    element: <Navigate to="/landing-page" replace />
+  },
+  { 
+    path: "/landing-page", 
+    element: (
+      <PlatformProvider>
+        <LandingPage />
+      </PlatformProvider>
+    )
+  },
   {
     path: "/clinic",
     element: (
@@ -206,4 +218,5 @@ export const routes = createBrowserRouter([
       }
     ],
   },
+  { path: "*", element: <NotFound /> },
 ]);

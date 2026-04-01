@@ -189,13 +189,12 @@ export default function Login() {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100 } },
   };
-  
 
   return (
     <>
       <div className="relative flex items-center min-h-screen px-0 bg-gray-50 container-2xl">
         {/* login */}
-        <div className="grid grid-cols-1 place-content-center lg:place-content-stretch lg:grid-cols-[.85fr_1fr] min-h-[695px] flex-1 px-4 lg:px-0">
+        <div className="grid grid-cols-1 place-content-center lg:place-content-stretch lg:grid-cols-[.85fr_1fr] min-h-[729px] flex-1 px-4 lg:px-0">
           {/* image section */}
           <motion.section 
             className="h-full bg-(--clr-primary) relative hidden lg:block overflow-hidden"
@@ -204,7 +203,7 @@ export default function Login() {
             transition={{ duration: 1.2, ease: "easeOut" }}
           >
             <motion.img 
-              src={loginPic} 
+              src={platformData?.login_photo ? `${API_URL}/${platformData.login_photo}` : loginPic}  
               alt="login picture 2 dogs" 
               className='absolute h-[95%] w-full rounded-xl bottom-0 right-0 object-cover'
               initial={{ y: 50, opacity: 0 }}

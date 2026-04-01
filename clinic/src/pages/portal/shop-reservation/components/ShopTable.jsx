@@ -17,7 +17,7 @@ export default function ShopTable({ data = [], onReview }) {
   // State for the Guest / Member filter
   const [customerTypeFilter, setCustomerTypeFilter] = useState("all"); 
   
-  const [sortConfig, setSortConfig] = useState({ key: 'pickup_date', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'order_id', direction: 'desc'});
 
   const getMediaUrl = (path) => {
     if (!path) return NoImage;

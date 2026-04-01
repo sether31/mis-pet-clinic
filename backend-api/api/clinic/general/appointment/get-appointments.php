@@ -19,15 +19,22 @@ try {
     a.status,   
     p.pet_picture,       
     p.name as pet_name,
+    p.breed,
+    p.species,
+    p.sex,
+    p.birthdate, 
+    p.medical_conditions,
     s.custom_name as service_name,  
     s.price as service_fee,
     u_staff.first_name as staff_fname, 
     u_staff.last_name as staff_lname,
     REPLACE(r.role_name, '_', ' ') as role_name,
-    CONCAT(u_staff.first_name, ' ', u_staff.last_name) as staff_name,
     u_owner.first_name as owner_fname, 
     u_owner.last_name as owner_lname,
     CONCAT(u_owner.first_name, ' ', u_owner.last_name) as owner_name,
+    u_staff.first_name as staff_fname, 
+    u_staff.last_name as staff_lname,
+    CONCAT(u_staff.first_name, ' ', u_staff.last_name) as staff_name,
     b.name as branch_name            
   FROM appointments_tb a
   JOIN clinic_branches_tb b ON a.branch_id = b.branch_id
@@ -42,11 +49,8 @@ try {
 
   $params = [':branch_id' => $branch_id];
   
-
   $adminRoles = ['clinic_admin', 'branch_admin', 'staff'];
-
   if(!in_array($role, $adminRoles)) {
-    // staff can only see their appointments
     $sql .= " AND bs.user_id = :user_id";
     $params[':user_id'] = $user_id;
   }
@@ -55,7 +59,21 @@ try {
 
   $stmt = $pdo->prepare($sql);
   $stmt->execute($params);
-  $data = $stmt->fetchAll();
+  $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+  // --- AGE CALCULATION ---
+  $today = new DateTime();
+  foreach ($data as &$row) {
+      if (!empty($row['birthdate'])) {
+          $birthDate = new DateTime($row['birthdate']);
+          $diff = $today->diff($birthDate);
+          if ($diff->y > 0) $row['age'] = $diff->y . "yrs old";
+          elseif ($diff->m > 0) $row['age'] = $diff->m . "m old";
+          else $row['age'] = $diff->d . "d old";
+      } else {
+          $row['age'] = "Unknown";
+      }
+  }
 
   echo json_encode(["success" => true, "data" => $data]);
 } catch(Exception $e) {

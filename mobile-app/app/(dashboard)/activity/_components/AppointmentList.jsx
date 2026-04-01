@@ -76,7 +76,8 @@ export default function AppointmentsList({ activeTab }) {
   const handlePayNow = async (appointmentId, method) => {
     setIsPaying(true);
     try {
-      const returnUrl = Linking.createURL('/'); 
+      const scheme = 'swiftvet';
+      const returnUrl = Linking.createURL('/activity', { scheme }); 
 
       const res = await authFetch(`${API_URL}/api/pet-owner/appointments/appointment-payment.php`, {
         method: 'POST',
@@ -137,7 +138,7 @@ export default function AppointmentsList({ activeTab }) {
     }
 
     setModalVisible(false); 
-    router.push(`/(dashboard)/clinics/${appointment.branch_id}?from=activity`); 
+    router.push(`/clinics/${appointment.branch_id}?from=activity`); 
   };
 
   const filteredAppointments = appointments.filter(item => {
@@ -177,7 +178,7 @@ export default function AppointmentsList({ activeTab }) {
           style={({pressed}) => [styles.card, pressed && styles.cardPressed]}
           onPress={() => {
             if(item.status === 'completed') {
-              router.push(`/(dashboard)/pets/record/${item.record_id}?from=activity`);
+              router.push(`/pets/record/${item.record_id}?from=activity`);
               
             } else {
               setSelectedAppointment(item);
@@ -354,6 +355,13 @@ export default function AppointmentsList({ activeTab }) {
                       </View>
 
                       <View style={styles.detailRow}>
+                        <AppText style={styles.detailLabel}>Assigned Staff</AppText>
+                        <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>
+                          {selectedAppointment.staff_name || "Staff"}
+                        </AppText>
+                      </View>
+
+                      <View style={styles.detailRow}>
                         <AppText style={styles.detailLabel}>Service Fee</AppText>
                         <AppText style={[styles.detailValue, { color: Colors.primary }]}>
                           ₱{parseFloat(selectedAppointment.service_fee || 0).toFixed(2)}
@@ -429,7 +437,7 @@ export default function AppointmentsList({ activeTab }) {
                           ]} 
                           onPress={() => {
                             setModalVisible(false); 
-                            router.push(`/(dashboard)/pets/record/${selectedAppointment.record_id}?from=activity`); 
+                            router.push(`/pets/record/${selectedAppointment.record_id}?from=activity`); 
                           }}
                         >
                           <Ionicons name="document-text" size={20} color="#FFFFFF" style={{marginRight: 8}}/>

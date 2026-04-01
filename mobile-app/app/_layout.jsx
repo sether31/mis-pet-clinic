@@ -1,8 +1,12 @@
 import { Stack } from 'expo-router';
 import Toast, { BaseToast, ErrorToast, InfoToast } from 'react-native-toast-message'; 
+import * as NavigationBar from 'expo-navigation-bar';
 import PlatformProvider from '../context/PlatformProvider';
 import UIProvider from '../context/UIProvider';
 import UserProvider from '../context/UserProvider';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
 
 const toastConfig = {
   // 👇 Success Toast (Green)
@@ -58,18 +62,31 @@ const toastConfig = {
 };
 
 export default function RootLayout() {
+  useEffect(() => {
+    // This hides the bottom navigation bar (Back/Home/Recents)
+    NavigationBar.setVisibilityAsync("hidden");
+    
+    // Optional: This makes the bar stay hidden even if the user swipes
+    NavigationBar.setBehaviorAsync('inset-touch');
+  }, []);
+
   return (
-    <PlatformProvider>
-      <UIProvider>
-        <UserProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(dashboard)" />
-          </Stack>
-          
-          <Toast position="top" config={toastConfig} />  
-        </UserProvider>
-      </UIProvider>
-    </PlatformProvider>
+    <SafeAreaProvider>
+      <StatusBar style="dark" backgroundColor="transparent" translucent={true} />
+
+      <PlatformProvider>
+        <UIProvider>
+          <UserProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(dashboard)" />
+              <Stack.Screen name="+not-found" options={{ headerShown: false }} />
+            </Stack>
+            
+            <Toast position="top" config={toastConfig} />  
+          </UserProvider>
+        </UIProvider>
+      </PlatformProvider>
+    </SafeAreaProvider>
   );
 }

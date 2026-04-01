@@ -33,6 +33,9 @@ export default function BookAppointment() {
   const [isPetDropdownOpen, setIsPetDropdownOpen] = useState(false);
   const [isStaffDropdownOpen, setIsStaffDropdownOpen] = useState(false);
 
+  const [serviceInfo, setServiceInfo] = useState(null);
+  const [loadingService, setLoadingService] = useState(true);
+
   // Fetched Data
   const [myPets, setMyPets] = useState([]);
   const [availableStaff, setAvailableStaff] = useState([]);
@@ -41,6 +44,7 @@ export default function BookAppointment() {
   useEffect(() => {
     fetchMyPets();
     fetchStaff();
+    fetchServiceDetails();
   }, []);
 
   useEffect(() => {
@@ -50,6 +54,20 @@ export default function BookAppointment() {
       setAvailableTimes([]); 
     }
   }, [selectedDate, selectedStaff]);
+
+  const fetchServiceDetails = async () => {
+    setLoadingService(true);
+    try {
+      const res = await authFetch(`${API_URL}/api/pet-owner/appointments/get-service-details.php?branch_service_id=${branch_service_id}`);
+      if (res?.success) {
+        setServiceInfo(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to load service details", error);
+    } finally {
+      setLoadingService(false);
+    }
+  };
 
   const fetchMyPets = async () => {
     try {
@@ -203,6 +221,30 @@ export default function BookAppointment() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+        <View style={styles.serviceHeaderCard}>
+          {loadingService ? (
+            <ActivityIndicator color={Colors.primary} />
+          ) : (
+            <>
+              <View style={styles.serviceIconBadge}>
+                <Ionicons name="paw-outline" size={24} color={Colors.primary} /> 
+              </View>
+              <AppText style={styles.serviceNameText}>
+                {serviceInfo?.custom_name || "Service name"}
+              </AppText>
+              <AppText style={styles.serviceDescriptionText}>
+                {serviceInfo?.custom_description || "No description available."}
+              </AppText>
+              <View style={styles.priceTag}>
+                <Ionicons name="pricetag-outline" size={14} color="#059669" /> 
+                <AppText style={styles.priceText}>
+                  {`₱${parseFloat(serviceInfo?.price || 0).toLocaleString()}`}
+                </AppText>
+              </View>
+            </>
+          )}
+        </View>
         
         {/* Step 1: Select Pet */}
         <View style={[styles.section, { zIndex: 50 }]}>
@@ -437,5 +479,56 @@ const styles = StyleSheet.create({
   footer: { position: 'absolute', bottom: 0, width: '100%', backgroundColor: Colors.white, padding: 20, borderTopWidth: 1, borderTopColor: '#E5E7EB', elevation: 10, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
   submitBtn: { backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { color: Colors.white, fontSize: 16, fontWeight: '800' }
+  submitBtnText: { color: Colors.white, fontSize: 16, fontWeight: '800' },
+
+
+  serviceHeaderCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: '#E5E7EB'
+  },
+  serviceIconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  serviceNameText: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: Colors.primary,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  serviceDescriptionText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'left',
+    lineHeight: 20,
+    paddingHorizontal: 10,
+  },
+  priceTag: {
+    marginTop: 15,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    // Use these for the "flex gap" effect:
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6, // Use a number, not a string
+  },
+  priceText: {
+    color: '#059669',
+    fontWeight: '800',
+    fontSize: 15,
+    // Remove display: flex and gap from here
+  },
 });
