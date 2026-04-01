@@ -165,6 +165,7 @@ export default function LandingPage() {
         animate={{ y: hidden ? "-100%" : 0 }}
         transition={{ duration: 0.3 }}
         className="fixed top-0 left-0 z-50 w-full bg-white border-b shadow-sm border-white/20"
+        className="fixed top-0 left-0 z-50 w-full bg-white border-b shadow-sm border-white/20"
       >
         <nav className="flex items-center justify-between h-20 mx-auto container-xl">
           {/* Logo */}
@@ -403,6 +404,7 @@ export default function LandingPage() {
               <img 
                 src={MobileImage} 
                 alt={`${platformData?.platform_name} Mobile app picture`}
+                alt={`${platformData?.platform_name} Mobile app picture`}
                 className="w-auto h-auto max-h-[500px] md:max-h-[600px] object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] z-10" 
               />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-emerald-400/20 blur-[120px] rounded-full"></div>
@@ -415,6 +417,7 @@ export default function LandingPage() {
               className="order-1 lg:order-2"
             >
               <h2 className="mb-6 text-4xl font-black tracking-tight md:text-6xl">
+                {platformData?.platform_name} for <span className="text-emerald-300">Pet Owners</span>
                 {platformData?.platform_name} for <span className="text-emerald-300">Pet Owners</span>
               </h2>
               
@@ -441,6 +444,7 @@ export default function LandingPage() {
                     <span>Get the APK</span>
                     <LuDownload size={26} />
                   </a>
+                  <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.4 • Approx. 110.4MB</span>
                   <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.4 • Approx. 110.4MB</span>
                 </div>
 
@@ -511,7 +515,7 @@ export default function LandingPage() {
           </div>
           
           <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest font-bold">
-            <p>&copy; 2026 ${platformData?.platform_name} Platform</p>
+            <p>&copy; 2026 {platformData?.platform_name} Platform</p>
             <p>Designed with care for furry friends</p>
           </div>
         </div>
