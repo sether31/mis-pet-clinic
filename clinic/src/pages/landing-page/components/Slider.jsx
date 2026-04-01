@@ -12,8 +12,6 @@ export default function Slider({ images = [] }) {
   return (
     <div ref={ref} className="h-[300vh] bg-slate-900 relative">
       <div className="sticky top-[40px] flex items-center h-screen overflow-hidden z-10">
-    <div ref={ref} className="h-[300vh] bg-slate-900 relative">
-      <div className="sticky top-[40px] flex items-center h-screen overflow-hidden z-10">
         <motion.div style={{ x }} className="flex gap-8 px-4">
           {images.map((url, i) => (
             <div 
@@ -30,7 +28,6 @@ export default function Slider({ images = [] }) {
       {/* Normal Modal Section */}
       <AnimatePresence>
         {selectedImg && (
-          <div className="fixed inset-0 flex items-center justify-center p-6 z-9999">
           <div className="fixed inset-0 flex items-center justify-center p-6 z-9999">
             {/* Backdrop - Click anywhere outside to close */}
             <motion.div

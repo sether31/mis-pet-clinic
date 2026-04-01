@@ -418,7 +418,6 @@ export default function LandingPage() {
             >
               <h2 className="mb-6 text-4xl font-black tracking-tight md:text-6xl">
                 {platformData?.platform_name} for <span className="text-emerald-300">Pet Owners</span>
-                {platformData?.platform_name} for <span className="text-emerald-300">Pet Owners</span>
               </h2>
               
               <p className="mb-8 text-lg font-medium text-emerald-50/80 md:text-xl">
@@ -444,7 +443,6 @@ export default function LandingPage() {
                     <span>Get the APK</span>
                     <LuDownload size={26} />
                   </a>
-                  <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.4 • Approx. 110.4MB</span>
                   <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.4 • Approx. 110.4MB</span>
                 </div>
 
