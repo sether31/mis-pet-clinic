@@ -1,13 +1,23 @@
 <?php
-require_once '../../../middleware/auth-middleware.php';
-require_once '../../../config/Database.php';
-require_once '../../../helper/send_notification.php'; 
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Content-Type: application/json; charset=utf-8");
 
-$user = validate_auth(['super_admin']); 
+require_once '../config/Database.php';
+require_once '../helper/send_notification.php'; 
+
+$cron_key = $_ENV['CRON_SECURE_KEY'] ?? getenv('CRON_SECURE_KEY');
+$is_cron = isset($_GET['key']) && $_GET['key'] === $cron_key;
+
+if (!isset($_GET['key']) || $_GET['key'] !== $cron_key) {
+  http_response_code(403);
+  echo json_encode(["success" => false, "message" => "Unauthorized access."]);
+  exit;
+}
 
 try {
   $pdo = (new Database())->pdo;
-  $superAdminId = $user->user_id;
 
   // 1. Fetch all expiring/expired branches + their Clinic Admin
   $stmt = $pdo->prepare("
@@ -75,13 +85,20 @@ try {
 }
 
 /**
- * The Secret Sauce: Prevents duplicate notifications per user
+ * The Secret Sauce: Prevents duplicate notifications per user.
+ * Isolated to only allow 30-day resets for subscription categories.
  */
 function send_unique_notif($pdo, $userId, $cat, $title, $msg) {
-    // Check if THIS user has EVER received a notification with this EXACT title.
-    // We ignore 'is_read' so that even if they read or delete it, 
-    // the database knows it was already delivered once.
-    $check = $pdo->prepare("SELECT COUNT(*) FROM notification_tb WHERE user_id = ? AND title = ?");
+    // 1. Start with the basic check (user and title)
+    $query = "SELECT COUNT(*) FROM notification_tb WHERE user_id = ? AND title = ?";
+
+    // 2. ONLY for subscriptions: Allow it to resend if the old one is more than 30 days old.
+    // This ensures that next year, a notification with the same title will send again.
+    if ($cat === 'subscription_expired' || $cat === 'subscription_warn') {
+        $query .= " AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)";
+    }
+
+    $check = $pdo->prepare($query);
     $check->execute([$userId, $title]);
     
     if ($check->fetchColumn() == 0) {

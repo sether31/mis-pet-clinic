@@ -1,15 +1,12 @@
 <?php
 require_once __DIR__ . '/../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../config/Database.php';
-require_once __DIR__ . '/../../../helper/trigger_birthdays.php';
 
 try {
   $decoded = validate_auth(['pet_owner']);
   $userId = $decoded->user_id;
 
   $pdo = (new Database())->pdo;
-
-  trigger_birthdays($pdo, $userId);
 
   // Fetch all notifications for this user, newest first
   $stmt = $pdo->prepare(
