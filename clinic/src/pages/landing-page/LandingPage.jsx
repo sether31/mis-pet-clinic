@@ -130,6 +130,21 @@ export default function LandingPage() {
     }
   };
 
+  const capitalize = (str) => {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  const formatTierList = (tiers) => {
+    if (!tiers || tiers.length === 0) return "premium"; 
+    const capitalized = tiers.map(t => capitalize(t));
+    if (capitalized.length === 1) return capitalized[0];
+    if (capitalized.length === 2) return capitalized.join(" and ");
+    
+    // For 3+ items: "Basic, Company, and Enterprise"
+    return capitalized.slice(0, -1).join(", ") + ", and " + capitalized.slice(-1);
+  };
+
   
   const faqData = [
     {
@@ -138,11 +153,11 @@ export default function LandingPage() {
     },
     {
       q: `How much does ${platformData?.platform_name} cost?`,
-      a: "We offer flexible tiers from Basic to Enterprise to fit your clinic's needs. Every plan includes multi-branch management from the start! To keep our network secure, we'll share the full pricing guide with you once your registration is approved."
+      a: `We offer flexible tiers from ${capitalize(platformStats?.min_tier?.name)} to ${capitalize(platformStats?.max_tier?.name)} to fit your clinic's needs. Prices range from ₱${platformStats?.min_tier?.price || 0} to ₱${platformStats?.max_tier?.price || 0} per branch.`
     },
     {
       q: "Can I sell pet supplies through the platform?",
-      a: `Yes. ${platformData?.platform_name} includes a Product Reservation system. This feature is available to clinics on our Company and Enterprise subscription tiers, allowing pet owners to reserve food or medicine for pickup via the mobile app.`
+      a: `Yes. ${platformData?.platform_name} includes a Product Reservation system. This feature is available to clinics on our ${formatTierList(platformStats?.shop_tiers)} subscription tiers, allowing pet owners to reserve food or medicine for pickup via the mobile app.`
     },
     {
       q: "Is there an iOS version?",
@@ -164,7 +179,6 @@ export default function LandingPage() {
       <motion.header
         animate={{ y: hidden ? "-100%" : 0 }}
         transition={{ duration: 0.3 }}
-        className="fixed top-0 left-0 z-50 w-full bg-white border-b shadow-sm border-white/20"
         className="fixed top-0 left-0 z-50 w-full bg-white border-b shadow-sm border-white/20"
       >
         <nav className="flex items-center justify-between h-20 mx-auto container-xl">
@@ -403,7 +417,6 @@ export default function LandingPage() {
             >
               <img 
                 src={MobileImage} 
-                alt={`${platformData?.platform_name} Mobile app picture`}
                 alt={`${platformData?.platform_name} Mobile app picture`}
                 className="w-auto h-auto max-h-[500px] md:max-h-[600px] object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] z-10" 
               />

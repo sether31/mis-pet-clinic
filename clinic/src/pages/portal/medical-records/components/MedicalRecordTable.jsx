@@ -38,48 +38,59 @@ export default function MedicalRecordTable({ data = [], onView }) {
   };
 
   const filteredAndSorted = useMemo(() => {
-    let result = data
+    return data
       .filter(r => {
-        const rawStatus = r.status?.toLowerCase() || "unrecorded";
-        const normalizedStatus = rawStatus === "pending" ? "unrecorded" : rawStatus;
+        // 1. TOP TAB FILTER (Status-based)
+        const rawStatus = r.status?.toLowerCase().trim() || "unrecorded";
+        const isRecorded = rawStatus === "recorded";
         
-        if (activeTab === "unrecorded") return normalizedStatus === "unrecorded";
-        if (activeTab === "recorded") return normalizedStatus === "recorded";
+        if (activeTab === "unrecorded") return !isRecorded;
+        if (activeTab === "recorded") return isRecorded;
         return true;
       })
       .filter(r => {
+        // 2. DROPDOWN FILTER (Type-based)
         if (recordTypeFilter === "all") return true;
         
         const rType = r.record_type?.toLowerCase().trim() || "";
         
+        // If user selects "Medical", ONLY show "medical"
+        // If user selects "Non-Medical", ONLY show "non_medical"
+        if (recordTypeFilter === "medical") return rType === "medical";
+        if (recordTypeFilter === "non_medical") return rType === "non_medical";
+        
+        // If user selects "Unrecorded" type from dropdown
         if (recordTypeFilter === "unrecorded") {
-          return rType === "" || rType === "unset";
+          return rType === "" || rType === "unset" || rType === "unrecorded";
         }
         
-        return rType === recordTypeFilter;
+        return true;
       })
       .filter(r => {
+        // 3. BRANCH FILTER
         if (branchFilter === "all") return true;
         return String(r.branch_id) === String(branchFilter);
       })
       .filter(r => {
+        // 4. SEARCH FILTER
         const s = search.toLowerCase();
         return !search ||
           r.pet_name?.toLowerCase().includes(s) ||
           r.owner_name?.toLowerCase().includes(s) ||
           r.phone_number?.includes(s);
-      });
-
-    if(sortConfig.key) {
-      result.sort((a, b) => {
+      })
+      .sort((a, b) => {
+        // 5. SORTING
         let aV = a[sortConfig.key] || '';
         let bV = b[sortConfig.key] || '';
+        if (sortConfig.key === 'start_time') {
+          aV = new Date(aV).getTime();
+          bV = new Date(bV).getTime();
+        }
         if (aV < bV) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aV > bV) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
-    }
-    return result;
   }, [data, activeTab, recordTypeFilter, branchFilter, search, sortConfig]);
 
   const paginated = filteredAndSorted.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);

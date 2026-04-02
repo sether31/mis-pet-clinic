@@ -23,7 +23,7 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
   const [showConfirm, setShowConfirm] = useState(false); 
   const [errors, setErrors] = useState({});
   const [petImgError, setPetImgError] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState(record.record_type || 'medical');
+  const [currentCategory, setCurrentCategory] = useState(record.record_type || 'unset');
 
   const [form, setForm] = useState({
     appointment_id: record.appointment_id,
@@ -32,8 +32,8 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
     diagnosis: record.diagnosis || '',
     treatment: record.treatment || '',
     notes: record.notes || '',
-    category: record.record_type || 'medical',
-    status: record.status || 'recorded',
+    category: record.record_type || 'unset', 
+    status: record.status || 'unrecorded',
     image_1: null,
     image_2: null,
     doc_1: null,
@@ -69,27 +69,32 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
   };
 
   const executeToggle = () => {
-    const nextCat = currentCategory === 'non_medical' ? 'medical' : 'non_medical';
+    let nextCat;
+    if (currentCategory === 'unset' || currentCategory === 'unrecorded') {
+      nextCat = 'medical'; // First click defaults to medical
+    } else {
+      nextCat = currentCategory === 'medical' ? 'non_medical' : 'medical';
+    }
+
     setCurrentCategory(nextCat);
     setShowConfirm(false);
     
-    if(nextCat === 'non_medical') {
-      // reset
-      setForm(prev => ({
+    setForm(prev => {
+      const isNonMedical = nextCat === 'non_medical';
+      
+      return {
         ...prev,
-        category: 'non_medical',
-        diagnosis: '',
-        treatment: '',
-        image_1: null,
-        image_2: null,
-        doc_1: null,
-        doc_2: null,
-        status: 'recorded'
-      }));
-      setErrors({}); 
-    } else {
-      setForm(prev => ({ ...prev, category: 'medical' }));
-    }
+        category: nextCat,
+        diagnosis: isNonMedical ? '' : prev.diagnosis,
+        treatment: isNonMedical ? '' : prev.treatment,
+        image_1: isNonMedical ? null : prev.image_1,
+        image_2: isNonMedical ? null : prev.image_2,
+        doc_1: isNonMedical ? null : prev.doc_1,
+        doc_2: isNonMedical ? null : prev.doc_2,
+      };
+    });
+
+    setErrors({});
   };
 
   const handleChange = (e) => {
@@ -117,6 +122,11 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
 
   const handleSubmit = async (e) => {
     if(e) e.preventDefault();
+
+    if (currentCategory === 'unset' || currentCategory === 'unrecorded') {
+      toast.error("Please select a Record Type first.");
+      return;
+    }
     
     if(currentCategory === 'medical' && !form.diagnosis.trim()) {
       setErrors(prev => ({ ...prev, diagnosis: "Diagnosis is required for medical records." }));
@@ -323,12 +333,15 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
               type="button"
               onClick={handleToggleAttempt}
               disabled={isUnauthorizedBranch}
-              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all border whitespace-nowrap active:scale-95 cursor-pointer disabled:cursor-not-allowed
-                ${currentCategory === 'non_medical' 
-                  ? 'bg-amber-500 border-amber-600 text-white'
-                  : 'bg-white border-gray-300 text-gray-400 hover:border-(--clr-primary) hover:text-(--clr-primary)'}`}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all border whitespace-nowrap active:scale-95 cursor-pointer
+                ${currentCategory === 'unset' 
+                  ? 'bg-white border-red-500 text-red-500' 
+                  : currentCategory === 'non_medical' 
+                    ? 'bg-amber-500 border-amber-600 text-white'
+                    : 'bg-(--clr-primary) border-(--clr-primary) text-white'}`}
             >
-              {currentCategory === 'non_medical' ? 'Set to Medical' : 'Set to Non-Medical'}
+              {currentCategory === 'unset' ? 'Select Record Type' : 
+              currentCategory === 'non_medical' ? 'Set to Medical' : 'Set to Non-Medical'}
             </button>
           </div>
 
