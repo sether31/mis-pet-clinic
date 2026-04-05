@@ -16,7 +16,9 @@ import {
   RiMailSettingsLine, 
   RiLockPasswordLine, 
   RiFingerprintLine,
-  RiUserLine
+  RiUserLine,
+  RiGlobalLine,
+  RiShieldKeyholeLine
 } from 'react-icons/ri';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -196,6 +198,19 @@ export default function SecuritySettings() {
 
   return (
     <div className="p-8">
+      {/* Header Section */}
+      <div className="flex flex-col items-center gap-2 mb-8 text-center sm:text-left sm:flex-row">
+        <div className="rounded-lg text-gray-700">
+          <RiShieldKeyholeLine size={36} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-800">Account Security</h2>
+          <p className="text-sm text-gray-500">
+            Manage your personal profile, update your login credentials, and ensure your account remains secure.
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16">   
         {/* personal info */}
         <section className="space-y-6 border-t border-gray-100 lg:pt-4 lg:border-none lg:pt-0">

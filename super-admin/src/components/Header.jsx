@@ -21,7 +21,9 @@ const links = [
   // nav links
   { label: 'Notifications', path: '/notifications' },
   { label: 'Settings', path: '/settings' },
-  { label: 'Account Security', path: '/settings/security' },
+  { label: 'Account Security', path: '/settings/account-security' },
+  { label: 'Announcement', path: '/settings/announcement' },
+  { label: 'Frequently Ask Questions', path: '/settings/faq' },
 ];
 
 const API_URL = import.meta.env.VITE_API_URL;
