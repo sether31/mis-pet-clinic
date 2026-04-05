@@ -35,10 +35,13 @@ try {
   $stats = $stmtStats->fetch();
 
   $stmtShop = $pdo->query("SELECT name FROM subscription_tb WHERE has_shop = 1 AND is_active = 1 ORDER BY price ASC");
-    $shopTiers = $stmtShop->fetchAll(PDO::FETCH_COLUMN);
+  $shopTiers = $stmtShop->fetchAll(PDO::FETCH_COLUMN);
 
   $stmt = $pdo->prepare("SELECT service_id, name FROM service_tb ORDER BY name ASC LIMIT 10");
   $stmt->execute();
+
+  $stmtFaq = $pdo->query("SELECT * FROM landing_accordion_tb WHERE is_active = 1 ORDER BY sort_order ASC");
+  $faqs = $stmtFaq->fetchAll();
 
   $services = $stmt->fetchAll();
 
@@ -58,7 +61,8 @@ try {
       ],
       "shop_tiers" => $shopTiers
     ],
-    "services" => $services
+    "services" => $services,
+    "faqs" => $faqs
   ]);
 
 } catch(Exception $e) {

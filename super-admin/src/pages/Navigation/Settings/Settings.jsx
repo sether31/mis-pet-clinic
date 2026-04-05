@@ -1,13 +1,13 @@
 import { NavLink, Outlet, useOutletContext, useLocation } from 'react-router-dom';
 import Header from '../../../components/Header';
-import { RiGlobalLine, RiShieldKeyholeLine } from 'react-icons/ri';
+import { RiGlobalLine, RiNotificationBadgeLine, RiQuestionLine, RiShieldKeyholeLine } from 'react-icons/ri';
 
 export default function Settings() {
   const context = useOutletContext();
   const location = useLocation();
 
   const navClass = ({ isActive }) => 
-    `flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
+    `flex items-center gap-1 px-6 py-3 text-sm font-bold transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
       isActive 
         ? 'text-(--clr-primary) border-(--clr-primary)' 
         : 'text-gray-400 border-transparent hover:text-gray-600'
@@ -22,13 +22,17 @@ export default function Settings() {
             <RiGlobalLine size={20} />
             General
           </NavLink>
-          <NavLink to="security" className={navClass}>
+          <NavLink to="account-security" className={navClass}>
             <RiShieldKeyholeLine size={20} />
-            Security
+            Account Security
           </NavLink>
           <NavLink to="announcement" className={navClass}>
-            <RiShieldKeyholeLine size={20} />
+            <RiNotificationBadgeLine size={20} />
             Announcement
+          </NavLink>
+          <NavLink to="faq" className={navClass}>
+            <RiQuestionLine size={20} />
+            Landing FAQ
           </NavLink>
         </nav>
 

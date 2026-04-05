@@ -72,9 +72,9 @@ export default function Announcement() {
         <div className="">
           
           {/* Header Section */}
-          <div className="flex flex-col items-center gap-3 mb-8 text-center sm:text-left sm:flex-row">
-            <div className="p-3 bg-blue-100 rounded-lg text-(--clr-primary)">
-              <RiNotificationBadgeLine size={24} />
+          <div className="flex flex-col items-center gap-2 mb-8 text-center sm:text-left sm:flex-row">
+            <div className="rounded-lg text-gray-700">
+              <RiNotificationBadgeLine size={36} />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-800">System Announcement</h2>

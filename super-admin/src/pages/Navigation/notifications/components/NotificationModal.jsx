@@ -5,7 +5,7 @@ export default function NotificationModal({ isOpen, onClose, notification, getCa
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 duration-200 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white max-w-md rounded-xl p-6 flex flex-col max-h-[85vh]">
+      <div className="bg-white max-w-lg w-md rounded-xl p-6 flex flex-col max-h-[85vh]">
         
         {/* Modal Header */}
         <div className="flex items-start justify-between pb-4 mb-4 border-b border-gray-100">

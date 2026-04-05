@@ -38,6 +38,7 @@ export default function LandingPage() {
   const [activeSection, setActiveSection] = useState("home");
   const [platformStats, setPlatformStats] = useState([]);
   const [services, setServices] = useState([]);
+  const [faqs, setFaqs] = useState([]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -53,8 +54,9 @@ export default function LandingPage() {
         if(result.success) {
           setPlatformStats(result.stats);
           setServices(result.services);
+          setFaqs(result.faqs)
         } else {
-          throw new Error(result.message || 'Unknown error occurred');
+          throw new Error("Something went wrong");
         }
       } catch (err) {
         console.error("Stats Fetch Error:", err);
@@ -63,6 +65,7 @@ export default function LandingPage() {
 
     fetchStats();
   }, []);
+
 
   useEffect(() => {
     let timeout;
@@ -145,33 +148,39 @@ export default function LandingPage() {
     return capitalized.slice(0, -1).join(", ") + ", and " + capitalized.slice(-1);
   };
 
-  
-  const faqData = [
-    {
-      q: "How do I register my clinic?",
-      a: "Simply click 'Clinic Login' and select 'Signup'. Our team will review your application within 24 hours."
-    },
-    {
-      q: `How much does ${platformData?.platform_name} cost?`,
-      a: `We offer flexible tiers from ${capitalize(platformStats?.min_tier?.name)} to ${capitalize(platformStats?.max_tier?.name)} to fit your clinic's needs. Prices range from ₱${platformStats?.min_tier?.price || 0} to ₱${platformStats?.max_tier?.price || 0} per branch.`
-    },
-    {
-      q: "Can I sell pet supplies through the platform?",
-      a: `Yes. ${platformData?.platform_name} includes a Product Reservation system. This feature is available to clinics on our ${formatTierList(platformStats?.shop_tiers)} subscription tiers, allowing pet owners to reserve food or medicine for pickup via the mobile app.`
-    },
-    {
-      q: "Is there an iOS version?",
-      a: `Currently, ${platformData?.platform_name} is only available for Android devices. You can download the APK directly from our 'Download' section above.`
-    },
-    { 
-      q: "Can pet owners book appointments?", 
-      a: `Absolutely. Pet owners can use the ${platformData?.platform_name} Mobile App to view available slots and book appointments in real-time.` 
-    },
-    { 
-      q: "Is my data secure?", 
-      a: `Yes. ${platformData?.platform_name} uses industry-standard encryption to ensure all medical records and owner data are kept private and secure.` 
-    }
-  ];
+  const finalFaqData = (faqs && faqs.length > 0) 
+    ? faqs.map(f => ({ 
+        q: f.question, 
+        a: f.answer 
+      })) 
+    : [
+      {
+        q: "How do I register my clinic?",
+        a: "Simply click 'Clinic Login' and select 'Signup'. Our team will review your application within 24 hours."
+      },
+      {
+        q: `How much does ${platformData?.platform_name || 'the platform'} cost?`,
+        a: `We offer flexible tiers from ${capitalize(platformStats?.min_tier?.name)} to ${capitalize(platformStats?.max_tier?.name)} to fit your clinic's needs. Prices range from ₱${platformStats?.min_tier?.price || 0} to ₱${platformStats?.max_tier?.price || 0} per branch.`
+      },
+      {
+        q: "Can I sell pet supplies through the platform?",
+        a: `Yes. ${platformData?.platform_name || 'The platform'} includes a Product Reservation system. This feature is available to clinics on our ${formatTierList(platformStats?.shop_tiers)} subscription tiers, allowing pet owners to reserve food or medicine for pickup via the mobile app.`
+      },
+      {
+        q: "Is there an iOS version?",
+        a: `Currently, ${platformData?.platform_name || 'the platform'} is only available for Android devices. You can download the APK directly from our 'Download' section above.`
+      },
+      { 
+        q: "Can pet owners book appointments?", 
+        a: `Absolutely. Pet owners can use the ${platformData?.platform_name || 'the platform'} Mobile App to view available slots and book appointments in real-time.` 
+      },
+      { 
+        q: "Is my data secure?", 
+        a: `Yes. ${platformData?.platform_name || 'The platform'} uses industry-standard encryption to ensure all medical records and owner data are kept private and secure.` 
+      }
+    ];
+
+    console.log(faqs)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -486,7 +495,7 @@ export default function LandingPage() {
 
         {/* faq section */}
         <div id="faq" className="py-20 scroll-mt-20">
-          <FAQ faqData={faqData} />
+          <FAQ faqData={finalFaqData} />
         </div>
       </main>
 

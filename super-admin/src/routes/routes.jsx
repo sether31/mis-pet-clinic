@@ -23,10 +23,11 @@ import TransactionManagement from "../pages/portal/transaction-management/Transa
 import Notifications from "../pages/Navigation/notifications/Notifications";
 import Settings from "../pages/Navigation/Settings/Settings";
 import ForgotPassword from "../pages/auth/ForgotPassword";
-import GeneralSettings from "../pages/Navigation/Settings/components/GeneralSettings";
-import SecuritySettings from "../pages/Navigation/Settings/components/SecuritySettings";
+import GeneralSettings from "../pages/Navigation/Settings/view/GeneralSettings";
+import SecuritySettings from "../pages/Navigation/Settings/view/SecuritySettings";
 import NotFoundDashboard from "../pages/portal/NotFoundDashboard";
-import Announcement from "../pages/Navigation/Settings/components/Announcement";
+import Announcement from "../pages/Navigation/Settings/view/Announcement";
+import FAQSettings from "../pages/Navigation/Settings/view/FAQSettings";
 
 
 export const routes = createBrowserRouter([
@@ -72,8 +73,9 @@ export const routes = createBrowserRouter([
             element: <Settings />,
             children: [
               { index: true, element: <GeneralSettings /> },
-              { path: "security", element: <SecuritySettings /> }, 
-              { path: "announcement", element: <Announcement /> }
+              { path: "account-security", element: <SecuritySettings /> }, 
+              { path: "announcement", element: <Announcement /> },
+              { path: "faq", element: <FAQSettings /> }
             ]
           },
           { path: "*", element: <NotFoundDashboard /> },
