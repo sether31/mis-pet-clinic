@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 // utils
 import { authFetch } from '../../../utils/authFetch';
 // components
@@ -35,19 +36,51 @@ export default function ServiceManagement() {
   useEffect(() => { fetchMasterServices(); }, [fetchMasterServices]);
 
   const handleToggleStatus = async (service) => {
-    const nextStatus = Number(service.status) === 1 ? 0 : 1;
-    try {
-      const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/super-admin/services/update-main-service-status.php`, {
-        method: 'POST',
-        body: JSON.stringify({ service_id: service.service_id, status: nextStatus })
-      });
-      if(res.success) { 
-        toast.success(res.message); 
-        fetchMasterServices(); 
+    const isArchiving = Number(service.status) === 1;
+    const nextStatus = isArchiving ? 0 : 1;
+
+    // 1. Show Confirmation Dialog
+    const result = await Swal.fire({
+      title: isArchiving ? 'Archive Service?' : 'Activate Service?',
+      text: `Are you sure you want to ${isArchiving ? 'archive' : 'activate'} the "${service.name}" service?`,
+      icon: isArchiving ? 'warning' : 'info',
+      buttonsStyling: false,
+      showCancelButton: true,
+      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Activate',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold 
+        ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}
+        `,
+        cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold border border-gray-200 ml-3'
       }
-    } catch(error) {
-      toast.error("Something went wrong");
-    } 
+    });
+
+    // 2. Proceed if Confirmed
+    if (result.isConfirmed) {
+      setLoading(true);
+      try {
+        const res = await authFetch(`${import.meta.env.VITE_API_URL}/api/super-admin/services/update-main-service-status.php`, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            service_id: service.service_id, 
+            status: nextStatus 
+          })
+        });
+
+        if (res.success) {
+          toast.success(res.message || (nextStatus === 1 ? "Service Activated!" : "Service Archived!"));
+          fetchMasterServices(); // Refresh table and cards
+        } else {
+          toast.error(res.message || "Something went wrong");
+        }
+      } catch (error) {
+        toast.error("Something went wrong");
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   return (

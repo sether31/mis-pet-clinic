@@ -149,7 +149,7 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
                 <td className="px-6 py-4 text-center">
                   <div className="flex justify-center gap-2">
                     <button onClick={() => onEdit(service)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-black transition-all"><HiPencilAlt size={16}/></button>
-                    <button onClick={() => onToggleStatus(service)} className={`p-2 bg-white border border-gray-300 rounded-lg cursor-pointer transition-all ${Number(service.status) === 1 ? 'hover:border-red-500' : 'hover:border-green-500'}`}>
+                    <button onClick={() => onToggleStatus(service)} className={`p-2 bg-white border border-gray-300 rounded-lg cursor-pointer transition-all ${Number(service.status) === 1 ? 'hover:border-red-600 hover:text-red-600' : 'hover:border-(--clr-primary) hover:text-(--clr-primary)'}`}>
                       {Number(service.status) === 1 ? <HiArchive size={16}/> : <HiRefresh size={16}/>}
                     </button>
                   </div>
