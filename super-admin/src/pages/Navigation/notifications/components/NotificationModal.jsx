@@ -37,7 +37,7 @@ export default function NotificationModal({ isOpen, onClose, notification, getCa
           {/* Changed to a neutral Close button */}
           <button 
             onClick={onClose}
-            className="w-full py-3.5 bg-red-100 hover:bg-red-200 text-red-700 font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-(--clr-primary)/95 hover:bg-(--clr-primary) text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 active:scale-95"
           >
             Close
           </button>
