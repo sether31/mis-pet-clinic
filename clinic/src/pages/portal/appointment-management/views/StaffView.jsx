@@ -12,6 +12,7 @@ import CreateAppointmentModalStaff from '../components/CreateAppointmentModalSta
 // icons
 import { HiRefresh, HiPlus } from 'react-icons/hi';
 import { IoLockClosedOutline } from "react-icons/io5";
+import AppointmentHistoryTable from '../components/AppointmentHistoryTable';
 
 export default function StaffView({ appointments, loading, onSelect, user, onRefresh, branchId }) {
   const { branchData } = useOutletContext();
@@ -175,6 +176,18 @@ export default function StaffView({ appointments, loading, onSelect, user, onRef
           )}
         </main>
       </div>
+
+      <section className="mt-15">
+        <div className='mb-4'>
+          <h1 className="text-2xl font-bold tracking-tight">Appointment History</h1>
+          <p className="text-gray-500">Managing appointment history</p>
+        </div>
+        
+        {/* Wrapping in a Card Style */}
+        <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
+          <AppointmentHistoryTable data={appointments} loading={loading} />
+        </div>
+      </section>
     </div>
   );
 }
