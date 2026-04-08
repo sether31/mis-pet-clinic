@@ -13,12 +13,12 @@ if(!$branch_id || $branch_id === 'undefined') {
 try {
   $pdo = (new Database())->pdo;
   $stmt = $pdo->prepare(
-    "SELECT * FROM service_tb 
-    WHERE service_id NOT IN (
-      SELECT service_id FROM branch_service_tb WHERE branch_id = :branch_id
+  "SELECT * FROM service_tb 
+    WHERE name NOT IN (
+      SELECT custom_name FROM branch_service_tb WHERE branch_id = :branch_id
     ) ORDER BY name ASC"
   );
-  $stmt->execute(['branch_id' => $branch_id]);
+$stmt->execute(['branch_id' => $branch_id]);
   $services = $stmt->fetchAll();
 
   echo json_encode(["success" => true, "data" => $services]);
