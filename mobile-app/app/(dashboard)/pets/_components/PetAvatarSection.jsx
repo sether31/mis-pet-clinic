@@ -33,6 +33,7 @@ export default function PetAvatarSection({ pet, newImage, isEditing, activeTab, 
       
       {!isEditing && (
         <>
+          <AppText style={styles.petMainId}>#{pet?.pet_id}</AppText>
           <AppText style={styles.petMainName}>{pet?.name}</AppText>
           <AppText style={styles.petSubText}>{pet?.breed} • {pet?.species}</AppText>
           
@@ -84,6 +85,7 @@ const styles = StyleSheet.create({
   },
   petImage: { width: '100%', height: '100%' },
   editBadge: { position: 'absolute', bottom: 0, width: '100%', backgroundColor: 'rgba(0,0,0,0.5)', paddingVertical: 6, alignItems: 'center' },
+  petMainId: { fontSize: 15, color: '#6B7280', fontWeight: '500', marginBottom: 2 },
   petMainName: { fontSize: 24, fontWeight: '900', color: '#111827', textTransform: 'capitalize' },
   petSubText: { fontSize: 15, color: '#6B7280', marginTop: 4, fontWeight: '500', textTransform: 'capitalize' },
   

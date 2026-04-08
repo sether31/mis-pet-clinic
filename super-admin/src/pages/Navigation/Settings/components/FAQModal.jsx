@@ -121,7 +121,7 @@ export default function FAQModal({ initialData, onClose, onRefresh }) {
             name="question"
             value={form.question}
             isImportant={true}
-            placeholder="e.g., What are your operating hours?"
+            placeholder="ex. How do I register my clinic??"
             onChange={handleChange}
             error={errors.question}
           />

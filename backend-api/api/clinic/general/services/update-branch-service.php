@@ -16,6 +16,24 @@ try {
 
   $pdo->beginTransaction();
 
+  $stmtCheck = $pdo->prepare("
+    SELECT COUNT(*) 
+    FROM branch_service_tb 
+    WHERE custom_name = :name 
+    AND branch_id = :bid 
+    AND branch_service_id != :bsid
+  ");
+  
+  $stmtCheck->execute([
+    ':name' => $data['custom_name'],
+    ':bid'  => $data['branch_id'],
+    ':bsid' => $data['branch_service_id']
+  ]);
+
+  if ($stmtCheck->fetchColumn() > 0) {
+    throw new Exception("A service with this name already exists in this branch.");
+  }
+
   // get clinic for audit
   $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
   $stmtClinic->execute([$data['branch_id']]);
@@ -67,7 +85,7 @@ try {
   $pdo->commit();
 
 } catch(Exception $e) {
-  http_response_code(500);
+  http_response_code(400);
   echo json_encode([
     "success" => false, 
     "message" => "Update failed: " . $e->getMessage()

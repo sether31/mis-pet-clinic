@@ -10,6 +10,8 @@ import { HiMiniExclamationCircle } from 'react-icons/hi2';
 import { useUI } from '../../../../hooks/useUI';
 // components
 import SubscriptionGate from '../../../../components/SubscriptionGate';
+import { LuPhone } from 'react-icons/lu';
+import { MdEmail, MdOutlineMailOutline } from 'react-icons/md';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -112,10 +114,10 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-6 overflow-y-auto max-h-[80vh] space-y-6">
+        <div className="p-4 lg:p-6 overflow-y-auto max-h-[80vh] space-y-6">
           
           {/* --- Patient Profile Card --- */}
-          <div className="relative px-6 py-6 overflow-hidden border border-gray-100 bg-gray-50/50 rounded-3xl">
+          <div className="relative px-0 py-6 lg:p-6 overflow-hidden border border-gray-100 bg-gray-50/50 rounded-3xl">
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
               
               {/* Pet Image */}
@@ -165,10 +167,36 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
 
             {/* Relationship Section */}
             <div className="flex flex-col gap-2 px-2 mt-6">
-              <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
-                Owner: <span className="text-gray-900">{ownerName}</span>
-              </p>
-              <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
+              {/* Owner Info */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
+                  Owner: <span className="text-gray-900">{ownerName}</span>
+                </p>
+                
+                <div className="flex flex-wrap items-center gap-4 mt-1">
+                  {/* Phone */}
+                  <div className="flex items-center gap-1.5">
+                    <div className="p-1 rounded-md bg-gray-100 text-gray-500">
+                      <LuPhone size={16} />
+                    </div>
+                    <span className="text-xs font-bold text-gray-600">
+                      {selectedAppointment?.owner_phone || selectedAppointment?.phone_number || 'N/A'}
+                    </span>
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex items-center gap-1.5">
+                    <div className="p-1 rounded-md bg-gray-100 text-gray-500">
+                      <MdOutlineMailOutline /> 
+                    </div>
+                    <span className="text-xs font-bold text-gray-600 truncate max-w-[180px]">
+                      {selectedAppointment?.owner_email || selectedAppointment?.email || 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase mt-4">
                 Assigned Staff: <span className="text-gray-900">{staffName}</span>
               </p>
             </div>
@@ -238,7 +266,7 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
           </div>
 
           {/* --- Action Buttons --- */}
-          <div className="grid grid-cols-2 gap-4 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
             <SubscriptionGate>
               <button 
                 onClick={() => handleAction('confirmed')}

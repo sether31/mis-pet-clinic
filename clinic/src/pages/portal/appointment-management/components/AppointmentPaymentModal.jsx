@@ -17,6 +17,8 @@ import { IoLockClosedOutline } from 'react-icons/io5';
 import Swal from 'sweetalert2';
 import { formatDateTime } from '../../../../utils/dateFormatter';
 import { HiMiniExclamationCircle } from 'react-icons/hi2';
+import { LuPhone } from 'react-icons/lu';
+import { MdOutlineMailOutline } from 'react-icons/md';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -290,7 +292,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
       return acc;
     }, {})
   );
-
+  
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-10000 bg-black/70 backdrop-blur-sm">
       <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white rounded-2xl">
@@ -361,10 +363,36 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
 
                   {/* Relationship Section */}
                   <div className="flex flex-col gap-2 px-2 mt-6">
-                    <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
-                      Owner: <span className="text-gray-900">{activeTask?.owner_name}</span>
-                    </p>
-                    <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
+                    {/* Owner Info */}
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase">
+                        Owner: <span className="text-gray-900">{activeTask?.owner_name}</span>
+                      </p>
+                      
+                      <div className="flex flex-wrap items-center gap-4 mt-1">
+                        {/* Phone */}
+                        <div className="flex items-center gap-1.5">
+                          <div className="p-1 rounded-md bg-gray-100 text-gray-500">
+                            <LuPhone size={16} />
+                          </div>
+                          <span className="text-xs font-bold text-gray-600">
+                            {activeTask?.owner_phone || activeTask?.phone_number || 'N/A'}
+                          </span>
+                        </div>
+      
+                        {/* Email */}
+                        <div className="flex items-center gap-1.5">
+                          <div className="p-1 rounded-md bg-gray-100 text-gray-500">
+                            <MdOutlineMailOutline /> 
+                          </div>
+                          <span className="text-xs font-bold text-gray-600 truncate max-w-[180px]">
+                            {activeTask?.owner_email || activeTask?.email || 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] font-black tracking-widest text-gray-400 uppercase mt-4">
                       Assigned Staff: <span className="text-gray-900">{activeTask?.staff_name || 'Not assigned'}</span>
                     </p>
                   </div>

@@ -100,7 +100,7 @@ export default function ServiceTable({ data = [], onEdit, onToggleStatus, onCrea
 
       {/* table */}
       <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left table-fixed">
+        <table className="w-full text-left border-collapse min-w-[1100px]">
           {/* table head */}
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600 select-none">

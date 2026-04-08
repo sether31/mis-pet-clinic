@@ -123,7 +123,7 @@ export default function FAQTable({ data = [], onEdit, onToggleStatus, onCreate }
 
       {/* Main Table Area */}
       <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left table-fixed">
+        <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600 select-none">
               <th onClick={() => handleSort('sort_order')} className="w-[10%] px-6 py-4 border-r border-gray-300 text-center cursor-pointer hover:bg-gray-100">
