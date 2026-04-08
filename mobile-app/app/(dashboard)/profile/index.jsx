@@ -80,6 +80,7 @@ export default function ProfileTab() {
           <View style={styles.profileCard}>
             <Image source={userImage} style={styles.avatar} />
             <View style={styles.profileInfo}>
+              <AppText style={styles.nameId} numberOfLines={1}>#{user?.user_id}</AppText>
               <AppText style={styles.nameText} numberOfLines={1}>{user?.name}</AppText>
               <AppText style={styles.memberSinceText}>
                 Member since {new Date(user?.created_at || Date.now()).getFullYear()}
@@ -193,6 +194,7 @@ const styles = StyleSheet.create({
   profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 20, borderRadius: 20, marginBottom: 20, borderWidth: 1, borderColor: '#D1D5DB' },
   avatar: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#F3F4F6', resizeMode: 'cover', borderWidth: 4, borderColor: Colors.primary },
   profileInfo: { flex: 1, marginLeft: 15 },
+  nameId: { fontSize: 13, color: '#6B7280', fontWeight: '500', marginBottom: 2 },
   nameText: { fontSize: 20, fontWeight: '800', color: '#1F1F1F', marginBottom: 4, paddingRight: 10 },
   memberSinceText: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   editBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#42756C15', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D1D5DB' },

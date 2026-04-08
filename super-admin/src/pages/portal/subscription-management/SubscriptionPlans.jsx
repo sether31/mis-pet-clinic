@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 // utils
 import { authFetch } from '../../../utils/authFetch';
 // component
@@ -47,26 +48,51 @@ export default function SubscriptionPage() {
 
   // toggle archive and restore
   const handleToggleStatus = async (sub) => {
-    const newStatus = Number(sub.is_active) === 1 ? 0 : 1;
-    
-    try {
-      const response = await authFetch(`${API_URL}/api/super-admin/subscription/update-subscription.php`, {
-        method: 'POST',
-        body: JSON.stringify({ 
-          ...sub,
-          is_active: newStatus 
-        })
-      });
-      
-      if(response.success) {
-        toast.success(newStatus === 1 ? "Subscription Restored!" : "Subscription has been Archived!");
-        // refresh the data to show the updated
-        fetchSubscriptions(); 
-      } else {
-        toast.error("Something went wrong");
+    const isArchiving = Number(sub.is_active) === 1;
+    const newStatus = isArchiving ? 0 : 1;
+
+    // 1. Show Confirmation Dialog
+    const result = await Swal.fire({
+      title: isArchiving ? 'Archive Subscription?' : 'Restore Subscription?',
+      text: `Are you sure you want to ${isArchiving ? 'archive' : 'restore'} the "${sub.name}" plan?`,
+      icon: isArchiving ? 'warning' : 'info',
+      buttonsStyling: false,
+      showCancelButton: true,
+      confirmButtonText: isArchiving ? 'Yes, Archive' : 'Yes, Restore',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      customClass: {
+        confirmButton: `rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold 
+        ${isArchiving ? 'bg-red-500 hover:bg-red-600' : 'bg-(--clr-primary)/95 hover:bg-(--clr-primary)'}
+        `,
+        cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold border border-gray-200 ml-3'
       }
-    } catch(error) {
-      toast.error("Something went wrong");
+    });
+
+    // 2. Proceed if user confirmed
+    if (result.isConfirmed) {
+      setLoading(true); // Use your existing loading state
+      try {
+        const response = await authFetch(`${API_URL}/api/super-admin/subscription/update-subscription.php`, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            ...sub,
+            is_active: newStatus 
+          })
+        });
+        
+        if (response.success) {
+          toast.success(response.message || (newStatus === 1 ? "Subscription Restored!" : "Subscription Archived!"));
+          fetchSubscriptions(); // Refresh the list
+        } else {
+          toast.error(response.message || "Something went wrong");
+        }
+      } catch (error) {
+        console.error("Update Error:", error);
+        toast.error("Something went wrong");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

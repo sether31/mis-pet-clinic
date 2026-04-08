@@ -35,13 +35,13 @@ try {
   // Update the status
   $stmt = $pdo->prepare(
     "UPDATE appointments_tb 
-    SET status = 'cancelled', feedback = 'cancelled by user' 
+    SET status = 'cancelled', feedback = 'cancelled by user', last_updated_by = ?, updated_at = NOW()
     WHERE appointment_id = ? 
     AND user_id = ? 
     AND status IN ('pending', 'confirmed')"
   );
   
-  $stmt->execute([$appointment_id, $user_id]);
+  $stmt->execute([$user_id, $appointment_id, $user_id]);
 
   if($stmt->rowCount() > 0) {
     log_audit(

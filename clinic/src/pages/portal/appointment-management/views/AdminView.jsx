@@ -11,6 +11,7 @@ import AppointmentPaymentModal from '../components/AppointmentPaymentModal';
 import CreateAppointmentModalAdmin from '../components/CreateAppointmentModalAdmin';
 // icons
 import { HiPlus, HiRefresh } from 'react-icons/hi';
+import AppointmentHistoryTable from '../components/AppointmentHistoryTable';
 
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -46,6 +47,7 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
       }
     }
   }, [searchParams, appointments, onSelect, setSearchParams]);
+
 
   useEffect(() => {
     const fetchStaff = async () => {
@@ -202,6 +204,18 @@ export default function AdminView({ appointments, loading, onSelect, user, onRef
           )}
         </main>
       </div>
+
+      <section className="mt-15">
+        <div className='mb-4'>
+          <h1 className="text-2xl font-bold tracking-tight">Appointment History</h1>
+          <p className="text-gray-500">Managing appointment history</p>
+        </div>
+        
+        {/* Wrapping in a Card Style */}
+        <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
+          <AppointmentHistoryTable data={appointments} loading={loading} />
+        </div>
+      </section>
     </div>
   );
 }

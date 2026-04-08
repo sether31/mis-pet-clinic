@@ -111,11 +111,22 @@ try {
   $serviceName = $appt['custom_name'] ?? 'service';
   $notifiedUsers = []; 
 
-  // Fetch the Actor's Name (Who clicked the button)
-  $actorStmt = $pdo->prepare("SELECT first_name, last_name FROM user_tb WHERE user_id = ? LIMIT 1");
+  // 1. Fetch Actor's Name AND Role Name
+  $actorStmt = $pdo->prepare("
+      SELECT u.first_name, u.last_name, r.role_name 
+      FROM user_tb u
+      JOIN roles_tb r ON u.role_id = r.role_id
+      WHERE u.user_id = ? LIMIT 1
+  ");
   $actorStmt->execute([$actorId]);
   $actor = $actorStmt->fetch(PDO::FETCH_ASSOC);
+
   $actorName = $actor ? trim($actor['first_name'] . ' ' . $actor['last_name']) : 'Staff';
+  // Format Role (e.g., 'clinic_admin' -> 'Clinic Admin')
+  $actorRole = $actor ? ucwords(str_replace('_', ' ', $actor['role_name'])) : 'Staff';
+
+  // Combined Actor String: "Clinic Admin (Seth Hernandez)"
+  $actorDisplay = "{$actorRole} ({$actorName})";
 
   if($is_card) {
       // --- CASE: CARD ---
@@ -159,7 +170,7 @@ try {
       $custMsg = "Your cash payment of ₱{$formattedTotal} for {$petName} has been processed. Thank you!";
       send_notification($pdo, $appt['user_id'], 'billing', $custTitle, $custMsg);
 
-      $sharedInternalMsg = "Cash payment of ₱{$formattedTotal} for {$petName}'s {$serviceName} received by {$actorName}.";
+      $sharedInternalMsg = "Cash payment of ₱{$formattedTotal} for {$petName}'s {$serviceName} received by {$actorDisplay}.";
 
       // 1. Notify Staff AND Branch Admin
       $staffStmt = $pdo->prepare("

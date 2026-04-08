@@ -16,6 +16,17 @@ try {
 
   $pdo->beginTransaction();
 
+  $stmtDuplicate = $pdo->prepare("SELECT COUNT(*) FROM branch_service_tb WHERE branch_id = :bid AND custom_name = :name");
+  $stmtDuplicate->execute([
+    ':bid' => $data['branch_id'],
+    ':name' => $data['custom_name']
+  ]);
+  
+  if ($stmtDuplicate->fetchColumn() > 0) {
+    // Throw an exception so the transaction rolls back and the catch block handles the response
+    throw new Exception("A service with this name already exists in this branch.");
+  }
+
   // get clinic for audit
   $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
   $stmtClinic->execute([$data['branch_id']]);

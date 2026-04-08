@@ -17,18 +17,31 @@ try {
   $stmtStats = $pdo->query(
     "SELECT 
     (SELECT COUNT(*) FROM clinic_branches_tb WHERE status = 'approved') as total_clinics,
-
+    
     (SELECT COUNT(*) FROM user_tb WHERE status = 'approved') as total_users,
-
+    
     (
       (SELECT COUNT(*) FROM appointments_tb WHERE status = 'completed') + 
       (SELECT COUNT(*) FROM order_tb WHERE order_status = 'completed' AND pickup_date IS NOT NULL)
-    ) as total_impact"
+    ) as total_impact,
+
+    (SELECT name FROM subscription_tb WHERE is_active = 1 ORDER BY price ASC LIMIT 1) as min_tier_name,
+    (SELECT price FROM subscription_tb WHERE is_active = 1 ORDER BY price ASC LIMIT 1) as min_price,
+    
+    /* Get Highest Tier Name and Price */
+    (SELECT name FROM subscription_tb WHERE is_active = 1 ORDER BY price DESC LIMIT 1) as max_tier_name,
+    (SELECT price FROM subscription_tb WHERE is_active = 1 ORDER BY price DESC LIMIT 1) as max_price"
   );
   $stats = $stmtStats->fetch();
 
+  $stmtShop = $pdo->query("SELECT name FROM subscription_tb WHERE has_shop = 1 AND is_active = 1 ORDER BY price ASC");
+  $shopTiers = $stmtShop->fetchAll(PDO::FETCH_COLUMN);
+
   $stmt = $pdo->prepare("SELECT service_id, name FROM service_tb ORDER BY name ASC LIMIT 10");
   $stmt->execute();
+
+  $stmtFaq = $pdo->query("SELECT * FROM landing_accordion_tb WHERE is_active = 1 ORDER BY sort_order ASC");
+  $faqs = $stmtFaq->fetchAll();
 
   $services = $stmt->fetchAll();
 
@@ -37,9 +50,19 @@ try {
     "stats" => [
       "clinics" => (int)($stats['total_clinics'] ?? 0),
       "users" => (int)($stats['total_users'] ?? 0),
-      "impact" => (int)($stats['total_impact'] ?? 0) 
+      "impact" => (int)($stats['total_impact'] ?? 0),
+      "min_tier" => [
+        "name" => $stats['min_tier_name'] ?? 'Basic',
+        "price" => (float)($stats['min_price'] ?? 0)
+      ],
+      "max_tier" => [
+        "name" => $stats['max_tier_name'] ?? 'Enterprise',
+        "price" => (float)($stats['max_price'] ?? 0)
+      ],
+      "shop_tiers" => $shopTiers
     ],
-    "services" => $services
+    "services" => $services,
+    "faqs" => $faqs
   ]);
 
 } catch(Exception $e) {

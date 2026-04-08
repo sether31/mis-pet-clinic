@@ -8,10 +8,10 @@ import { validateEmail } from '../../../../utils/validateEmail';
 // components
 import Input from '../../../../components/Input';
 import InputImage from '../../../../components/InputImage';
-// icons
-import { RiGlobalLine, RiDatabase2Line, RiMailLine, RiPhoneLine } from 'react-icons/ri';
-import { HiSave } from 'react-icons/hi';
 import LoaderV2 from '../../../../components/LoaderV2';
+// icons
+import { RiGlobalLine, RiDatabase2Line, RiMailLine, RiPhoneLine, RiShieldKeyholeLine } from 'react-icons/ri';
+import { HiSave } from 'react-icons/hi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -146,11 +146,25 @@ export default function GeneralSettings() {
       ) : (
         <>
           <div className="grid grid-cols-1">
+
+            {/* Header Section */}
+            <div className="flex flex-col items-center gap-2 mb-8 text-center sm:text-left sm:flex-row">
+              <div className="rounded-lg text-gray-700">
+                <RiGlobalLine size={36} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">General Settings</h2>
+                <p className="text-sm text-gray-500">
+                  Manage your platform's core identity, contact information, and global configurations.
+                </p>
+              </div>
+            </div>
+
             <div className="space-y-10">       
               {/* platform info */}
               <div className="space-y-6">
                 <div className="flex items-center gap-1 pb-2 text-lg font-bold text-gray-900 border-b border-gray-100">
-                  <RiGlobalLine size={24} className="text-gray-700" />
+                  <RiShieldKeyholeLine size={24} className="text-gray-700" />
                   Platform Information
                 </div>
 
