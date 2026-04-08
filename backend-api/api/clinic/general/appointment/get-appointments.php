@@ -31,6 +31,8 @@ try {
     REPLACE(r.role_name, '_', ' ') as role_name,
     u_owner.first_name as owner_fname, 
     u_owner.last_name as owner_lname,
+    u_owner.email,
+    u_owner.phone_number,
     CONCAT(u_owner.first_name, ' ', u_owner.last_name) as owner_name,
     u_staff.first_name as staff_fname, 
     u_staff.last_name as staff_lname,
