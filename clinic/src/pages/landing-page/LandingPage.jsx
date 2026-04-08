@@ -465,7 +465,7 @@ export default function LandingPage() {
                     <span>Get the APK</span>
                     <LuDownload size={26} />
                   </a>
-                  <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.4 • Approx. 110.4MB</span>
+                  <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.5 • Approx. 110.4MB</span>
                 </div>
 
                 {/* qr*/}
