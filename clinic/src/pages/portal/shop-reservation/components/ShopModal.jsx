@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
-// components
 import SubscriptionGate from '../../../../components/SubscriptionGate';
-// icons
 import { HiXCircle, HiInformationCircle } from 'react-icons/hi';
 import noImage from '../../../../assets/images/no-image.jpg';
 
@@ -15,26 +13,23 @@ export default function ShopModal({ order, onClose, onUpdate }) {
   const getAvatarUrl = (name) => {
     const isGuest = !name || name.trim() === "";
     const displayName = isGuest ? 'G' : name;
-  
-    const bg = 'd1fae5';
-    const color = '42756C';
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=${bg}&color=${color}&bold=true`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=d1fae5&color=42756C&bold=true`;
   };
 
-  //  Safely handle Guest Sales which have NO pickup_date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
+  // A record is only "Locked" if it reached a final state
+  const isLocked = ['completed', 'cancelled', 'rejected'].includes(order.order_status);
+
+  // Logic: Only show overdue if the date passed AND the order is still pending/confirmed
   let isOverdue = false;
-  if (order.pickup_date) {
+  if (order.pickup_date && !isLocked) {
     const pickupDate = new Date(order.pickup_date);
     pickupDate.setHours(0, 0, 0, 0);
     isOverdue = pickupDate < today;
   }
 
-  const isLocked = ['completed', 'cancelled', 'rejected'].includes(order.order_status);
-
-  // Dynamic naming based on current status
   const actionName = order.order_status === 'pending' ? 'Reject' : 'Cancel';
   const targetStatus = order.order_status === 'pending' ? 'rejected' : 'cancelled';
 
@@ -102,7 +97,8 @@ export default function ShopModal({ order, onClose, onUpdate }) {
         </div>
 
         <div className="flex flex-col p-8 space-y-6 overflow-y-auto custom-scrollbar">
-          {isOverdue && !isLocked && (
+          {/* Overdue Banner: Only shows if order isn't completed/cancelled */}
+          {isOverdue && (
             <div className="flex items-center gap-3 p-4 border border-amber-200 bg-amber-50 rounded-xl">
               <HiInformationCircle className="text-amber-500" size={20} />
               <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">
@@ -119,21 +115,17 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                   src={order.profile_picture 
                     ? `${API_URL}/${order.profile_picture}` 
                     : getAvatarUrl(order.owner_name)} 
-                  onError={(e) => {
-                    e.target.src = noImage; 
-                  }}
+                  onError={(e) => { e.target.src = noImage; }}
                   alt="Customer"
                   className="object-cover w-full h-full"
                 />
               </div>
               <div>
                 <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest">Customer Name</p>
-                {/* 👇 Added Guest Walk-in styling fallback */}
                 <p className={`text-base font-black uppercase mb-1 ${order.owner_name ? 'text-(--text-primary)' : 'text-gray-500 italic'}`}>
                   {order.owner_name || "Guest Walk-in"}
                 </p>
                 
-                {/* 👇 Handle missing dates for direct sales */}
                 <p className="text-[10px] font-bold uppercase mt-1">
                   {order.pickup_date ? (
                     <>
@@ -151,7 +143,7 @@ export default function ShopModal({ order, onClose, onUpdate }) {
             </div>
           </div>
 
-          {/* Reserved Items Section */}
+          {/* Items Section */}
           <div className="space-y-3">
             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
               {order.pickup_date ? "Reserved Items" : "Purchased Items"}
@@ -224,7 +216,6 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                 )}
               </div>
 
-              {/* Reject/Cancel */}
               {!isLocked && (
                 <button 
                   onClick={handleRejectClick}
@@ -235,7 +226,6 @@ export default function ShopModal({ order, onClose, onUpdate }) {
                 </button>
               )}
 
-              {/* Cancellation Reason Footer */}
               {isLocked && order.cancellation_reason && (
                 <div className="flex items-start gap-3 p-4 mt-2 border border-red-100 bg-red-50 rounded-xl">
                   <HiInformationCircle className="text-red-500 mt-0.5 shrink-0" size={16} />
@@ -249,24 +239,16 @@ export default function ShopModal({ order, onClose, onUpdate }) {
               )}
 
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-3">
-                    <p className="text-[10px] font-bold text-gray-700 uppercase italic">
-                      Last Updated: {order?.updated_at 
-                      ? new Date(order.updated_at).toLocaleString('en-US', { 
-                          month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
-                        }) 
+                <div className="flex items-center gap-3">
+                  <p className="text-[10px] font-bold text-gray-700 uppercase italic">
+                    Last Updated: {order?.updated_at 
+                      ? new Date(order.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
                       : '---'}
-                    </p>
-                    
-                    <span className="text-gray-300">|</span>
-                    
-                    <div className="flex items-center gap-1">
-                      <span className={`text-[10px] font-black uppercase ${!order?.updated_by_name ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
-                        Updated By: {order?.updated_by_name || 'No record yet'}
-                      </span>
-                    </div>
-                  </div>
+                  </p>
+                  <span className="text-gray-300">|</span>
+                  <span className={`text-[10px] font-black uppercase ${!order?.updated_by_name ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
+                    Updated By: {order?.updated_by_name || 'No record yet'}
+                  </span>
                 </div>
               </div>
             </div>
