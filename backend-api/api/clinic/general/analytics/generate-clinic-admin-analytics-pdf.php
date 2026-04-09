@@ -40,42 +40,112 @@ try {
     $platform = $platformStmt->fetch();
     $platformName = ucwords(strtolower($platform['platform_name'] ?? 'Clinic Platform'));
 
-    // 2. VIRTUAL DATE & STATUS DEFINITIONS
-    $virtualDate = "COALESCE((SELECT MIN(a.start_time) FROM appointments_tb a WHERE a.order_id = p.order_id), p.created_at)";
-    $paidStatuses = "'paid', 'completed', 'success', 'fully paid', 'billed'";
-    $pendingStatuses = "'pending', 'unpaid', 'partially paid'";
+    // 2. FILTERS
+    $virtualDate = "CASE 
+        WHEN p.payment_type = 'appointment' THEN (SELECT MIN(a.start_time) FROM appointments_tb a WHERE a.order_id = p.order_id)
+        WHEN p.payment_type = 'product' THEN (SELECT o.pickup_date FROM order_tb o WHERE o.order_id = p.order_id)
+        ELSE p.created_at 
+    END";
     
     $revDateClause = getSqlDateConstraint($period, $virtualDate);
-    $apptDateClause = getSqlDateConstraint($period, "a.start_time");
-    $branchSub = "SELECT branch_id FROM clinic_branches_tb WHERE clinic_id = :cid";
+    $branchSub = "SELECT branch_id FROM clinic_branches_tb WHERE clinic_id = :cid AND LOWER(status) = 'approved'";
 
-    // KPI Queries
-    $revStmt = $pdo->prepare("SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p WHERE p.branch_id IN ($branchSub) AND LOWER(p.payment_status) IN ($paidStatuses) AND p.subscription_id IS NULL $revDateClause");
+    /**
+     * BROAD CONDITION 
+     * Includes all items (Billed, Pending, Paid) as long as the appointment itself 
+     * is no longer in 'pending' or 'confirmed' status.
+     */
+    $broadCondition = "p.branch_id IN ($branchSub) 
+        AND (p.payment_type != 'appointment' 
+             OR EXISTS (SELECT 1 FROM appointments_tb a WHERE a.order_id = p.order_id AND LOWER(a.status) NOT IN ('pending', 'confirmed'))) 
+        $revDateClause";
+
+    /**
+     * STRICT CONDITION 
+     * Specifically for "Money in the Bank".
+     */
+    $strictCondition = $broadCondition . " AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed')";
+
+    // --- KPI CALCULATIONS ---
+
+    // Total Revenue (STRICT)
+    $revStmt = $pdo->prepare("SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p WHERE $strictCondition AND p.subscription_id IS NULL");
     $revStmt->execute([':cid' => $clinic_id]);
-    $totalRevenue = $revStmt->fetchColumn();
+    $totalRevenue = (float)$revStmt->fetchColumn();
 
-    $pendStmt = $pdo->prepare("SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p WHERE p.branch_id IN ($branchSub) AND LOWER(p.payment_status) IN ($pendingStatuses) AND p.subscription_id IS NULL $revDateClause");
+    // Pending Revenue
+    $pendStmt = $pdo->prepare("SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p WHERE $broadCondition AND LOWER(p.payment_status) IN ('pending', 'unpaid', 'partially paid') AND p.subscription_id IS NULL");
     $pendStmt->execute([':cid' => $clinic_id]);
-    $pendingRevenue = $pendStmt->fetchColumn();
+    $pendingRevenue = (float)$pendStmt->fetchColumn();
 
-    $apptStmt = $pdo->prepare("SELECT COUNT(*) FROM appointments_tb a WHERE a.branch_id IN ($branchSub) AND LOWER(a.status) = 'completed' $apptDateClause");
-    $apptStmt->execute([':cid' => $clinic_id]);
-    $totalAppts = $apptStmt->fetchColumn();
+    // Completed Reservations (Strict)
+    $resStmt = $pdo->prepare("SELECT COUNT(DISTINCT p.order_id) FROM payments_tb p WHERE $strictCondition AND p.payment_type = 'product'");
+    $resStmt->execute([':cid' => $clinic_id]);
+    $totalReservations = (int)$resStmt->fetchColumn();
 
-    $prodSalesKpiStmt = $pdo->prepare("SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items_tb oi JOIN payments_tb p ON oi.order_id = p.order_id WHERE p.branch_id IN ($branchSub) AND LOWER(p.payment_status) IN ($paidStatuses) AND oi.product_id IS NOT NULL $revDateClause");
-    $prodSalesKpiStmt->execute([':cid' => $clinic_id]);
-    $totalProductUnits = $prodSalesKpiStmt->fetchColumn();
+    // Product Sales Volume (CHANGED TO BROAD: To show products tied to pending/billed appointments)
+    $prodKpiStmt = $pdo->prepare("SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items_tb oi JOIN payments_tb p ON oi.order_id = p.order_id WHERE $broadCondition AND oi.product_id IS NOT NULL");
+    $prodKpiStmt->execute([':cid' => $clinic_id]);
+    $totalProductUnits = (int)$prodKpiStmt->fetchColumn();
+
+    // Other KPI Counts
+    $staffStmt = $pdo->prepare("SELECT COUNT(*) FROM branch_staff_tb WHERE branch_id IN ($branchSub) AND status = 1");
+    $staffStmt->execute([':cid' => $clinic_id]);
+    $totalStaff = $staffStmt->fetchColumn();
 
     $branchCountStmt = $pdo->prepare("SELECT COUNT(*) FROM clinic_branches_tb WHERE clinic_id = :cid AND LOWER(status) = 'approved'");
     $branchCountStmt->execute([':cid' => $clinic_id]);
     $totalBranches = $branchCountStmt->fetchColumn();
 
-    $staffStmt = $pdo->prepare("SELECT COUNT(*) FROM branch_staff_tb WHERE branch_id IN ($branchSub) AND status = 1");
-    $staffStmt->execute([':cid' => $clinic_id]);
-    $totalStaff = $staffStmt->fetchColumn();
+    // --- DATA TABLES ---
 
-    // 3. BRANCHES OVERVIEW
-    $branchesStmt = $pdo->prepare("SELECT b.branch_id, b.name, b.status, b.is_maintenance, (SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p WHERE p.branch_id = b.branch_id AND LOWER(p.payment_status) IN ($paidStatuses) AND p.subscription_id IS NULL $revDateClause) as branch_revenue FROM clinic_branches_tb b WHERE b.clinic_id = :cid AND LOWER(b.status) = 'approved'");
+    // 1. SERVICES TABLE (Broad)
+    $svcStmt = $pdo->prepare("SELECT COALESCE(bs.custom_name, 'Unknown Service') as name, COUNT(oi.service_id) as count, SUM(oi.subtotal) as revenue FROM order_items_tb oi JOIN payments_tb p ON oi.order_id = p.order_id LEFT JOIN branch_service_tb bs ON oi.service_id = bs.branch_service_id WHERE $broadCondition AND oi.service_id IS NOT NULL GROUP BY bs.custom_name ORDER BY revenue DESC");
+    $svcStmt->execute([':cid' => $clinic_id]);
+    $allServices = $svcStmt->fetchAll();
+
+    $itemsHtml = ""; $grandTotalSvcRev = 0; $grandTotalSvcVol = 0;
+    foreach ($allServices as $s) {
+        $grandTotalSvcRev += $s['revenue'];
+        $grandTotalSvcVol += $s['count'];
+        $itemsHtml .= "<tr>
+            <td style='padding: 8px; border: 1px solid #ddd;'>" . ucwords(strtolower(htmlspecialchars($s['name']))) . "</td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align:center;'>{$s['count']}</td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>PHP " . number_format($s['revenue'], 2) . "</td>
+        </tr>";
+    }
+
+    // 2. PRODUCTS TABLE (CHANGED TO BROAD: To include pending products tied to appointments)
+    $prdStmt = $pdo->prepare("SELECT pr.name, SUM(oi.quantity) as qty, SUM(oi.subtotal) as revenue 
+        FROM order_items_tb oi 
+        JOIN payments_tb p ON oi.order_id = p.order_id 
+        JOIN products_tb pr ON oi.product_id = pr.product_id 
+        WHERE $broadCondition AND oi.product_id IS NOT NULL 
+        GROUP BY pr.name 
+        ORDER BY revenue DESC");
+    $prdStmt->execute([':cid' => $clinic_id]);
+    $allProducts = $prdStmt->fetchAll();
+
+    $prodRowsHtml = ""; $grandTotalProdRev = 0; $grandTotalProdQty = 0;
+    foreach ($allProducts as $pr) {
+        $grandTotalProdRev += $pr['revenue'];
+        $grandTotalProdQty += $pr['qty'];
+        $prodRowsHtml .= "<tr>
+            <td style='padding: 8px; border: 1px solid #ddd;'>" . ucwords(strtolower(htmlspecialchars($pr['name']))) . "</td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>{$pr['qty']} Units</td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>PHP " . number_format($pr['revenue'], 2) . "</td>
+        </tr>";
+    }
+
+    // 3. BRANCH OVERVIEW (Strict)
+    $branchesStmt = $pdo->prepare("SELECT b.branch_id, b.name, b.status, b.is_maintenance, 
+        (SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p 
+         WHERE p.branch_id = b.branch_id 
+         AND p.subscription_id IS NULL 
+         AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed')
+         AND (p.payment_type != 'appointment' OR EXISTS (SELECT 1 FROM appointments_tb a WHERE a.order_id = p.order_id AND LOWER(a.status) NOT IN ('pending', 'confirmed'))) 
+         $revDateClause) as branch_revenue 
+        FROM clinic_branches_tb b WHERE b.clinic_id = :cid AND LOWER(b.status) = 'approved'");
     $branchesStmt->execute([':cid' => $clinic_id]);
     $branchesData = $branchesStmt->fetchAll();
 
@@ -91,38 +161,6 @@ try {
         </tr>";
     }
 
-    // 4. TOP SERVICES
-    $svcStmt = $pdo->prepare("SELECT COALESCE(bs.custom_name, 'Unknown Service') as name, COUNT(oi.service_id) as count, SUM(oi.subtotal) as revenue FROM order_items_tb oi JOIN payments_tb p ON oi.order_id = p.order_id LEFT JOIN branch_service_tb bs ON oi.service_id = bs.branch_service_id WHERE p.branch_id IN ($branchSub) AND LOWER(p.payment_status) IN ($paidStatuses) AND oi.service_id IS NOT NULL $revDateClause GROUP BY bs.custom_name ORDER BY revenue DESC LIMIT 5");
-    $svcStmt->execute([':cid' => $clinic_id]);
-    $topServices = $svcStmt->fetchAll();
-
-    $itemsHtml = ""; $grandTotalSvcRev = 0; $grandTotalSvcVol = 0;
-    foreach ($topServices as $s) {
-        $grandTotalSvcRev += $s['revenue'];
-        $grandTotalSvcVol += $s['count'];
-        $itemsHtml .= "<tr>
-            <td style='padding: 8px; border: 1px solid #ddd;'>" . ucwords(strtolower(htmlspecialchars($s['name']))) . "</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align:center;'>{$s['count']}</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>PHP " . number_format($s['revenue'], 2) . "</td>
-        </tr>";
-    }
-
-    // 5. TOP PRODUCTS
-    $prdStmt = $pdo->prepare("SELECT pr.name, SUM(oi.quantity) as qty, SUM(oi.subtotal) as revenue FROM order_items_tb oi JOIN payments_tb p ON oi.order_id = p.order_id JOIN products_tb pr ON oi.product_id = pr.product_id WHERE p.branch_id IN ($branchSub) AND LOWER(p.payment_status) IN ($paidStatuses) AND oi.product_id IS NOT NULL $revDateClause GROUP BY pr.name ORDER BY revenue DESC LIMIT 5");
-    $prdStmt->execute([':cid' => $clinic_id]);
-    $topProducts = $prdStmt->fetchAll();
-
-    $prodRowsHtml = ""; $grandTotalProdRev = 0; $grandTotalProdQty = 0;
-    foreach ($topProducts as $pr) {
-        $grandTotalProdRev += $pr['revenue'];
-        $grandTotalProdQty += $pr['qty'];
-        $prodRowsHtml .= "<tr>
-            <td style='padding: 8px; border: 1px solid #ddd;'>" . ucwords(strtolower(htmlspecialchars($pr['name']))) . "</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>{$pr['qty']} Units</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>PHP " . number_format($pr['revenue'], 2) . "</td>
-        </tr>";
-    }
-
     // Logo Processing
     $platformLogoHtml = '';
     if (!empty($platform['platform_logo'])) {
@@ -134,6 +172,7 @@ try {
         }
     }
 
+    // --- HTML RENDER ---
     $html = "<html><head><style>
             body { font-family: 'DejaVu Sans', sans-serif; color: #333; margin: 0; padding: 0; font-size: 10px; }
             .container { padding: 20px; }
@@ -157,12 +196,12 @@ try {
                 <tr>
                     <td class='kpi-card'><span class='kpi-label'>Revenue</span><span class='kpi-value'>PHP " . number_format($totalRevenue, 2) . "</span></td>
                     <td class='kpi-card'><span class='kpi-label'>Pending Revenue</span><span class='kpi-value'>PHP " . number_format($pendingRevenue, 2) . "</span></td>
-                    <td class='kpi-card'><span class='kpi-label'>Appointments</span><span class='kpi-value'>" . number_format($totalAppts) . "</span></td>
+                    <td class='kpi-card'><span class='kpi-label'>Total Reservations</span><span class='kpi-value'>" . number_format($totalReservations) . "</span></td>
                 </tr>
                 <tr>
                     <td class='kpi-card'><span class='kpi-label'>Product Sales</span><span class='kpi-value'>" . number_format($totalProductUnits) . " Units</span></td>
+                    <td class='kpi-card'><span class='kpi-label'>Active Staff</span><span class='kpi-value'>" . number_format($totalStaff) . "</span></td>
                     <td class='kpi-card'><span class='kpi-label'>Active Branches</span><span class='kpi-value'>" . number_format($totalBranches) . "</span></td>
-                    <td class='kpi-card'><span class='kpi-label'>Total Staff</span><span class='kpi-value'>" . number_format($totalStaff) . "</span></td>
                 </tr>
             </table>
 

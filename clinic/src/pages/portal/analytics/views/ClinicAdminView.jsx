@@ -5,12 +5,12 @@ import Header from '../../../../components/Header';
 import DashboardCard from '../../../../components/DashboardCard';
 import BranchPerformanceTable from '../components/BranchPerformanceTable'; 
 import { BranchTopEarnersChart } from '../components/DashboardComponents';
-import { TbUsers, TbCalendarTime } from 'react-icons/tb';
+import { TbUsers, TbCalendarTime, TbCalendarCheck } from 'react-icons/tb';
 import { RiMoneyDollarCircleLine } from 'react-icons/ri';
 import { HiCalendar, HiDownload, HiOutlineInformationCircle } from "react-icons/hi";
 import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
 import NetworkLeaderboard from '../components/NetworkLeaderBoard';
-import { FiShoppingCart } from 'react-icons/fi';
+import { FiShoppingCart, FiPackage } from 'react-icons/fi'; // Added FiPackage
 import { PiWarning } from 'react-icons/pi';
 import LoaderV2 from '../../../../components/LoaderV2';
 
@@ -20,8 +20,17 @@ export default function ClinicAdminAnalytics() {
   const { user } = useUser();
   const [timeFilter, setTimeFilter] = useState('today');
   const [data, setData] = useState({
-    stats: { total_branches: 0, total_staff: 0, today_appointments: 0, total_product_sales: 0, today_revenue: 0 },
-    branches: [], topServices: [], // Add this
+    stats: { 
+      total_branches: 0, 
+      total_staff: 0, 
+      today_appointments: 0, 
+      total_product_sales_units: 0, // Updated to match PHP key
+      total_product_orders: 0,      // Added new PHP key
+      today_revenue: 0,
+      pending_revenue: 0 
+    },
+    branches: [], 
+    topServices: [],
     topProducts: []
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -43,20 +52,29 @@ export default function ClinicAdminAnalytics() {
 
   const maintenanceBranches = data.branches.filter(b => b.status === 'Maintenance');
   
+  // Helper to capitalize filter for labels
+  const filterLabel = timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1);
+
   const dashboardCards = [
     { title: "Clinic Branches", data: data.stats.total_branches, icon: HiOutlineBuildingOffice2, iconColor: "text-gray-700" },
     { title: "Active Staff", data: data.stats.total_staff, icon: TbUsers, iconColor: "text-gray-700" },
     { 
-      title: `Appointments (${timeFilter})`, 
+      title: `Appointments(${filterLabel})`, 
       data: data.stats.today_appointments, 
       icon: TbCalendarTime, 
       iconColor: "text-blue-600" 
     },
     { 
-      title: `Product Sales (${timeFilter})`, 
-      data: `${data.stats.total_product_sales}`, 
-      icon: FiShoppingCart, 
+      title: `Product Units (${filterLabel})`, 
+      data: data.stats.total_product_sales_units, 
+      icon: FiPackage, 
       iconColor: "text-purple-600" 
+    },
+    { 
+      title: `Completed Reservations (${filterLabel})`, 
+      data: data.stats.total_product_orders, 
+      icon: TbCalendarCheck, 
+      iconColor: "text-(--clr-primary)" 
     },
     { 
       title: `Pending Revenue (${timeFilter})`, 
@@ -65,16 +83,16 @@ export default function ClinicAdminAnalytics() {
       iconColor: "text-yellow-500" 
     },
     { 
-      title: `Revenue (${timeFilter})`, 
+      title: `Revenue (${filterLabel})`, 
       data: `₱${(data.stats.today_revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}`, 
       icon: RiMoneyDollarCircleLine, 
       iconColor: "text-(--clr-primary)" 
     }
   ];
+
 const handleExportPDF = () => {
   if (!user?.user_id) return;
 
-  // Added user_id to the query parameters
   const url = `${API_URL}/api/clinic/general/analytics/generate-clinic-admin-analytics-pdf.php?period=${timeFilter}&user_id=${user.user_id}`;
   
   window.open(url, '_blank');

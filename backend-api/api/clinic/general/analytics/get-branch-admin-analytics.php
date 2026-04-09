@@ -28,7 +28,7 @@ try {
             case 'month': return "AND MONTH($column) = MONTH(CURDATE()) AND YEAR($column) = YEAR(CURDATE())";
             case 'year':  return "AND YEAR($column) = YEAR(CURDATE())"; 
             case 'all':
-                return "1=1";
+                return " AND 1=1 ";
             case 'week':
             default:      return "AND YEARWEEK($column, 1) = YEARWEEK(CURDATE(), 1)"; 
         }
@@ -83,8 +83,19 @@ try {
     $prodCountStmt->execute([':bid' => $branch_id]);
     $productsSold = (int)$prodCountStmt->fetchColumn();
 
+    // Completed Reservations (Product Pickups)
+    $resDateClause = getSqlDateConstraint($period, 'o.updated_at');
+    $resStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM order_tb o
+        WHERE o.branch_id = :bid 
+        AND o.pickup_date IS NOT NULL 
+        AND LOWER(o.order_status) = 'completed' 
+        $resDateClause
+    ");
+    $resStmt->execute([':bid' => $branch_id]);
+    $completedReservations = (int)$resStmt->fetchColumn();
 
-    // --- 2. REVENUE TREND --- (Stays the same, but uses expanded status list)
+    // --- 2. REVENUE TREND ---
     $revenueTrend = [];
     if ($period === 'year') {
         $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -126,8 +137,7 @@ try {
         }
     }
 
-
-    // --- 3. TOP SERVICES & PRODUCTS (With ucwords) ---
+    // --- 3. TOP SERVICES & PRODUCTS ---
     $orderVirtualDate = "COALESCE((SELECT MIN(a.start_time) FROM appointments_tb a WHERE a.order_id = o.order_id), o.created_at)";
     
     $svcStmt = $pdo->prepare("
@@ -183,6 +193,44 @@ try {
     $breakdownStmt->execute([':bid' => $branch_id]);
     $revenueBreakdown = $breakdownStmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // --- 6. INVENTORY STATUS (Stock Levels) ---
+    // Logic: Only count stock issues if the item is NOT expired and is active
+    $invStatusStmt = $pdo->prepare("
+        SELECT 
+            SUM(CASE WHEN stock_level <= 0 THEN 1 ELSE 0 END) as out_of_stock,
+            SUM(CASE WHEN stock_level > 0 AND stock_level <= min_stock_level THEN 1 ELSE 0 END) as low_stock
+        FROM inventory_tb 
+        WHERE branch_id = :bid 
+        AND is_active = 1 
+        AND (expiry_date >= CURDATE() OR expiry_date IS NULL) -- ONLY NOT EXPIRED
+    ");
+    $invStatusStmt->execute([':bid' => $branch_id]);
+    $invCounts = $invStatusStmt->fetch(PDO::FETCH_ASSOC);
+
+    $inventoryStatus = [
+        ["category" => "Out of Stock", "count" => (int)($invCounts['out_of_stock'] ?? 0)],
+        ["category" => "Low Stock", "count" => (int)($invCounts['low_stock'] ?? 0)]
+    ];
+
+    // --- 7. EXPIRY STATUS ---
+    // Logic: Expired (before today), Expiring Soon (next 30 days)
+    $expiryStmt = $pdo->prepare("
+        SELECT 
+            SUM(CASE WHEN expiry_date < CURDATE() THEN 1 ELSE 0 END) as expired,
+            SUM(CASE WHEN expiry_date >= CURDATE() AND expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as expiring_soon
+        FROM inventory_tb 
+        WHERE branch_id = :bid 
+        AND is_active = 1 
+        AND expiry_date IS NOT NULL
+    ");
+    $expiryStmt->execute([':bid' => $branch_id]);
+    $expCounts = $expiryStmt->fetch(PDO::FETCH_ASSOC);
+
+    $expiryStatus = [
+        ["name" => "Expired", "value" => (int)($expCounts['expired'] ?? 0)],
+        ["name" => "Expiring Soon", "value" => (int)($expCounts['expiring_soon'] ?? 0)]
+    ];
+
     echo json_encode([
         "success" => true,
         "data" => [
@@ -190,12 +238,15 @@ try {
                 "revenue" => $revenue, 
                 "pendingRevenue" => $pendingRevenue, 
                 "productsSold" => $productsSold, 
-                "appointments" => $appointments
+                "appointments" => $appointments,
+                "completedReservations" => $completedReservations
             ],
             "revenueTrend" => $revenueTrend,
             "topServices" => $topServices,
             "topProducts" => $topProducts,
-            "revenueBreakdown" => $revenueBreakdown
+            "revenueBreakdown" => $revenueBreakdown,
+            "inventoryStatus" => $inventoryStatus, // Added
+            "expiryStatus" => $expiryStatus
         ]
     ]);
 

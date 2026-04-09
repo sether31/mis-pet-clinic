@@ -19,20 +19,20 @@ try {
     if (!$clinicId) throw new Exception("Clinic not found.");
 
     // 2. Virtual Date Logic (Crucial for correct billing attribution)
-    // This ensures revenue follows the appointment time, not just the "swipe" time
-    $virtualDate = "COALESCE(
-        (SELECT MIN(a.start_time) FROM appointments_tb a WHERE a.order_id = p.order_id), 
-        p.created_at
-    )";
+    // Accrual logic: Appointments follow start_time, Products follow pickup_date.
+    $virtualDate = "CASE 
+        WHEN p.payment_type = 'appointment' THEN (SELECT MIN(a.start_time) FROM appointments_tb a WHERE a.order_id = p.order_id)
+        WHEN p.payment_type = 'product' THEN (SELECT o.pickup_date FROM order_tb o WHERE o.order_id = p.order_id)
+        ELSE p.created_at 
+    END";
 
-    // Helper for Date Constraints based on your reference script
+    // Helper for Date Constraints
     function getSqlDateConstraint($filter, $column) {
         switch ($filter) {
             case 'week':  return "YEARWEEK($column, 1) = YEARWEEK(CURDATE(), 1)";
             case 'month': return "MONTH($column) = MONTH(CURDATE()) AND YEAR($column) = YEAR(CURDATE())";
             case 'year':  return "YEAR($column) = YEAR(CURDATE())";
-            case 'all':
-                return "1=1";
+            case 'all':   return "1=1";
             case 'today':
             default:      return "DATE($column) = CURDATE()";
         }
@@ -51,16 +51,23 @@ try {
     $stmtStaff->execute([$clinicId]);
     $totalStaff = (int)$stmtStaff->fetchColumn();
 
+    // Completed Appointments
     $stmtGlobalAppts = $pdo->prepare("SELECT COUNT(*) FROM appointments_tb a WHERE a.branch_id IN ($validBranchIds) AND LOWER(a.status) = 'completed' AND $apptDateClause");
     $stmtGlobalAppts->execute([$clinicId]);
     $globalAppts = (int)$stmtGlobalAppts->fetchColumn();
 
-    // Global Reservations
-    $stmtGlobalRes = $pdo->prepare("SELECT COUNT(*) FROM appointments_tb a WHERE a.branch_id IN ($validBranchIds) AND LOWER(a.status) IN ('pending', 'confirmed') AND $apptDateClause");
+    $stmtGlobalRes = $pdo->prepare("
+        SELECT COUNT(DISTINCT p.order_id) 
+        FROM payments_tb p
+        WHERE p.branch_id IN ($validBranchIds) 
+        AND p.payment_type = 'product'
+        AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed') 
+        AND $revDateClause
+    ");
     $stmtGlobalRes->execute([$clinicId]);
     $globalReservations = (int)$stmtGlobalRes->fetchColumn();
 
-    // Realized Revenue (Using Virtual Date and Expanded Statuses)
+    // Realized Revenue
     $stmtGlobalRev = $pdo->prepare("
         SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p
         WHERE p.branch_id IN ($validBranchIds) 
@@ -70,7 +77,7 @@ try {
     $stmtGlobalRev->execute([$clinicId]);
     $globalRev = (float)$stmtGlobalRev->fetchColumn();
 
-    // Pending Revenue (Using Virtual Date)
+    // Pending Revenue
     $stmtGlobalPending = $pdo->prepare("
         SELECT COALESCE(SUM(p.amount), 0) FROM payments_tb p
         WHERE p.branch_id IN ($validBranchIds) 
@@ -80,7 +87,7 @@ try {
     $stmtGlobalPending->execute([$clinicId]);
     $globalPending = (float)$stmtGlobalPending->fetchColumn();
 
-    // Total Product Units
+    // Total Product Sales (Units Volume)
     $stmtTotalProd = $pdo->prepare("
         SELECT COALESCE(SUM(oi.quantity), 0) 
         FROM order_items_tb oi
@@ -93,7 +100,20 @@ try {
     $stmtTotalProd->execute([$clinicId]);
     $totalProductUnits = (int)$stmtTotalProd->fetchColumn();
 
-    // 5. Per-Branch Breakdown (Independent Counting)
+    // Total Product Orders (Unique Transactions/Reservations)
+    $stmtTotalProdOrders = $pdo->prepare("
+        SELECT COUNT(DISTINCT p.order_id) 
+        FROM payments_tb p
+        JOIN order_items_tb oi ON p.order_id = oi.order_id
+        WHERE p.branch_id IN ($validBranchIds)
+        AND oi.product_id IS NOT NULL
+        AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed')
+        AND $revDateClause
+    ");
+    $stmtTotalProdOrders->execute([$clinicId]);
+    $totalProductOrders = (int)$stmtTotalProdOrders->fetchColumn();
+
+    // 5. Per-Branch Breakdown
     $stmtBranches = $pdo->prepare("
         SELECT b.branch_id, b.name, b.status, b.is_maintenance, b.logo_picture
         FROM clinic_branches_tb b
@@ -174,7 +194,8 @@ try {
                 "today_reservations" => $globalReservations,
                 "today_revenue" => $globalRev,
                 "pending_revenue" => $globalPending,
-                "total_product_sales" => $totalProductUnits
+                "total_product_sales_units" => $totalProductUnits,
+                "total_product_orders" => $totalProductOrders
             ],
             "branches" => $branchDataList,
             "topServices" => $topServices,
