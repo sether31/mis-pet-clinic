@@ -41,12 +41,20 @@ try {
   $totalPatientsQuery = "SELECT COUNT(DISTINCT pet_id) FROM appointments_tb WHERE branch_id = ? AND status = 'completed' $staffFilter";
 
   // Today's Billings (Revenue from Paid orders linked to this staff's appointments)
-  $todayBillingsQuery = "SELECT COALESCE(SUM(p.amount), 0) 
-                          FROM payments_tb p 
-                          INNER JOIN order_tb o ON p.order_id = o.order_id 
-                          INNER JOIN appointments_tb a ON o.order_id = a.order_id 
-                          WHERE p.branch_id = ? AND p.payment_status = 'paid' 
-                          AND p.created_at BETWEEN ? AND ? $staffFilter";
+  // Today's Billings: Revenue from Paid transactions based on the SCHEDULED date
+$todayBillingsQuery = "SELECT COALESCE(SUM(p.amount), 0) 
+                       FROM payments_tb p 
+                       LEFT JOIN order_tb o ON p.order_id = o.order_id 
+                       LEFT JOIN appointments_tb a ON o.order_id = a.order_id 
+                       WHERE p.branch_id = ? 
+                       AND p.payment_status = 'paid' 
+                       AND (
+                           -- Case 1: It's an appointment (Matches start_time)
+                           (p.payment_type = 'appointment' AND DATE(a.start_time) = CURDATE()) 
+                           OR 
+                           -- Case 2: It's a product (Matches pickup_date)
+                           (p.payment_type = 'product' AND o.pickup_date = CURDATE())
+                       ) $staffFilter";
 
   // FIXED: Count ALL active product reservations (pickup_date exists) that aren't finished yet.
   // This ignores the 'today' time filter so you see the total backlog.
@@ -65,12 +73,12 @@ try {
   );
   
   $stmtStats->execute([
-      $branchId, $todayStart, $todayEnd, // today_appointments
-      $branchId,                         // total_patients
-      $branchId, $todayStart, $todayEnd, // today_billings
-      $branchId,                         // stock_alerts
-      $branchId                          // pending_reservations
-  ]);
+    $branchId, $todayStart, $todayEnd, // 3 tokens for today_appointments
+    $branchId,                         // 1 token for total_patients
+    $branchId,                         // 1 token for today_billings (FIXED: removed start/end)
+    $branchId,                         // 1 token for stock_alerts
+    $branchId                          // 1 token for pending_reservations
+]);
   $statsData = $stmtStats->fetch();
 
   // --- 4. UPCOMING APPOINTMENTS LIST ---

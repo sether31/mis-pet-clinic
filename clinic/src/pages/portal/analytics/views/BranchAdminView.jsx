@@ -16,6 +16,7 @@ import DashboardCard from '../../../../components/DashboardCard';
 import { LuPackage, LuStethoscope, LuWallet } from 'react-icons/lu';
 import { FiShoppingCart } from 'react-icons/fi';
 import { PiWarning } from 'react-icons/pi';
+import { TbCalendarCheck } from 'react-icons/tb';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const CATEGORY_COLORS = {
@@ -23,16 +24,31 @@ const CATEGORY_COLORS = {
   'Products': '#9333ea'             
 };
 
+const STATUS_COLORS = {
+  'Out of Stock': '#ef4444', // Red
+  'Low Stock': '#f59e0b',    // Amber
+  'Expired': '#dc2626',      // Dark Red
+  'Expiring Soon': '#fbbf24' // Yellow
+};
+
 export default function BranchAdminView() {
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('week'); 
   const [data, setData] = useState({
-    cardData: { revenue: 0, productsSold: 0, appointments: 0, pendingAppointments: 0 },
+    cardData: { 
+        revenue: 0, 
+        pendingRevenue: 0, 
+        productsSold: 0, 
+        appointments: 0, 
+        completedReservations: 0 // Match PHP key
+    },
     revenueTrend: [],
     topServices: [],
     topProducts: [],
     revenueBreakdown: [],
+    inventoryStatus: [], // For Low Stock vs Out of Stock
+    expiryStatus: [],
   });
 
   // Helper to format the filter name for the card titles
@@ -113,7 +129,7 @@ export default function BranchAdminView() {
         ) : (
           <>
             {/* KPI GRID */}
-            <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <DashboardCard 
                 title={`Total Revenue (${getFilterLabel(timeFilter)})`} 
                 data={`₱${Number(data.cardData.revenue).toLocaleString()}`} 
@@ -143,11 +159,53 @@ export default function BranchAdminView() {
               />
 
               <DashboardCard 
+                title={`Completed Reservations (${getFilterLabel(timeFilter)})`} 
+                data={data.cardData.completedReservations} 
+                icon={TbCalendarCheck} 
+                iconColor="text-(--clr-primary)" 
+              />
+
+              <DashboardCard 
                 title={`Products Sales (${getFilterLabel(timeFilter)})`} 
                 data={data.cardData.productsSold} 
                 icon={FiShoppingCart} 
                 iconColor="text-purple-600"
               />
+
+              <DashboardCard 
+                  title="Inventory Stock Alerts" 
+                  data={
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-red-600" title="Out of Stock">
+                        {data.inventoryStatus.find(i => i.category === 'Out of Stock')?.count || 0}
+                      </span>
+                      <span className="text-gray-300 text-lg">/</span>
+                      <span className="text-amber-500 text-sm font-medium" title="Low Stock">
+                        {data.inventoryStatus.find(i => i.category === 'Low Stock')?.count || 0} Low
+                      </span>
+                    </div>
+                  } 
+                  icon={LuPackage} 
+                  iconColor="text-red-600"
+                />
+
+                {/* CARD 7: Expiry Alerts */}
+                <DashboardCard 
+                  title="Inventory Expiry Alerts" 
+                  data={
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-red-700" title="Expired">
+                        {data.expiryStatus.find(i => i.name === 'Expired')?.value || 0}
+                      </span>
+                      <span className="text-gray-300 text-lg">/</span>
+                      <span className="text-yellow-500 text-sm font-medium" title="Expiring Soon">
+                        {data.expiryStatus.find(i => i.name === 'Expiring Soon')?.value || 0} Soon
+                      </span>
+                    </div>
+                  } 
+                  icon={PiWarning} 
+                  iconColor="text-orange-600"
+                />
             </div>
 
             {/* MAIN CHARTS GRID */}
@@ -231,6 +289,56 @@ export default function BranchAdminView() {
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       />
                       <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </ChartContainer>
+
+              <ChartContainer 
+                title="Inventory needing Restock" 
+                icon={LuPackage}
+                iconColor="text-red-600"
+                isEmpty={data.inventoryStatus.every(item => item.count === 0)}
+              >
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={data.inventoryStatus}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="category" axisLine={false} tickLine={false} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: '#fef2f2' }} />
+                    <Bar dataKey="count">
+                      {data.inventoryStatus.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.category]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+
+              {/* NEW: EXPIRY MONITOR (Pie Chart) */}
+              <ChartContainer 
+                title="Inventory Expiry Status (Next 30 Days)" 
+                icon={PiWarning}
+                iconColor="text-orange-500"
+                isEmpty={data.expiryStatus.every(item => item.value === 0)}
+              >
+                <div className="flex flex-col items-center justify-center">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={data.expiryStatus}
+                        innerRadius={70} 
+                        outerRadius={95}
+                        paddingAngle={8} 
+                        dataKey="value" 
+                        nameKey="name"
+                      >
+                        {data.expiryStatus.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: '12px', border: 'none' }} />
+                      <Legend verticalAlign="bottom" height={36}/>
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
