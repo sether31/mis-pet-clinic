@@ -2,7 +2,7 @@ import { useOutletContext } from 'react-router-dom';
 import { cloneElement } from 'react';
 import { IoLockClosedOutline } from "react-icons/io5";
 
-export default function SubscriptionGate({ children, type }) {
+export default function SubscriptionGate({ children, type, iconOnly = false }) {
   const { branchData } = useOutletContext();
   
   const sub = branchData?.subscription;
@@ -21,8 +21,10 @@ export default function SubscriptionGate({ children, type }) {
     className: `${children.props.className} ${isLocked ? 'opacity-50 cursor-not-allowed grayscale' : ''}`,
     children: (
       <>
-        {isLocked && <IoLockClosedOutline className="inline mr-1" />}
-        {isLocked ? (isExpired ? "Subscription Expired" : "Limit Reached") : children.props.children}
+        {isLocked && <IoLockClosedOutline className={iconOnly ? "" : "inline mr-1"} size={iconOnly ? 16 : undefined} />}
+        {isLocked 
+          ? (iconOnly ? null : (isExpired ? "Subscription Expired" : "Limit Reached")) 
+          : children.props.children}
       </>
     )
   });

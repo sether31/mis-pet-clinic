@@ -5,6 +5,7 @@ import NoImage from '../../../../assets/images/no-image.jpg';
 import { CiSearch } from 'react-icons/ci';
 import { HiSearch, HiPencilAlt, HiPlus, HiArchive, HiExclamationCircle, HiRefresh } from 'react-icons/hi';
 import { HiChevronLeft, HiChevronRight, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
+import SubscriptionGate from '../../../../components/SubscriptionGate';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -172,9 +173,11 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
             <input type="text" placeholder="Search products..." className="w-64 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg outline-none bg-gray-50 focus:ring-1 focus:ring-(--clr-primary)" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
 
-          <button onClick={onCreate} className="px-6 py-2 bg-(--clr-primary) text-white text-[11px] font-black rounded-lg uppercase tracking-widest flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer">
-            <HiPlus size={14}/> Add Product
-          </button>
+          <SubscriptionGate type="inventory">
+            <button onClick={onCreate} className="px-6 py-2 bg-(--clr-primary) text-white text-[11px] font-black rounded-lg uppercase tracking-widest flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer">
+              <HiPlus size={14}/> Add Product
+            </button>
+          </SubscriptionGate>
         </div>
       </div>
 
@@ -274,15 +277,21 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
                   <td className="px-6 py-4 text-center">
                     <div className="flex justify-center gap-2">
                       {/* edit */}
-                      <button onClick={() => onEdit(item)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-(--clr-primary) hover:text-(--clr-primary) transition-all"><HiPencilAlt size={16}/></button>
+                      <SubscriptionGate type="inventory" iconOnly={true}>
+                        <button onClick={() => onEdit(item)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-(--clr-primary) hover:text-(--clr-primary) transition-all">
+                          <HiPencilAlt size={16}/>
+                        </button>
+                      </SubscriptionGate>
                       {/* archive */}
-                      <button 
-                        onClick={() => onToggleStatus(item)} 
-                        className={`p-2 bg-white border border-gray-300 rounded-lg cursor-pointer transition-all ${isArchived ? 'hover:border-(--clr-primary) hover:text-(--clr-primary)' : 'hover:border-red-600 hover:text-red-600'}`}
-                        title={isArchived ? 'Restore Item' : 'Archive Item'}
-                      >
-                        {isArchived ? <HiRefresh size={16}/> : <HiArchive size={16}/>}
-                      </button>
+                      <SubscriptionGate type="inventory" iconOnly={true}>
+                        <button 
+                          onClick={() => onToggleStatus(item)} 
+                          className={`p-2 bg-white border border-gray-300 rounded-lg cursor-pointer transition-all ${isArchived ? 'hover:border-(--clr-primary) hover:text-(--clr-primary)' : 'hover:border-red-600 hover:text-red-600'}`}
+                          title={isArchived ? 'Restore Item' : 'Archive Item'}
+                        >
+                          {isArchived ? <HiRefresh size={16}/> : <HiArchive size={16}/>}
+                        </button>
+                      </SubscriptionGate>
                     </div>
                   </td>
                 </tr>
