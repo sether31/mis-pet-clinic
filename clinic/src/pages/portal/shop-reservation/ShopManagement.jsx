@@ -14,6 +14,7 @@ import ShopTable from './components/ShopTable';
 import ShopModal from './components/ShopModal';
 import ShopCard from './components/ShopCard';
 import { HiPlus } from 'react-icons/hi';
+import SubscriptionGate from '../../../components/SubscriptionGate';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -102,12 +103,14 @@ export default function ShopManagement() {
             <p className="text-gray-500">Process reservations or handle walk-in sales.</p>
           </div>
           
-          <button 
-            onClick={() => setIsReservationModalOpen(true)}
-            className="bg-(--clr-primary) text-white justify-center px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-          >
-            <HiPlus size={18}/> Direct Sale
-          </button>
+          <SubscriptionGate type="shop">
+            <button 
+              onClick={() => setIsReservationModalOpen(true)}
+              className="bg-(--clr-primary) text-white justify-center px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            >
+              <HiPlus size={18}/> Direct Sale
+            </button>
+          </SubscriptionGate>
         </div>
 
         {isLoading ? (
