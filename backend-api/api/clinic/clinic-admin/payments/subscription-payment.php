@@ -14,20 +14,27 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../../../');
 $dotenv->load();
 
 $user = validate_auth(['clinic_admin', 'branch_admin']); 
+
 try {
   $pdo = (new Database())->pdo;
   $data = json_decode(file_get_contents('php://input'));
   $is_from_settings = (isset($data->is_resubscribe) && $data->is_resubscribe) ? 'true' : 'false';
 
-  $method_input = $data->payment_method ?? 'GCASH';
-  $selectedMethod = strtoupper((string)$method_input);
+  // 1. Get the method from frontend (e.g., 'CARD', 'GCASH', 'PAYMAYA')
+  $method_input = strtoupper((string)($data->payment_method ?? 'GCASH'));
+  
+  // 2. Map it to Xendit's exact required naming conventions
+  $xendit_method = $method_input;
+  if ($method_input === 'CARD') {
+    $xendit_method = 'CREDIT_CARD';
+  }
+
   Configuration::setXenditKey($_ENV['XENDIT_SECRET_KEY']);
   $apiInstance = new InvoiceApi();
 
   $external_id = 'sub_' . time() . '_' . $data->branch_id;
   $base_url = rtrim($_ENV['MAIN_URL'], '/'); 
 
-  // redirect url
   $success_url = $base_url . "/payment-success?branch_id={$data->branch_id}&sub_id={$data->subscription_id}&amount={$data->amount}&from_settings={$is_from_settings}";
   $failure_url = $base_url . "/clinic/{$data->branch_id}/select-plan?status=cancelled";
 
@@ -36,7 +43,8 @@ try {
     'amount' => (float)$data->amount,
     'currency' => 'PHP',
     'description' => "Subscription: " . $data->plan_name,
-    'payment_methods' => [$selectedMethod],
+    // 3. Pass the mapped method to Xendit
+    'payment_methods' => [$xendit_method],
     'success_redirect_url' => $success_url,
     'failure_redirect_url' => $failure_url,
     'invoice_duration' => 900 
@@ -44,6 +52,7 @@ try {
 
   $result = $apiInstance->createInvoice($create_invoice_request);
 
+  // 4. Save the intention in the database as 'pending'
   $stmt = $pdo->prepare(
     "INSERT INTO payments_tb (
       branch_id, subscription_id, payment_type, payment_method, 
@@ -54,13 +63,12 @@ try {
   $stmt->execute([
     ":branch_id" => $data->branch_id,
     ":sub_id" => $data->subscription_id,
-    ":method" => $selectedMethod,
+    ":method" => $xendit_method, // Stores 'CREDIT_CARD', 'GCASH', or 'PAYMAYA'
     ":x_id" => $result['id'],
     ":ext_id" => $external_id,
     ":amt" => $data->amount
   ]);
 
-  // audit create payment init
   log_audit(
     $pdo, 
     $user->user_id, 
@@ -69,7 +77,7 @@ try {
     'CREATE', 
     'PAYMENT_INTENT', 
     $data->subscription_id
-);
+  );
 
   echo json_encode(["success" => true, "checkout_url" => $result['invoice_url']]);
 } catch(Exception $e) {

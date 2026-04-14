@@ -67,7 +67,10 @@ try {
     }
 
     // update payment
-    $pdo->prepare("UPDATE payments_tb SET payment_status = 'paid' WHERE xendit_invoice_id = ?")->execute([$xendit_id]);
+    $actual_method = $invoice['payment_channel'] ?? $invoice['payment_method'] ?? 'UNKNOWN';
+
+    // update payment with the actual method
+    $pdo->prepare("UPDATE payments_tb SET payment_status = 'paid', payment_method = ? WHERE xendit_invoice_id = ?")->execute([$actual_method, $xendit_id]);
 
     $stmtPlan = $pdo->prepare("SELECT duration_months FROM subscription_tb WHERE subscription_id = ? LIMIT 1");
     $stmtPlan->execute([$newSubId]);
