@@ -44,6 +44,9 @@ try {
   // check if card then the method will be null until user pay
   $finalMethod = $is_card ? null : 'cash';
 
+  $cashReceived = !$is_card ? ($data->cash_received ?? 0) : null;
+  $cashChange = !$is_card ? ($data->cash_change ?? 0) : null;
+
   // create order
   $orderStmt = $pdo->prepare("INSERT INTO order_tb (user_id, branch_id, order_status, total_amount) VALUES (?, ?, ?, ?)");
   $orderStmt->execute([$appt['user_id'], $data->branch_id, $orderStatus, $data->total]);
@@ -52,11 +55,26 @@ try {
   // create payment
   $payStmt = $pdo->prepare(
     "INSERT INTO payments_tb (
-      branch_id, order_id, amount, payment_method, payment_status, payment_type
-    ) VALUES (?, ?, ?, ?, ?, 'appointment')"
+      branch_id, 
+      order_id, 
+      amount, 
+      cash_received, 
+      cash_change, 
+      payment_method, 
+      payment_status, 
+      payment_type
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'appointment')"
   );
-  $payStmt->execute([$data->branch_id, $order_id, $data->total, $finalMethod, $paymentStatus]);
-
+  
+  $payStmt->execute([
+    $data->branch_id, 
+    $order_id, 
+    $data->total, 
+    $cashReceived, 
+    $cashChange, 
+    $finalMethod, 
+    $paymentStatus
+  ]);
   // process order items
   $itemStmt = $pdo->prepare("INSERT INTO order_items_tb (order_id, product_id, service_id, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?, ?)");
   // update inventory

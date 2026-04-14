@@ -12,7 +12,6 @@ import {
 } from 'react-icons/hi';
 import { FaRectangleList } from "react-icons/fa6";
 // images
-import noImage from '../../../../assets/images/no-image.jpg'
 import { IoLockClosedOutline } from 'react-icons/io5';
 import Swal from 'sweetalert2';
 import { formatDateTime } from '../../../../utils/dateFormatter';
@@ -38,6 +37,149 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const [cashReceived, setCashReceived] = useState("");
+
+  const handlePaymentAction = async () => {
+    // 1. Generate the shared itemized HTML breakdown
+    const itemsListHtml = billedItems.length > 0 
+      ? billedItems.map(item => {
+          const unitPrice = parseFloat(item.price);
+          const quantity = parseInt(item.qty) || 0;
+          const itemTotal = unitPrice * quantity;
+          return `
+            <div class="mb-2 pl-2">
+              <div class="flex justify-between text-sm text-gray-800 font-medium">
+                <span class="truncate pr-2">${item.name}</span>
+                <span class="shrink-0">₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+              </div>
+              <div class="text-[11px] text-gray-500 italic">
+                ${quantity} x ₱${unitPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}
+              </div>
+            </div>
+          `;
+        }).join('')
+      : `<div class="text-xs text-gray-400 italic pl-2">No additional items</div>`;
+
+    const sharedModalHtml = `
+      <div class="text-left mb-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <div class="flex justify-between text-sm text-gray-800 mb-3">
+          <span class="font-bold">Service Fee:</span> 
+          <span class="font-black text-(--clr-primary)">₱${serviceFee.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+        </div>
+        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">Itemized Breakdown</div>
+        <div class="max-h-40 overflow-y-auto custom-scrollbar pr-2 mb-2">
+          ${itemsListHtml}
+        </div>
+        <div class="border-t border-gray-300 my-3"></div>
+        <div class="flex justify-between text-xl font-black text-(--clr-primary)">
+          <span>Total Due:</span> 
+          <span>₱${pricing.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+        </div>
+      </div>
+    `;
+
+  // --- CASE: CASH ---
+  if (paymentMethod === 'cash') {
+    const { value: cashAmount, isConfirmed } = await Swal.fire({
+      title: 'Receive Cash Payment',
+      html: sharedModalHtml,
+      input: 'number',
+      inputAttributes: { min: pricing.total, step: '0.01', placeholder: '0.00' },
+      inputLabel: 'Amount Received (₱)',
+      showCancelButton: true,
+      confirmButtonText: 'Compute Change',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        container: '!z-[99999]',
+        popup: '!rounded-2xl !border !border-gray-300 !max-w-md !py-8 !px-4',
+        title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+        inputLabel: '!text-sm !font-bold !text-gray-500 !text-left !w-full !px-4',
+        input: '!rounded-xl !text-lg !border-gray-300 !focus:border-gray-400 !focus:ring-0 !font-bold !m-4 !w-[calc(100%-2rem)] !shadow-none',
+        confirmButton: 'rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold bg-(--clr-primary) hover:opacity-90 mx-2',
+        cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 mx-2'
+      },
+      preConfirm: (value) => {
+        if (!value || isNaN(value)) {
+          Swal.showValidationMessage('Please enter a valid cash amount');
+          return false;
+        }
+        if (parseFloat(value) < pricing.total) {
+          Swal.showValidationMessage(`Insufficient payment. Need at least ₱${pricing.total.toLocaleString()}`);
+          return false;
+        }
+        return parseFloat(value);
+      }
+    });
+
+    if (isConfirmed && cashAmount) {
+      const change = cashAmount - pricing.total;
+      const finalConfirm = await Swal.fire({
+        icon: 'success',
+        iconColor: 'var(--clr-primary)',
+        title: 'Payment Details',
+        html: `
+          <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-200 mt-2">
+            <div class="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Total Due:</span> <span>₱${pricing.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Cash Received:</span> <span>₱${cashAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+            <div class="border-t border-gray-300 my-3"></div>
+            <div class="flex justify-between text-2xl font-black text-(--clr-primary)">
+              <span>Change:</span> <span>₱${change.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Complete Transaction',
+        showCancelButton: true,
+        cancelButtonText: 'Go Back',
+        buttonsStyling: false,
+        customClass: {
+          container: '!z-[99999]',
+          popup: '!rounded-2xl !border !border-gray-300 !max-w-md !py-8 !px-4',
+          title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+          confirmButton: 'rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold bg-(--clr-primary) hover:opacity-90 mx-2',
+          cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 mx-2',
+          icon: '!mb-2 !mt-4'
+        }
+      });
+
+      if (finalConfirm.isConfirmed) {
+        handleSubmit(cashAmount, change);
+      }
+    }
+
+  // --- CASE: CARD (PRE-BILLING REVIEW) ---
+  } else if (paymentMethod === 'card') {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Review Final Bill',
+      html: `
+        <div class="text-sm text-gray-500 mb-4 text-left px-1">
+          Review the items below. Clicking <b>Generate Bill</b> will send an invoice to the customer's account for online payment.
+        </div>
+        ${sharedModalHtml}
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Generate Bill',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+        customClass: {
+          container: '!z-[99999]',
+          popup: '!rounded-2xl !py-8 !border !border-gray-300 !max-w-md',
+          title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+          confirmButton: 'rounded-lg px-5 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-sm font-bold bg-(--clr-primary) hover:opacity-90 mx-2',
+          cancelButton: 'rounded-lg px-5 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-sm font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 mx-2'
+        }
+      });
+
+      if (isConfirmed) {
+        handleSubmit(); // No cash details needed for card
+      }
+    }
+  };
 
   const serviceFee = parseFloat(activeTask?.service_fee || 0);
   const isLocked = ['billed', 'completed'].includes(activeTask?.status);
@@ -172,6 +314,9 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
 
   const pricing = getPricingBreakdown();
 
+  const changeAmount = parseFloat(cashReceived) - pricing.total;
+  const isAmountSufficient = !isNaN(changeAmount) && changeAmount >= 0;
+
   const handleCancel = async () => {
     const { value: reason, isConfirmed } = await Swal.fire({
       icon: 'warning',
@@ -236,7 +381,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (received = null, change = null) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     showLoader('Processing...');
@@ -246,6 +391,8 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
         branch_id: branchId,
         total: parseFloat(pricing.total.toFixed(2)),
         payment_method: paymentMethod,
+        cash_received: paymentMethod === 'cash' ? received : null,
+        cash_change: paymentMethod === 'cash' ? change : null,
         items: [
           { service_id: activeTask.branch_service_id, name: activeTask?.service_name || 'Service', price: serviceFee, qty: 1, type: 'service' },
           ...billedItems.map(i => ({ inventory_id: i.inventory_id, product_id: i.product_id, name: i.name, price: i.price, qty: i.qty, type: 'product' }))
@@ -555,21 +702,21 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                                       Dist: {p.supplier_name || 'N/A'}
                                     </span>
         
-        <span className="mt-1 font-black text-blue-500">
-          Exp: {formatExpiry(p.expiry_date)}
-        </span>
-        
-        <span className="mt-1 text-gray-400">
-          Stock: {p.stock_level}
-        </span>
-      </div>
-    </div>
-  ))
-) : (
-  <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">
-    No active items found
-  </div>
-)}
+                                    <span className="mt-1 font-black text-blue-500">
+                                      Exp: {formatExpiry(p.expiry_date)}
+                                    </span>
+                                    
+                                    <span className="mt-1 text-gray-400">
+                                      Stock: {p.stock_level}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">
+                                No active items found
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -681,11 +828,11 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                     </div>
                   ) : (
                     <button 
-                      onClick={handleSubmit} 
+                      onClick={handlePaymentAction} 
                       disabled={isSubmitting} 
                       className="px-8 py-4 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                     >
-                      {paymentMethod === 'cash' ? 'Process Payment' : 'Confirm & Bill'}
+                      {paymentMethod === 'cash' ? 'Process Payment' : 'Confirm Bill'}
                     </button>
                   )}
                 </div>
