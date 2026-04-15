@@ -7,7 +7,7 @@ import NoImage from '../../../../assets/images/no-image.jpg'
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function MedicalRecordTable({ data = [], onView }) {
+export default function MedicalRecordTable({ data = [], branchesList = [], onView, userRole }) {
   const [activeTab, setActiveTab] = useState("all"); 
   const [recordTypeFilter, setRecordTypeFilter] = useState("all"); 
   const [branchFilter, setBranchFilter] = useState("all");
@@ -24,12 +24,23 @@ export default function MedicalRecordTable({ data = [], onView }) {
 
   // Dynamic Branch List with ID to handle same-name branches
   const branches = useMemo(() => {
+    // 1. If we have the list from the parent (Array of Objects)
+    if (branchesList && branchesList.length > 0) {
+      return branchesList; 
+    }
+    
+    // 2. Fallback: Derive from data (Convert Map to Array of Objects)
     const uniqueMap = new Map();
     data.forEach(item => {
       if (item.branch_id) uniqueMap.set(item.branch_id, item.branch_name);
     });
-    return Array.from(uniqueMap.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [data]);
+    
+    // Return as objects so the structure is consistent
+    return Array.from(uniqueMap.entries()).map(([id, name]) => ({
+      branch_id: id,
+      name: name
+    }));
+}, [data, branchesList]);
 
   const handleSort = (key) => {
     let direction = 'desc'; 
@@ -135,23 +146,6 @@ export default function MedicalRecordTable({ data = [], onView }) {
             >
               {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
             </select>
-
-            {/* branch */}
-            <div className="relative">
-              <select 
-                value={branchFilter} 
-                onChange={(e) => setBranchFilter(e.target.value)} 
-                className="border border-gray-300 rounded-lg pl-8 pr-3 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-black transition-all w-[160px] truncate"
-              >
-                <option value="all">All Branches</option>
-                {branches.map(([branch_id, name]) => (
-                  <option title={name} key={branch_id} value={branch_id}>
-                    (ID: {branch_id}) {name.length > 20 ? `${name.substring(0, 20)}...` : name}
-                  </option>
-                ))}
-              </select>
-              <HiLocationMarker className="absolute text-gray-400 -translate-y-1/2 left-2.5 top-1/2" size={14} />
-            </div>
 
             {/* record type */}
             <div className="relative">

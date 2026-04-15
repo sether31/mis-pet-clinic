@@ -192,7 +192,7 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
     : "--:--";
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center px-4 z-[100] bg-gray-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 flex items-center justify-center px-4 z-[110] bg-gray-900/60 backdrop-blur-sm">
       <div className="relative flex flex-col w-full max-w-2xl max-h-[95vh] overflow-hidden bg-white rounded-2xl border border-gray-300">
         
         {/* check if switching to non medical */}
@@ -301,7 +301,7 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
                   {record.branch_name || 'Branch Name'}
                 </p>
                 <p className="text-[9px] font-bold text-(--clr-primary) uppercase tracking-tighter truncate">
-                  {record.address || 'Branch Address'}
+                  {record.branch_address || record.address || 'Branch Address'}
                 </p>
               </div>
 
@@ -471,8 +471,8 @@ export default function MedicalRecordModal({ record, onClose, onRefresh }) {
                 
                 {/* staff */}
                 <div className="flex items-center gap-1">
-                  <span className={`text-[10px] font-black uppercase ${!record.updated_by ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
-                    Updated By: {record.updated_by_staff_name || record.updated_by || 'No record yet'}
+                  <span className={`text-[10px] font-black uppercase ${!record.updated_by_staff_name ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
+                    Updated By: {record.updated_by_staff_name || (typeof record.updated_by === 'string' ? record.updated_by : 'No record yet')}
                   </span>
                 </div>
               </div>
