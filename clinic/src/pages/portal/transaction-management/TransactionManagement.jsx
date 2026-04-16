@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-// hooks
 import { useUI } from '../../../hooks/useUI'; 
 import { useUser } from '../../../hooks/useUser';
-// utils
 import { authFetch } from '../../../utils/authFetch';
-// components
 import Header from '../../../components/Header';
 import LoaderV2 from '../../../components/LoaderV2'; 
-// view
 import ClinicAdminView from './views/ClinicAdminView';
 import StaffView from './views/StaffView';
 
@@ -20,7 +16,6 @@ export default function TransactionManagement() {
   const { user, loading: userLoading } = useUser();
   
   const [isLoading, setIsLoading] = useState(true);
-  
   const [transactions, setTransactions] = useState([]); 
   const [summary, setSummary] = useState(null);
   const [branches, setBranches] = useState([]);
@@ -31,16 +26,11 @@ export default function TransactionManagement() {
 
   const fetchAll = useCallback(async (isManualRefresh = false) => {
     if (!currentBranch) return;
-
-    if(isManualRefresh) {
-      showLoader('Refreshing Transactions...'); 
-    } else {
-      setIsLoading(true);
-    }
+    if(isManualRefresh) showLoader('Refreshing Transactions...'); 
+    else setIsLoading(true);
     
     try {
       const res = await authFetch(`${API_URL}/api/clinic/general/billing/get-transactions.php?branch_id=${currentBranch}`);
-      
       if(res.success) {
         setTransactions(res.data); 
         setSummary(res.summary); 
@@ -49,18 +39,13 @@ export default function TransactionManagement() {
     } catch(err) { 
       console.error("Fetch Error:", err); 
     } finally { 
-      if(isManualRefresh) {
-        hideLoader();
-      } else {
-        setIsLoading(false);
-      }
+      if(isManualRefresh) hideLoader();
+      else setIsLoading(false);
     }
   }, [currentBranch, isClinicAdmin, showLoader, hideLoader]); 
 
   useEffect(() => { 
-    if(!userLoading) {
-      fetchAll(false); 
-    }
+    if(!userLoading) fetchAll(false); 
   }, [currentBranch, userLoading, fetchAll]);
 
   useEffect(() => {
@@ -73,7 +58,6 @@ export default function TransactionManagement() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
-      
       <section className="flex-1 w-full px-6 my-6 container-xl">  
         {isLoading ? (
           <LoaderV2 />
@@ -94,6 +78,7 @@ export default function TransactionManagement() {
             summary={summary}
             loading={loading}
             onRefresh={() => fetchAll(true)}
+            user={user}
           />
         )}
       </section>
