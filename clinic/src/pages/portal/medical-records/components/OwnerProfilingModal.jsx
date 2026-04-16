@@ -200,9 +200,9 @@ export default function OwnerProfilingModal({ isOpen, onClose, ownerId, ownerNam
                   </div>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                     {services.map(service => (
-                      <div key={service.service_id} onClick={() => handleSelectService(service)} className="flex flex-col items-center justify-center p-6 text-center transition-all bg-white border border-gray-400 rounded-2xl hover:border-black hover:bg-green-50/30 cursor-pointer active:scale-98 min-h-[140px]">
-                        <div className="p-3 mb-3 rounded-full text-(--clr-primary) bg-green-100"><HiOutlineBeaker size={24} /></div>
-                        <p className="text-[10px] font-black uppercase leading-tight text-gray-800">{service.service_name}</p>
+                      <div  key={service.service_id} onClick={() => handleSelectService(service)} className="flex flex-col items-center justify-center p-8 text-center transition-all bg-white border border-gray-400 rounded-2xl hover:border-(--clr-primary) hover:bg-green-50/50 cursor-pointer active:scale-98 min-h-[140px] group">
+                        <div className="p-4 mb-3 rounded-full text-(--clr-primary) bg-green-100 group-hover:scale-105 transition-transform"><HiOutlineBeaker size={24} /></div>
+                        <p className="text-[11px] font-black uppercase leading-tight text-gray-800 tracking-widest">{service.service_name}</p>
                       </div>
                     ))}
                   </div>

@@ -22,20 +22,16 @@ export default function MedicalRecordTable({ data = [], branchesList = [], onVie
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '?')}&background=${bg}&color=${color}&bold=true`;
   };
 
-  // Dynamic Branch List with ID to handle same-name branches
   const branches = useMemo(() => {
-    // 1. If we have the list from the parent (Array of Objects)
     if (branchesList && branchesList.length > 0) {
       return branchesList; 
     }
     
-    // 2. Fallback: Derive from data (Convert Map to Array of Objects)
     const uniqueMap = new Map();
     data.forEach(item => {
       if (item.branch_id) uniqueMap.set(item.branch_id, item.branch_name);
     });
     
-    // Return as objects so the structure is consistent
     return Array.from(uniqueMap.entries()).map(([id, name]) => ({
       branch_id: id,
       name: name
@@ -51,7 +47,6 @@ export default function MedicalRecordTable({ data = [], branchesList = [], onVie
   const filteredAndSorted = useMemo(() => {
     return data
       .filter(r => {
-        // 1. TOP TAB FILTER (Status-based)
         const rawStatus = r.status?.toLowerCase().trim() || "unrecorded";
         const isRecorded = rawStatus === "recorded";
         
@@ -60,13 +55,10 @@ export default function MedicalRecordTable({ data = [], branchesList = [], onVie
         return true;
       })
       .filter(r => {
-        // 2. DROPDOWN FILTER (Type-based)
         if (recordTypeFilter === "all") return true;
         
         const rType = r.record_type?.toLowerCase().trim() || "";
         
-        // If user selects "Medical", ONLY show "medical"
-        // If user selects "Non-Medical", ONLY show "non_medical"
         if (recordTypeFilter === "medical") return rType === "medical";
         if (recordTypeFilter === "non_medical") return rType === "non_medical";
         

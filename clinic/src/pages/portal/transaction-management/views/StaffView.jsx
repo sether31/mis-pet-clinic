@@ -1,29 +1,41 @@
 import { useState } from 'react';
 import TransactionCard from '../components/TransactionCard';
 import TransactionTable from '../components/TransactionTable';
-import TransactionModal from '../components/TransactionModal'; 
+import TransactionProfilingModal from '../components/TransactionProfilingModal'; 
 
 export default function StaffView({ 
   transactions,
   summary,
   loading,
   onRefresh,
+  user 
 }) {
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [selectedOwner, setSelectedOwner] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialStep, setInitialStep] = useState(1);
 
-  const handleViewDetails = (transaction) => {
-    setSelectedTransaction(transaction);
+  const handleViewDetails = (profile) => {
+    setSelectedOwner(profile);
+    
+    // Guest handling logic (matches your admin view)
+    if (!profile.user_id) {
+      setInitialStep(2); 
+    } else {
+      setInitialStep(1);
+    }
+    
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedTransaction(null);
+    setSelectedOwner(null);
   };
 
-  const branchName = transactions[0]?.branch_name || 'Assigned Branch';
-  const branchId = transactions[0]?.branch_id || 'Assigned Branch';
+  // Securely get the branch info from the authenticated user, NOT the transactions array
+  const branchName = user?.branch_name || 'Assigned Branch';
+  const branchId = user?.branch_id || 'N/A';
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col items-start justify-between gap-4 pb-2 border-b border-gray-100 md:flex-row">
@@ -36,9 +48,10 @@ export default function StaffView({
           </p>
         </div>
 
-        <div className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-xl">
+        {/* Read-Only Branch Badge */}
+        <div className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-xl select-none">
           <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-0.5">
-            Current Branch
+            Current Assigned Branch
           </span>
           <span className="text-sm font-bold text-gray-700">
             (ID: {branchId}) {branchName}
@@ -56,15 +69,18 @@ export default function StaffView({
           loading={loading} 
           onRefresh={onRefresh}
           onViewDetails={handleViewDetails}
-          isGlobalView={false}
+          isGlobalView={false} 
         />
       </div>
 
       {/* modal */}
-      {isModalOpen && selectedTransaction && (
-        <TransactionModal 
-          transaction={selectedTransaction} 
+      {isModalOpen && selectedOwner && (
+        <TransactionProfilingModal 
+          isOpen={isModalOpen} 
           onClose={handleCloseModal} 
+          owner={selectedOwner}
+          branchId={branchId}
+          forcedStep={initialStep}
         />
       )}
     </div>
