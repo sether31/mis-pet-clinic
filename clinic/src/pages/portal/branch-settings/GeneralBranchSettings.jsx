@@ -14,6 +14,7 @@ import { HiSave } from 'react-icons/hi';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const initialFormState = {
+  brandLogo: null,
   logoPic: null, 
   mainBrandingName: '',
   clinicName: '',
@@ -50,6 +51,7 @@ export default function GeneralBranchSettings() {
   const isClinicAdmin = user?.role === 'clinic_admin';
 
   const inputLabels = {
+    brandLogo: 'Main Brand Logo',
     logoPic: "Clinic Logo",
     mainBrandingName: "Main Branding Name",
     clinicName: "Clinic Name",
@@ -95,6 +97,7 @@ export default function GeneralBranchSettings() {
         }));
 
         setExistingPaths({
+          brandLogo: res.data.brand_logo || '',
           logoPic: res.data.logo_picture || '', 
           tinNumberPic: res.data.tin_id_picture || '',
           businessPermitPic: res.data.business_permit_picture || ''
@@ -137,7 +140,7 @@ export default function GeneralBranchSettings() {
       "clinicName", "contactNumber", "completeAddress", "municipality", "province",
       "zipCode", "est", "clinicDescription"
     ];
-    const requiredImages = ["logoPic"];
+    const requiredImages = ["logoPic", "brandLogo"];
 
     if (isClinicAdmin) {
       requiredInputFields.push("mainBrandingName");
@@ -242,19 +245,31 @@ export default function GeneralBranchSettings() {
               </div>
 
               {isClinicAdmin && (
-                <div className="flex flex-col justify-end mt-6">
-                  <Input
-                    value={form.mainBrandingName} 
-                    label="Main Branding Name" 
-                    name="mainBrandingName" 
-                    placeholder="Enter the main brand name"
-                    isImportant={true} 
+                <div className="flex flex-col mt-6 pb-6 border-b border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Main Brand Identity</h3>
+                  <InputImage 
+                    label="Main Brand Logo" 
+                    name="brandLogo" 
+                    isPreview={true}
+                    required={true}
                     onChange={handleChange} 
-                    error={errors.mainBrandingName} 
+                    error={errors.brandLogo} 
+                    existingImage={existingPaths.brandLogo} 
                   />
-                  <p className="mt-2 text-xs text-gray-400">
-                    This updates the core brand name for your entire clinic network.
-                  </p>
+                  <div className="mt-4">
+                    <Input
+                      value={form.mainBrandingName} 
+                      label="Main Branding Name" 
+                      name="mainBrandingName" 
+                      placeholder="Enter the main brand name"
+                      isImportant={true} 
+                      onChange={handleChange} 
+                      error={errors.mainBrandingName} 
+                    />
+                    <p className="mt-2 text-xs text-gray-400">
+                      This updates the core brand name for your entire clinic network.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
