@@ -9,21 +9,25 @@ $decoded = validate_auth(['pet_owner']);
 try {
   $pdo = (new Database())->pdo;
 
+  // We add the clinics_tb (c) to get the parent clinic name
   $stmtClinics = $pdo->prepare(
     "SELECT 
+      c.clinic_id,
+      c.brand_logo,
+      c.name AS clinic_name,
       cb.branch_id,
-      cb.name as branch_name,
-      cb.logo_picture as branch_image,
+      cb.name AS branch_name,
+      cb.logo_picture AS branch_image,
       cb.address,
       cb.municipality,
       cb.province,
       cb.contact_number,
       cb.created_at,
       
-      -- Let MySQL glue the active services together into a comma-separated string
       GROUP_CONCAT(DISTINCT COALESCE(NULLIF(bsrv.custom_name, ''), srv.name) SEPARATOR ',') as offered_services
       
-    FROM clinic_branches_tb cb
+    FROM clinics_tb c
+    JOIN clinic_branches_tb cb ON c.clinic_id = cb.clinic_id
     JOIN branch_subscriptions_tb bs ON cb.branch_id = bs.branch_id
     LEFT JOIN branch_service_tb bsrv ON cb.branch_id = bsrv.branch_id AND bsrv.status = 1
     LEFT JOIN service_tb srv ON bsrv.service_id = srv.service_id 
@@ -33,8 +37,9 @@ try {
       AND LOWER(bs.status) = 'active'
       AND bs.end_date >= CURDATE() 
       
-    -- EVERY selected column must be here to prevent MySQL Strict Mode errors
     GROUP BY 
+      c.clinic_id,
+      c.name,
       cb.branch_id,
       cb.name,
       cb.logo_picture,
@@ -44,15 +49,27 @@ try {
       cb.contact_number,
       cb.created_at
       
-    ORDER BY cb.created_at DESC"
+    ORDER BY c.name ASC, cb.created_at DESC"
   );
   
   $stmtClinics->execute();
   
-  $clinics = [];
+  $grouped_clinics = [];
 
-  while ($row = $stmtClinics->fetch()) {
-    // Address Formatting
+  while ($row = $stmtClinics->fetch(PDO::FETCH_ASSOC)) {
+    $clinic_id = $row['clinic_id'];
+
+    // If the clinic parent isn't in our array yet, create it
+    if (!isset($grouped_clinics[$clinic_id])) {
+        $grouped_clinics[$clinic_id] = [
+            'clinic_id' => $clinic_id,
+            'brand_logo' => $row['brand_logo'],
+            'clinic_name' => $row['clinic_name'],
+            'branches' => []
+        ];
+    }
+
+    // Format Branch Address
     $base_address = trim($row['address']);
     $muni = trim($row['municipality']);
     $prov = trim($row['province']);
@@ -61,18 +78,24 @@ try {
     if(!empty($muni) && stripos($full_address, $muni) === false) $full_address .= ', ' . $muni;
     if(!empty($prov) && stripos($full_address, $prov) === false) $full_address .= ', ' . $prov;
 
-    $row['full_address'] = $full_address;
-
-    // Convert into a JSON array
-    $row['services'] = !empty($row['offered_services']) ? explode(',', $row['offered_services']) : [];
-    
-    // Clean up the raw string so it doesn't get sent to the app
-    unset($row['offered_services']); 
-
-    $clinics[] = $row;
+    // Push the branch into the parent clinic's 'branches' array
+    $grouped_clinics[$clinic_id]['branches'][] = [
+        'branch_id' => $row['branch_id'],
+        'brand_logo' => $row['brand_logo'],
+        'branch_name' => $row['branch_name'],
+        'branch_image' => $row['branch_image'],
+        'full_address' => $full_address,
+        'municipality' => $row['municipality'],
+        'province' => $row['province'],
+        'contact_number' => $row['contact_number'],
+        'services' => !empty($row['offered_services']) ? explode(',', $row['offered_services']) : []
+    ];
   }
 
-  echo json_encode(["success" => true, "data" => $clinics]);
+  // Convert the associative array into a clean indexed array for JSON
+  $final_output = array_values($grouped_clinics);
+
+  echo json_encode(["success" => true, "data" => $final_output]);
 
 } catch(Throwable $e) {
   http_response_code(500);
