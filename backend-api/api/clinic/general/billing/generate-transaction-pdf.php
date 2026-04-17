@@ -211,7 +211,7 @@ try {
   $dompdf->render();
   
   $filename = $user_id ? "BILLING-HISTORY-{$user_id}.pdf" : "TRANSAC-{$transaction_id}.pdf";
-  $dompdf->stream($filename, ["Attachment" => false]);
+  $dompdf->stream($filename, ["Attachment" => true]);
 
 } catch(Exception $e) {
   die("Error: " . $e->getMessage());
