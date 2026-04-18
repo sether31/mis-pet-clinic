@@ -49,13 +49,22 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
   if (!isOpen) return null;
 
   // ADDED: Filter history based on the pickup_date rule
+  // Change this section in your component
   const displayedHistory = history.filter(tx => {
-    // Check if pickup date exists and is not an empty string
-    const hasPickupDate = tx.pickup_date && tx.pickup_date.trim() !== '';
+    // Normalize the source type for easier comparison
+    const sourceType = tx.source_type?.toLowerCase() || '';
+
+    if (selectedType === 'product') {
+      // Look for "retail" or "product" in the source_type string
+      return sourceType.includes('product') || sourceType.includes('retail');
+    }
     
-    if (selectedType === 'product') return hasPickupDate; // Products MUST have a pickup date
-    if (selectedType === 'appointment') return !hasPickupDate; // Appointments MUST NOT have a pickup date
-    return true; // Fallback if 'all'
+    if (selectedType === 'appointment') {
+      // Only show if it's strictly an appointment
+      return sourceType === 'appointment';
+    }
+
+    return true; // Show all for 'all'
   });
 
   return (
@@ -187,7 +196,16 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                       </div>
 
                       <div className="space-y-3">
-                        {tx.items?.map((item, idx) => (
+                        {tx.items?.filter(item => {
+                          // If we are looking at an 'appointment' transaction, 
+                          // show EVERYTHING in that transaction (Service + Product)
+                          if (selectedType === 'appointment') return true; 
+
+                          // If we are in 'product' mode (Retail), only show items that are products
+                          if (selectedType === 'product') return item.product_id !== null;
+                          
+                          return true;
+                        }).map((item, idx) => (
                           <div key={idx} className="flex justify-between items-center text-[11px] font-bold">
                             <span className="text-gray-600 uppercase flex items-center gap-2">
                               <span className="w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-[9px] font-black">{item.quantity}x</span>
