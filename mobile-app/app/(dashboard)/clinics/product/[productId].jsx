@@ -19,11 +19,9 @@ export default function ProductDetailScreen() {
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  
   const [quantity, setQuantity] = useState('1');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  
   const [dateError, setDateError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,7 +37,6 @@ export default function ProductDetailScreen() {
   const fetchProductDetails = async () => {
     try {
       setProduct(null);
-      
       const res = await authFetch(`${API_URL}/api/pet-owner/shop/get-product-details.php?product_id=${productId}&branch_id=${branch_id}`);
       if (res?.success) {
         setProduct(res.data);
@@ -48,7 +45,7 @@ export default function ProductDetailScreen() {
           Toast.show({ 
             type: 'error', 
             text1: 'Shop Unavailable', 
-            text2: 'This clinic is currently under maintenance or unavailable',
+            text2: res.message || 'This clinic is currently unavailable',
             visibilityTime: 4000
           });
         } else {
@@ -65,7 +62,7 @@ export default function ProductDetailScreen() {
   };
 
   const getMediaUrl = (path) => {
-    if (!path || path.trim() === '') return null;
+    if (!path || path.trim() === '' || path === 'NULL') return null;
     if (path.startsWith('http')) return path; 
     return `${API_URL}/${path.startsWith('/') ? path.substring(1) : path}`;
   };
@@ -121,9 +118,7 @@ export default function ProductDetailScreen() {
       setDateError('Please select a pickup date.');
       return;
     }
-
     if (isSubmitting) return;
-
     setIsSubmitting(true);
     setDateError('');
 
@@ -134,7 +129,6 @@ export default function ProductDetailScreen() {
         quantity: quantity,
         pickup_date: selectedDate
       };
-
       const res = await authFetch(`${API_URL}/api/pet-owner/shop/create-reservation.php`, {
         method: 'POST',
         body: JSON.stringify(payload)
@@ -144,30 +138,19 @@ export default function ProductDetailScreen() {
         setIsModalVisible(false);
         setQuantity('1');
         setSelectedDate(null);
-        setDateError('');
-        
         fetchProductDetails(); 
-
         Toast.show({
           type: 'success',
           text1: 'Reservation Confirmed!',
-          text2: 'Your items have been reserved successfully.',
-          position: 'top'
+          text2: 'Your items have been reserved successfully.'
         });
-        
       } else {
         if(res?.is_unavailable) {
           setIsModalVisible(false);
-          Toast.show({ 
-            type: 'error', 
-            text1: 'Clinic Unavailable', 
-            text2: res.message,
-            visibilityTime: 5000 
-          });
+          Toast.show({ type: 'error', text1: 'Clinic Unavailable', text2: res.message, visibilityTime: 5000 });
           router.back(); 
           return;
         }
-
         setDateError(res.message || 'Something went wrong');
       }
     } catch (error) {
@@ -180,29 +163,18 @@ export default function ProductDetailScreen() {
 
   const pickupDates = useMemo(() => {
     if (!product || !product.schedule || product.schedule.length === 0) return [];
-    
     const availableDates = [];
     let dayOffset = 0; 
-
     while (availableDates.length < 3) {
       const date = new Date();
       date.setDate(date.getDate() + dayOffset);
       const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }); 
-
-      const dayConfig = product.schedule.find(
-        d => d.day_of_week.toLowerCase() === dayName.toLowerCase()
-      );
-
+      const dayConfig = product.schedule.find(d => d.day_of_week.toLowerCase() === dayName.toLowerCase());
       const isClosed = dayConfig ? (dayConfig.is_closed == 1 || dayConfig.is_closed === "1" || dayConfig.is_closed === true) : true;
 
       if (dayConfig && !isClosed) {
-        let label = "";
-        if (dayOffset === 0) label = "Today";
-        else if (dayOffset === 1) label = "Tomorrow";
-        else label = date.toLocaleDateString('en-US', { weekday: 'short' });
-
+        let label = dayOffset === 0 ? "Today" : dayOffset === 1 ? "Tomorrow" : date.toLocaleDateString('en-US', { weekday: 'short' });
         const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
         availableDates.push({ 
           id: date.toISOString().split('T')[0], 
           label: `${label}, ${formattedDate}`,
@@ -210,15 +182,10 @@ export default function ProductDetailScreen() {
           endTime: formatTime(dayConfig.end_time)
         });
       }
-
       dayOffset++;
       if (dayOffset > 30) break; 
     }
-
-    if (availableDates.length > 0 && !selectedDate) {
-      setSelectedDate(availableDates[0].id);
-    }
-
+    if (availableDates.length > 0 && !selectedDate) setSelectedDate(availableDates[0].id);
     return availableDates;
   }, [product]);
 
@@ -232,30 +199,23 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const imageSource = getMediaUrl(product.prod_pic) ? { uri: getMediaUrl(product.prod_pic) } : NO_IMAGE;
-  // Fallback to default if clinic_logo isn't provided by the API yet
-  const clinicLogoSource = getMediaUrl(product.branch_image) ? { uri: getMediaUrl(product.branch_image) } : DEFAULT_CLINIC_LOGO;
-  
-  const isOutOfStock = parseInt(product.total_stock) <= 0;
-  const safeQty = parseInt(quantity) || 1;
-  const totalPrice = (parseFloat(product.price) * safeQty).toFixed(2);
+  // --- BRANDING LOGIC ---
+  const categoryLower = product.category?.toLowerCase() || '';
+  const isMedicine = categoryLower.includes('medicine') || categoryLower.includes('medication');
+  const hasBrandType = isMedicine && product.brand_type && product.brand_type !== 'NULL' && product.brand_type !== 'N/A';
+  const hasBrandName = product.brand_name && product.brand_name !== 'NULL' && product.brand_name !== 'N/A';
 
-  const handleSmartBack = () => {
-    if(from === 'activity') {
-      router.navigate('/activity'); 
-    } else {
-      router.back();
-    }
-  };
+  const imageSource = getMediaUrl(product.prod_pic) ? { uri: getMediaUrl(product.prod_pic) } : NO_IMAGE;
+  const clinicLogoSource = getMediaUrl(product.branch_image) ? { uri: getMediaUrl(product.branch_image) } : DEFAULT_CLINIC_LOGO;
+  const isOutOfStock = parseInt(product.total_stock) <= 0;
+  const totalPrice = (parseFloat(product.price) * (parseInt(quantity) || 1)).toFixed(2);
+
+  const handleSmartBack = () => { from === 'activity' ? router.navigate('/activity') : router.back(); };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      
       <View style={styles.header}>
-        <Pressable 
-          style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]} 
-          onPress={handleSmartBack}
-        >
+        <Pressable style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]} onPress={handleSmartBack}>
           <Ionicons name="arrow-back" size={26} color="#111827" />
         </Pressable>
         <AppText style={styles.headerTitle}>Product Details</AppText>
@@ -268,8 +228,26 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={styles.detailsContainer}>
-          <AppText style={styles.category}>{product.category}</AppText>
-          <AppText style={styles.title}>{product.name}</AppText>
+          <View style={styles.tagRow}>
+            <AppText style={styles.category}>{product.category}</AppText>
+            {hasBrandName && (
+              <View style={styles.brandNameTag}>
+                <AppText style={styles.brandNameText}>{product.brand_name}</AppText>
+              </View>
+            )}
+
+            {hasBrandType && (
+              <View style={styles.brandTypeBadge}>
+                <AppText style={styles.brandTypeText}>{product.brand_type}</AppText>
+              </View>
+            )}
+          </View>
+
+          <AppText style={styles.title}>
+            {product.name}
+            {product.dosage && product.dosage !== 'NULL' ? ` (${product.dosage})` : ''}
+          </AppText>
+          
           <AppText style={styles.price}>₱{parseFloat(product.price).toFixed(2)}</AppText>
 
           <View style={styles.stockBadge}>
@@ -281,36 +259,18 @@ export default function ProductDetailScreen() {
 
           <View style={styles.divider} />
 
-          {/* SELLER PROFILE SECTION */}
-          <Pressable 
-            style={({ pressed }) => [
-              styles.sellerContainer, 
-              pressed && styles.sellerContainerPressed
-            ]}
-            onPress={() => router.push(`/clinics/${branch_id}`)}
-          >
-            {({ pressed }) => (
-              <>
-                <Image source={clinicLogoSource} style={styles.sellerLogo} />
-                <View style={styles.sellerInfo}>
-                  <AppText style={styles.sellerName}>{product.branch_name}</AppText>
-                  <AppText style={styles.sellerSubtitle}>View Clinic Profile</AppText>
-                </View>
-                <Ionicons 
-                  name="chevron-forward" 
-                  size={20} 
-                  color={pressed ? "#9CA3AF" : Colors.primary} 
-                />
-              </>
-            )}
+          <Pressable style={({ pressed }) => [styles.sellerContainer, pressed && styles.sellerContainerPressed]} onPress={() => router.push(`/clinics/${branch_id}`)}>
+            <Image source={clinicLogoSource} style={styles.sellerLogo} />
+            <View style={styles.sellerInfo}>
+              <AppText style={styles.sellerName}>{product.branch_name}</AppText>
+              <AppText style={styles.sellerSubtitle}>View Clinic Profile</AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
           </Pressable>
 
           <View style={styles.divider} />
-
           <AppText style={styles.sectionTitle}>Description</AppText>
-          <AppText style={styles.description}>
-            {product.description || "No description provided for this item."}
-          </AppText>
+          <AppText style={styles.description}>{product.description || "No description provided for this item."}</AppText>
         </View>
       </ScrollView>
 
@@ -321,144 +281,53 @@ export default function ProductDetailScreen() {
               <AppText style={styles.totalPriceLabel}>Total: <AppText style={styles.totalPriceValue}>₱{totalPrice}</AppText></AppText>
               <AppText style={styles.maxStockHint}>Max: {product.total_stock}</AppText>
             </View>
-
             <View style={styles.actionRow}>
               <View style={styles.quantityContainer}>
-                <Pressable 
-                  style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]} 
-                  onPress={decreaseQuantity}
-                >
-                  <Ionicons name="remove" size={20} color="#111827" />
-                </Pressable>
-                
-                <TextInput 
-                  style={styles.qtyInput}
-                  keyboardType="numeric"
-                  value={quantity}
-                  onChangeText={handleQuantityChange}
-                  onBlur={handleQuantityBlur}
-                  maxLength={3} 
-                />
-                
-                <Pressable 
-                  style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]} 
-                  onPress={increaseQuantity}
-                >
-                  <Ionicons name="add" size={20} color="#111827" />
-                </Pressable>
+                <Pressable style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]} onPress={decreaseQuantity}><Ionicons name="remove" size={20} color="#111827" /></Pressable>
+                <TextInput style={styles.qtyInput} keyboardType="numeric" value={quantity} onChangeText={handleQuantityChange} onBlur={handleQuantityBlur} maxLength={3} />
+                <Pressable style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]} onPress={increaseQuantity}><Ionicons name="add" size={20} color="#111827" /></Pressable>
               </View>
-
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.reserveBtn,
-                  pressed && styles.solidBtnPressed
-                ]}
-                onPress={() => {
-                  setDateError(''); 
-                  setIsModalVisible(true);
-                }}
-              >
+              <Pressable style={({ pressed }) => [styles.reserveBtn, pressed && styles.solidBtnPressed]} onPress={() => setIsModalVisible(true)}>
                 <AppText style={styles.reserveBtnText}>Schedule Pickup</AppText>
               </Pressable>
             </View>
           </>
         ) : (
-          <View style={[styles.reserveBtn, styles.reserveBtnDisabled, { width: '100%' }]}>
-            <AppText style={styles.reserveBtnText}>Currently Unavailable</AppText>
-          </View>
+          <View style={[styles.reserveBtn, styles.reserveBtnDisabled, { width: '100%' }]}><AppText style={styles.reserveBtnText}>Currently Unavailable</AppText></View>
         )}
       </View>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={isModalVisible}
-        onRequestClose={() => setIsModalVisible(false)}
-        statusBarTranslucent={true} 
-      >
+      <Modal animationType="slide" transparent={true} visible={isModalVisible} onRequestClose={() => setIsModalVisible(false)} statusBarTranslucent={true}>
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalBackgroundClick} onPress={() => setIsModalVisible(false)} />
-          
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <View>
-                <AppText style={styles.modalTitle}>Pickup Schedule</AppText>
-                <AppText style={styles.modalSub}>Reservations are held for a maximum of 3 days.</AppText>
-              </View>
-              <Pressable onPress={() => setIsModalVisible(false)}>
-                {({ pressed }) => (
-                  <Ionicons name="close-circle" size={28} color={pressed ? "#EF4444" : "#D1D5DB"} />
-                )}
-              </Pressable>
+              <View><AppText style={styles.modalTitle}>Pickup Schedule</AppText><AppText style={styles.modalSub}>Reservations are held for a maximum of 3 days.</AppText></View>
+              <Pressable onPress={() => setIsModalVisible(false)}><Ionicons name="close-circle" size={28} color="#D1D5DB" /></Pressable>
             </View>
-
             <AppText style={styles.pickerLabel}>Select Date</AppText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerScroll}>
               {pickupDates.map(date => (
-                <Pressable 
-                  key={date.id} 
-                  style={({ pressed }) => [
-                    styles.pickerBtn, 
-                    selectedDate === date.id && styles.pickerBtnActive,
-                    pressed && styles.pickerBtnPressed
-                  ]}
-                  onPress={() => {
-                    setSelectedDate(date.id);
-                    setDateError(''); 
-                  }}
-                >
-                  <AppText style={[styles.pickerBtnText, selectedDate === date.id && styles.pickerBtnTextActive]}>
-                    {date.label}
-                  </AppText>
+                <Pressable key={date.id} style={[styles.pickerBtn, selectedDate === date.id && styles.pickerBtnActive]} onPress={() => { setSelectedDate(date.id); setDateError(''); }}>
+                  <AppText style={[styles.pickerBtnText, selectedDate === date.id && styles.pickerBtnTextActive]}>{date.label}</AppText>
                 </Pressable>
               ))}
             </ScrollView>
-
             <View style={styles.infoBox}>
               <Ionicons name="time-outline" size={24} color="#1D4ED8" style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
                 <AppText style={styles.infoBoxTitle}>{product.branch_name} Pickup Info</AppText>
-                
                 {selectedDayInfo ? (
                   <View>
-                    <AppText style={styles.infoBoxText}>
-                      You can claim your reserved items anytime between {selectedDayInfo.startTime} - {selectedDayInfo.endTime} on your selected date.
-                    </AppText>
-                    
-                    <View style={styles.cashNotice}>
-                      <Ionicons name="pricetag-outline" size={16} color="#1E3A8A" />
-                      <AppText style={styles.cashNoticeText}>
-                        Payment is strictly Cash Only at the clinic.
-                      </AppText>
-                    </View>
+                    <AppText style={styles.infoBoxText}>Claim anytime between {selectedDayInfo.startTime} - {selectedDayInfo.endTime}.</AppText>
+                    <View style={styles.cashNotice}><Ionicons name="pricetag-outline" size={16} color="#1E3A8A" /><AppText style={styles.cashNoticeText}>Payment is strictly Cash Only at the clinic.</AppText></View>
                   </View>
-                ) : (
-                  <AppText style={styles.infoBoxText}>Please select a valid date to see pickup hours.</AppText>
-                )}
-                
+                ) : <AppText style={styles.infoBoxText}>Please select a valid date.</AppText>}
               </View>
             </View>
-
-            {dateError ? (
-              <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={16} color="#EF4444" />
-                <AppText style={styles.errorText}>{dateError}</AppText>
-              </View>
-            ) : null}
-
-            <Pressable 
-              style={({ pressed }) => [
-                styles.confirmBtn,
-                pressed && styles.solidBtnPressed
-              ]} 
-              onPress={handleConfirmReservation}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <AppText style={styles.confirmBtnText}>Confirm Reservation</AppText>
-              )}
+            {dateError ? <View style={styles.errorContainer}><Ionicons name="alert-circle" size={16} color="#EF4444" /><AppText style={styles.errorText}>{dateError}</AppText></View> : null}
+            <Pressable style={({ pressed }) => [styles.confirmBtn, pressed && styles.solidBtnPressed]} onPress={handleConfirmReservation} disabled={isSubmitting}>
+              {isSubmitting ? <ActivityIndicator color="#FFF" /> : <AppText style={styles.confirmBtnText}>Confirm Reservation</AppText>}
             </Pressable>
           </View>
         </View>
@@ -470,45 +339,29 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFF' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' },
-  
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 20, 
-    paddingVertical: 15, 
-    backgroundColor: Colors.white, 
-    zIndex: 10, 
-    borderBottomWidth: 1, 
-    borderBottomColor: '#E5E7EB' 
-  },
-  headerTitle: { 
-    flex: 1, 
-    fontSize: 18, 
-    fontWeight: '800', 
-    color: '#111827', 
-    textAlign: 'center', 
-    marginHorizontal: 12 
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: '#111827', textAlign: 'center' },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
   backBtnPressed: { opacity: 0.5 },
-
   imageWrapper: { width: '100%', height: 350, backgroundColor: '#F3F4F6' },
   productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   detailsContainer: { padding: 24 },
-  category: { fontSize: 13, fontWeight: '800', color: Colors.primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  tagRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 10 },
+  category: { fontSize: 13, fontWeight: '800', color: Colors.primary, textTransform: 'uppercase' },
+  brandNameTag: { backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: '#E5E7EB' },
+  brandNameText: { fontSize: 11, fontWeight: '700', color: '#4B5563' },
+  brandTypeBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: '#E5E7EB' },
+  brandTypeText: { fontSize: 11, fontWeight: '700', color: '#4B5563' },
   title: { fontSize: 28, fontWeight: '900', color: '#111827', lineHeight: 34, marginBottom: 12 },
   price: { fontSize: 24, fontWeight: '800', color: '#111827', marginBottom: 20 },
   stockBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9FAFB', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', alignSelf: 'flex-start' },
   stockText: { fontSize: 14, fontWeight: '700', color: '#374151', marginLeft: 8 },
-  
-  sellerContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, marginHorizontal: -8, paddingHorizontal: 8, borderRadius: 12 },
+  sellerContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderRadius: 12 },
   sellerContainerPressed: { backgroundColor: '#F3F4F6' },
-  sellerLogo: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#E5E7EB', borderWidth: 1, borderColor: '#D1D5DB' },
+  sellerLogo: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#E5E7EB' },
   sellerInfo: { flex: 1, marginLeft: 12 },
-  sellerName: { fontSize: 16, fontWeight: '800', color: '#111827', marginBottom: 2 },
+  sellerName: { fontSize: 16, fontWeight: '800', color: '#111827' },
   sellerSubtitle: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
-
   divider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 20 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 12 },
   description: { fontSize: 15, color: '#4B5563', lineHeight: 24 },
@@ -519,7 +372,7 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 16 },
   quantityContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB' },
   qtyBtn: { width: 44, height: 48, justifyContent: 'center', alignItems: 'center' },
-  qtyBtnPressed: { backgroundColor: '#E5E7EB', borderRadius: 10 },
+  qtyBtnPressed: { backgroundColor: '#E5E7EB' },
   qtyInput: { width: 40, height: 48, textAlign: 'center', fontSize: 18, fontWeight: '800', color: '#111827' },
   reserveBtn: { flex: 1, backgroundColor: '#111827', height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   solidBtnPressed: { backgroundColor: Colors.primary, transform: [{ scale: 0.98 }] },
@@ -531,20 +384,19 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
   modalTitle: { fontSize: 22, fontWeight: '900', color: '#111827' },
   modalSub: { fontSize: 13, color: '#6B7280', marginTop: 4 },
-  pickerLabel: { fontSize: 14, fontWeight: '800', color: '#111827', textTransform: 'uppercase', marginBottom: 10, marginTop: 10 },
+  pickerLabel: { fontSize: 14, fontWeight: '800', color: '#111827', textTransform: 'uppercase', marginBottom: 10 },
   pickerScroll: { gap: 10, paddingBottom: 10 },
   pickerBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 10, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
   pickerBtnActive: { backgroundColor: Colors.primary + '15', borderColor: Colors.primary },
-  pickerBtnPressed: { backgroundColor: '#E5E7EB', transform: [{ scale: 0.97 }] },
   pickerBtnText: { fontSize: 14, fontWeight: '600', color: '#4B5563' },
   pickerBtnTextActive: { color: Colors.primary, fontWeight: '800' },
-  infoBox: { flexDirection: 'row', backgroundColor: '#DBEAFE', padding: 16, borderRadius: 12, marginTop: 20, marginBottom: 10, alignItems: 'flex-start', gap: 12 },
-  infoBoxTitle: { fontSize: 14, color: '#1E3A8A', fontWeight: '800', marginBottom: 4 },
-  infoBoxText: { fontSize: 13, color: '#1E3A8A', lineHeight: 20, fontWeight: '500' },
+  infoBox: { flexDirection: 'row', backgroundColor: '#DBEAFE', padding: 16, borderRadius: 12, marginTop: 20, marginBottom: 10, gap: 12 },
+  infoBoxTitle: { fontSize: 14, color: '#1E3A8A', fontWeight: '800' },
+  infoBoxText: { fontSize: 13, color: '#1E3A8A', lineHeight: 20 },
   cashNotice: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6, backgroundColor: '#BFDBFE', padding: 8, borderRadius: 8 },
   cashNoticeText: { fontSize: 12, color: '#1E3A8A', fontWeight: '800' },
   errorContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 12, borderRadius: 8, marginBottom: 12, gap: 6 },
-  errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600', flex: 1, lineHeight: 18 },
+  errorText: { color: '#EF4444', fontSize: 13, fontWeight: '600' },
   confirmBtn: { backgroundColor: '#111827', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   confirmBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' }
 });

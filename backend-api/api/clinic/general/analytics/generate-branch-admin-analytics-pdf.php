@@ -99,13 +99,64 @@ try {
     }
 
     // PRODUCT SALES TABLE
-    $pStmt = $pdo->prepare("SELECT pr.name, SUM(oi.quantity) as sales, SUM(oi.subtotal) as revenue FROM order_items_tb oi JOIN payments_tb p ON oi.order_id = p.order_id JOIN products_tb pr ON oi.product_id = pr.product_id WHERE $broadCondition AND oi.product_id IS NOT NULL GROUP BY pr.product_id ORDER BY revenue DESC");
+    // PRODUCT SALES TABLE
+    // PRODUCT SALES TABLE - Sorted by Sales Volume
+    $pStmt = $pdo->prepare("
+        SELECT 
+            pr.name, 
+            pr.brand_name,
+            pr.brand_type, 
+            pr.dosage, 
+            pr.category, -- Ensure you select category if you want to use the medication logic
+            SUM(oi.quantity) as sales, 
+            SUM(oi.subtotal) as revenue 
+        FROM order_items_tb oi 
+        JOIN payments_tb p ON oi.order_id = p.order_id 
+        JOIN products_tb pr ON oi.product_id = pr.product_id 
+        WHERE $broadCondition AND oi.product_id IS NOT NULL 
+        GROUP BY pr.product_id 
+        ORDER BY sales DESC -- Changed from revenue to sales
+    ");
     $pStmt->execute([':bid' => $branch_id]);
     $prodData = $pStmt->fetchAll();
+
+    // PRODUCT SALES TABLE
     $prodRows = ""; $prodTotalRev = 0; $prodTotalQty = 0;
     foreach ($prodData as $p) {
-        $prodTotalRev += $p['revenue']; $prodTotalQty += $p['sales'];
-        $prodRows .= "<tr><td style='padding:8px; border:1px solid #ddd;'>" . ucwords(strtolower(htmlspecialchars($p['name']))) . "</td><td align='center' style='padding:8px; border:1px solid #ddd;'>" . number_format($p['sales']) . " Units</td><td align='right' style='padding:8px; border:1px solid #ddd;'>PHP " . number_format($p['revenue'], 2) . "</td></tr>";
+        $prodTotalRev += $p['revenue']; 
+        $prodTotalQty += $p['sales'];
+        
+        $name = ucwords(strtolower(htmlspecialchars($p['name'])));
+        $brand = !empty($p['brand_name']) ? ucwords(strtolower(htmlspecialchars($p['brand_name']))) : 'Generic';
+        
+        // 1. Brand Type: ONLY for Medication category
+        $showType = (strcasecmp($p['category'] ?? '', 'medication') === 0 && !empty($p['brand_type'])) 
+                    ? " &bull; " . ucwords(strtolower($p['brand_type'])) 
+                    : "";
+
+        // 2. Dosage/Size: FOR EVERYONE (using the dosage column)
+        // Checks if it's empty or contains "N/A"
+        $rawMeasurement = trim($p['dosage'] ?? '');
+        $hasMeasurement = (!empty($rawMeasurement) && strcasecmp($rawMeasurement, 'n/a') !== 0);
+        
+        $showMeasurement = $hasMeasurement 
+                           ? " &bull; <span style='color: #42756C; font-weight: bold;'>" . strtoupper($rawMeasurement) . "</span>" 
+                           : "";
+
+        $prodRows .= "<tr>
+            <td style='padding:8px; border:1px solid #ddd;'>
+                <div style='font-size:10px; font-weight:bold; color:#1a1a1a;'>$name</div>
+                <div style='font-size:7.5px; color:#666; margin-top:2px; text-transform:uppercase;'>
+                    {$brand}{$showType}{$showMeasurement}
+                </div>
+            </td>
+            <td align='center' style='padding:8px; border:1px solid #ddd; background-color: #f9f9f9;'>
+                " . number_format($p['sales']) . " Units
+            </td>
+            <td align='right' style='padding:8px; border:1px solid #ddd;'>
+                PHP " . number_format($p['revenue'], 2) . "
+            </td>
+        </tr>";
     }
 
     // INVENTORY ALERTS TABLE 

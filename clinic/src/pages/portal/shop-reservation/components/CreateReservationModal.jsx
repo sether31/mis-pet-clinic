@@ -34,8 +34,8 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const formatExpiry = (dateString) => {
-    if (!dateString) return "No Expiry";
+  const formatExpiry = (dateString, category) => {
+    if (category === 'Accessories' || !dateString) return "No Expiry";
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short', day: '2-digit', year: 'numeric'
     });
@@ -144,19 +144,20 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
   };
 
   // search filter
-  // Group by product_id and pick the batch that expires first (FIFO)
   const filteredProducts = useMemo(() => {
     const grouped = availableProducts.reduce((acc, item) => {
-      // 1. Basic Search Filter
+      const searchTermLower = searchTerm.toLowerCase();
       const matchesSearch = 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (item.supplier_name && item.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()));
+        item.name.toLowerCase().includes(searchTermLower) || 
+        item.brand_name?.toLowerCase().includes(searchTermLower) ||
+        item.dosage?.toLowerCase().includes(searchTermLower) ||
+        item.category?.toLowerCase().includes(searchTermLower);
       
       if (!matchesSearch) return acc;
 
       const prodId = item.product_id;
 
-      // 2. FIFO Logic: If we haven't added this product yet, or this batch expires SOONER
+      // FIFO Logic: Pick the batch that expires first
       if (!acc[prodId]) {
         acc[prodId] = item;
       } else {
@@ -177,7 +178,7 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
     <div className="fixed inset-0 flex items-center justify-center p-4 z-10000 bg-black/70 backdrop-blur-sm">
       <div className="flex flex-col w-full max-w-xl overflow-hidden bg-white rounded-2xl">
         
-        {/* Header - No Icon, matching the height/border style */}
+        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50/50">
           <div>
             <h2 className="text-xl font-black tracking-tight text-gray-800 uppercase">Guest Product Purchase</h2>
@@ -194,7 +195,7 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
         <div className="p-8 h-[550px] flex flex-col">
           <div className="flex-1 pr-2 overflow-y-auto custom-scrollbar space-y-6">
             
-            {/* Search Dropdown - Exact Match */}
+            {/* Search Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <div 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -205,49 +206,58 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
               </div>
 
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl z-[50] shadow-sm overflow-hidden flex flex-col max-h-[300px]">
-                  {/* search input */}
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl z-[50] shadow-xl overflow-hidden flex flex-col max-h-[300px]">
                   <div className="flex items-center gap-2 p-3 border-b bg-gray-50">
                     <HiSearch className="text-gray-400" />
                     <input 
                       autoFocus
                       type="text" 
-                      placeholder="Search products or distributor..." 
+                      placeholder="Search name, brand, dosage, or category..." 
                       className="w-full bg-transparent border-none outline-none text-[10px] font-black tracking-widest"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
 
-                  {/* list */}
                   <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
                     {filteredProducts.length > 0 ? (
                       filteredProducts.map(p => (
                         <div 
                           key={p.inventory_id} 
                           onClick={() => handleAddItem(p)}
-                          className="p-4 border-b last:border-none flex flex-col gap-1 hover:bg-green-50 transition-colors cursor-pointer"
+                          className="p-4 border-b last:border-none flex flex-col gap-1 hover:bg-blue-50/50 transition-colors cursor-pointer"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase text-gray-700">
-                              {p.name}
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-black uppercase text-gray-700">{p.name}</span>
+                                
+                                {/* Dosage Badge (Meds only) */}
+                                {(p.category === 'Medication' || p.category === 'Supplies') && p.dosage && (
+                                    <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 uppercase">
+                                        {p.dosage}
+                                    </span>
+                                )}
+
+                                {/* Category Tag */}
+                                <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 uppercase border border-gray-200">
+                                    {p.category}
+                                </span>
+                            </div>
                             <span className="text-[10px] font-black text-(--clr-primary)">
                               ₱{parseFloat(p.price).toLocaleString()}
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-3 text-[8px] font-bold uppercase tracking-tighter">
-                            {/* Visual indicator for FIFO batch */}
-                            <span className="text-amber-600 font-black px-1.5 py-0.5 bg-amber-50 rounded border border-amber-100">
-                              Dispatch Priority
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[8px] font-bold uppercase tracking-tighter">
+                            <span className="text-gray-500 italic">
+                                {p.brand_name || 'No Brand'} 
+                                {(p.category === 'Medication' || p.category === 'Supplies') && p.brand_type !== 'N/A' && ` • ${p.brand_type}`}
                             </span>
-                            <span className="text-gray-400 mt-1">Dist: {p.supplier_name || 'N/A'}</span>
-                            <span className="text-blue-500 mt-1 font-black">Exp: {formatExpiry(p.expiry_date)}</span>
-                            <span className="text-gray-400 mt-1">Stock: {p.stock_level}</span>
+                            <span className="text-blue-500 font-black">Exp: {formatExpiry(p.expiry_date, p.category)}</span>
+                            <span className="text-gray-400">Stock: {p.stock_level}</span>
                           </div>
                         </div>
                       ))
-                                          ) : (
+                    ) : (
                       <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">No active items found</div>
                     )}
                   </div>
@@ -255,32 +265,36 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
               )}
             </div>
 
-            {/* Billed Items List - Exact Match */}
+            {/* Billed Items List */}
             <div className="space-y-3">
               {billedItems.map(item => {
                 const originalProd = availableProducts.find(p => String(p.inventory_id) === String(item.inventory_id));
 
                 return (
-                  <div key={item.inventory_id} className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl">
+                  <div key={item.inventory_id} className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl shadow-sm">
                     <div className="flex-1">
-                      <p className="text-[11px] font-black text-gray-800 uppercase flex gap-2 items-center">
-                        {item.name} 
-                        <span className="text-(--clr-primary)">₱{parseFloat(item.price).toLocaleString()}</span>
-                      </p>
-                      <div className="flex flex-wrap gap-3 mt-1">
-                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">
-                          Exp: {formatExpiry(item.expiry_date)}
+                      <div className="flex items-center gap-2">
+                        <p className="text-[11px] font-black text-gray-800 uppercase">{item.name}</p>
+                        {item.dosage && (item.category === 'Medication' || item.category === 'Supplies') && (
+                            <span className="text-[9px] font-black text-blue-500 uppercase">({item.dosage})</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-3 mt-1 text-[9px] font-bold uppercase tracking-tighter">
+                        <span className="text-(--clr-primary) font-black">₱{parseFloat(item.price).toLocaleString()}</span>
+                        
+                        {/* Billed Category Badge */}
+                        <span className="px-1.5 bg-gray-50 text-gray-400 rounded border border-gray-100 uppercase text-[8px]">{item.category}</span>
+                        
+                        <span className="text-gray-400 italic">
+                            {item.brand_name}
+                            {(item.category === 'Medication' || item.category === 'Supplies') && item.brand_type !== 'N/A' && ` • ${item.brand_type}`}
                         </span>
-                        <span className="text-[9px] font-black text-gray-700 uppercase tracking-tighter">
-                          Stock: {originalProd?.stock_level || item.stock_level}
-                        </span>
-                        <span className="text-[9px] font-black text-gray-700 uppercase tracking-tighter">
-                          Dist: {item.supplier_name || 'N/A'}
-                        </span>
+                        <span className="text-gray-400">Stock: {originalProd?.stock_level || item.stock_level}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center px-2 bg-gray-100 border border-transparent rounded-xl focus-within:border-(--clr-primary) focus-within:bg-white">
+                      <div className="flex items-center px-2 bg-gray-100 border border-transparent rounded-xl focus-within:border-(--clr-primary) focus-within:bg-white transition-all">
                         <button onClick={() => handleQtyChange(item.inventory_id, (parseInt(item.qty) || 0) - 1)} className="p-2 cursor-pointer hover:text-(--clr-primary)"><HiMinus size={14}/></button>
                         <input 
                           type="number" 
@@ -302,10 +316,10 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
 
           </div>
 
-          {/* Footer Box - Exact Match */}
+          {/* Footer Box */}
           <div className="pt-6 mt-auto border-t border-gray-100">
             <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between text-white bg-black p-6 rounded-[1.5rem]">
+              <div className="flex items-center justify-between text-white bg-black p-6 rounded-[1.5rem] shadow-lg">
                 <div>
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Due</p>
                   <p className="text-3xl font-black tracking-tighter text-(--clr-primary)">
@@ -315,7 +329,7 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
                 <button 
                   onClick={handleSubmit} 
                   disabled={isSubmitting || billedItems.length === 0} 
-                  className="px-8 py-4 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer"
+                  className="px-8 py-4 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? 'Processing...' : 'Process Cash Sale'}
                 </button>

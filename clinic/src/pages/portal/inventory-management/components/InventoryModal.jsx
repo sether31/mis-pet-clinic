@@ -7,7 +7,6 @@ import Input from '../../../../components/Input';
 import InputImage from '../../../../components/InputImage';
 // icons
 import { HiXCircle, HiSave } from 'react-icons/hi';
-import { HiMiniExclamationCircle } from 'react-icons/hi2';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -18,6 +17,9 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
   const [form, setForm] = useState({
     product_id: initialData?.product_id || null,
     name: initialData?.name || '',
+    brand_type: initialData?.brand_type || 'Branded',
+    brand_name: initialData?.brand_name || '',
+    dosage: initialData?.dosage || '', 
     description: initialData?.description || '',
     price: initialData?.price || '', 
     category: initialData?.category || 'Medication',
@@ -32,13 +34,8 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
   });
 
   const categories = ["Medication", "Supplies", "Pet Food", "Accessories", "Hygiene"];
-
-  const formattedDateUpdate = initialData?.updated_at 
-    ? new Date(initialData.updated_at).toLocaleString('en-US', { 
-        dateStyle: 'medium', 
-        timeStyle: 'short' 
-      }) 
-    : "--:--";
+  const brandTypes = ["Branded", "Generic", "N/A"];
+  const showBrandType = form.category === 'Medication' || form.category === 'Supplies';
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target || { 
@@ -51,31 +48,27 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     if(type !== "file") {
       const stringVal = String(updatedValue).trim();
       
-      // 👇 ADDED: Don't show "Required" error for Expiry Date if it's an Accessory
-      if(!stringVal && name !== 'stock_adjustment' && !(name === 'expiry_date' && form.category === 'Accessories')) {
+      if(!stringVal && name !== 'stock_adjustment') {
+        // Dynamic labels for real-time error messages
         const labels = {
           name: "Product name",
+          brand_name: "Brand name",
+          dosage: form.category === 'Medication' ? "Dosage" : "Size/Volume",
           description: "Description",
-          price: "Price",
+          price: "Retail price",
           unit_cost: "Unit cost",
-          min_stock_level: "Restock level",
+          min_stock_level: "Low stock alert",
           expiry_date: "Expiry date",
           supplier_name: "Supplier name",
           supplier_contact: "Supplier contact"
         };
-        setErrors(prev => ({ ...prev, [name]: `${labels[name] || name} is required.` }));
-      } else if ((name === 'price' || name === 'unit_cost') && Number(updatedValue) <= 0) {
-        setErrors(prev => ({ ...prev, [name]: "Must be greater than 0." }));
-      } else if (name === 'stock_adjustment' && updatedValue !== '') {
-        const adjustment = Number(updatedValue);
-        const currentStock = Number(initialData?.stock_level || 0);
-        
-        if (!form.product_id && adjustment < 0) {
-          setErrors(prev => ({ ...prev, [name]: "Initial stock cannot be negative." }));
-        } else if (form.product_id && (currentStock + adjustment < 0)) {
-          setErrors(prev => ({ ...prev, [name]: "Stock cannot drop below 0." }));
-        } else {
-          setErrors(prev => ({ ...prev, [name]: "valid" }));
+
+        // Filter: Don't show error for expiry if it's an accessory
+        const isExpiryRequired = form.category !== 'Accessories' && name === 'expiry_date';
+        const isDosageRequired = form.category === 'Medication' && name === 'dosage';
+
+        if ((name === 'expiry_date' && isExpiryRequired) || (name === 'dosage' && isDosageRequired) || (!['expiry_date', 'dosage'].includes(name))) {
+            setErrors(prev => ({ ...prev, [name]: `${labels[name] || name} is required.` }));
         }
       } else {
         setErrors(prev => ({ ...prev, [name]: "valid" }));
@@ -84,75 +77,106 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
 
     setForm(prev => ({ ...prev, [name]: updatedValue }));
 
-    // 👇 ADDED: Clear expiry date error if user switches category to Accessories
-    if (name === 'category' && updatedValue === 'Accessories') {
-        setErrors(prev => {
-            const newErrs = { ...prev };
-            delete newErrs.expiry_date;
-            return newErrs;
-        });
+    if (name === 'category') {
+      setErrors(prev => {
+        const newErrs = { ...prev };
+        if (updatedValue === 'Accessories') delete newErrs.expiry_date;
+        if (updatedValue !== 'Medication') delete newErrs.dosage;
+        return newErrs;
+      });
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!form.name.trim()) newErrors.name = "Product name is required.";
-    if (!form.description.trim()) newErrors.description = "Description is required.";
-    if (!form.price || form.price <= 0) newErrors.price = "Valid price is required.";
-    if (!form.unit_cost || form.unit_cost <= 0) newErrors.unit_cost = "Unit cost is required.";
-    if (form.min_stock_level === '' || form.min_stock_level < 0) newErrors.min_stock_level = "Restock level is required.";
+
+    // 1. Strings - using optional chaining and trim
+    if (!form.name?.trim()) newErrors.name = "Product name is required.";
+    if (!form.brand_name?.trim()) newErrors.brand_name = "Brand name is required.";
+    if (!form.description?.trim()) newErrors.description = "Description is required.";
     
-    // 👇 MODIFIED: Skip expiry validation if category is Accessories
+    // 2. Conditional Dosage (Only if Medication)
+    if (form.category === 'Medication' && !String(form.dosage || '').trim()) {
+      newErrors.dosage = "Dosage is required.";
+    }
+
+    // 3. Price & Cost (Handle as numbers)
+    if (form.price === '' || parseFloat(form.price) <= 0) {
+      newErrors.price = "Valid retail price is required.";
+    }
+    if (form.unit_cost === '' || parseFloat(form.unit_cost) <= 0) {
+      newErrors.unit_cost = "Valid unit cost is required.";
+    }
+
+    // 4. Stock Logic
+    const adj = form.stock_adjustment === '' ? 0 : parseInt(form.stock_adjustment);
+    if (!form.product_id) {
+      // NEW ITEM
+      if (form.stock_adjustment === '' || adj < 0) {
+        newErrors.stock_adjustment = "Initial stock is required.";
+      }
+    } else {
+      // UPDATE ITEM
+      const current = Number(initialData?.stock_level || 0);
+      if (current + adj < 0) {
+        newErrors.stock_adjustment = "Resulting stock cannot be negative.";
+      }
+    }
+
+    // 5. Expiry (Required for non-accessories)
     if (form.category !== 'Accessories' && !form.expiry_date) {
-        newErrors.expiry_date = "Expiry date is required.";
+      newErrors.expiry_date = "Expiry date is required.";
     }
 
-    if (!form.supplier_name.trim()) newErrors.supplier_name = "Supplier name is required.";
-    if (!form.supplier_contact.trim()) newErrors.supplier_contact = "Supplier contact is required.";
-    
-    if(!form.product_id && !form.prod_pic) {
-      newErrors.prod_pic = "Product image is required.";
+    // 6. Supplier
+    if (!form.supplier_name?.trim()) newErrors.supplier_name = "Supplier name is required.";
+    if (!form.supplier_contact?.trim()) newErrors.supplier_contact = "Supplier contact is required.";
+
+    // 7. Image (New items only)
+    if (!form.product_id && !form.prod_pic) {
+      newErrors.prod_pic = "Image is required.";
     }
 
-    const adjustment = Number(form.stock_adjustment || 0);
-    const currentStock = Number(initialData?.stock_level || 0);
-
-    if(!form.product_id && (form.stock_adjustment === '' || adjustment < 0)) {
-        newErrors.stock_adjustment = "Initial stock is required and cannot be negative.";
-    }
-    if(form.product_id && (currentStock + adjustment < 0)) {
-        newErrors.stock_adjustment = "Final stock cannot drop below 0.";
-    }
-    
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return; // Prevent double clicks
+
     const validationErrors = validateForm();
+    
     if (Object.keys(validationErrors).length > 0) {
+      // 👇 THIS IS YOUR BEST FRIEND FOR DEBUGGING:
+      console.error("VALIDATION FAILED:", validationErrors);
       setErrors(validationErrors);
-      toast.error("Please fill up all required fields.");
+      toast.error("Please check the required fields.");
       return;
     }
 
     setIsSubmitting(true);
+
     const fd = new FormData();
     
-    const currentStock = Number(initialData?.stock_level || 0);
+    // Logic for stock adjustment
     const adjustment = Number(form.stock_adjustment || 0);
+    const currentStock = Number(initialData?.stock_level || 0);
     const finalStockLevel = form.product_id ? (currentStock + adjustment) : adjustment;
 
     Object.keys(form).forEach(key => {
-      if(key === 'prod_pic') { 
-        if (form[key]) fd.append(key, form[key]); 
-      } 
-      else if(key !== 'stock_adjustment' && form[key] !== null) { 
-        // 👇 ADDED: Ensure expiry_date is sent as empty string if it's an accessory
+      if (key === 'prod_pic') {
+        if (form[key] instanceof File) {
+          fd.append(key, form[key]);
+        }
+      } else if (key === 'inventory_id' || key === 'product_id') {
+        // CRITICAL: Ensure IDs are sent as strings or null correctly
+        if (form[key] !== null) fd.append(key, form[key]);
+      } else if (key !== 'stock_adjustment' && form[key] !== null) {
+        // Handle Accessories Expiry
         if (key === 'expiry_date' && form.category === 'Accessories') {
-            fd.append(key, '');
+          fd.append(key, '');
         } else {
-            fd.append(key, form[key]); 
+          fd.append(key, form[key]);
         }
       }
     });
@@ -161,18 +185,26 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
     fd.append('branch_id', branchId);
 
     try {
+      // Determine endpoint based on existence of product_id
       const endpoint = form.product_id ? 'update-product-inventory.php' : 'create-product-inventory.php';
+      
       const response = await authFetch(`${API_URL}/api/clinic/general/inventory/${endpoint}`, { 
-        method: 'POST', body: fd 
+        method: 'POST', 
+        body: fd 
       });
-      if(response.success) {
+
+      if (response.success) {
         toast.success(response.message || "Inventory updated");
-        onRefresh(); onClose();
+        onRefresh(); 
+        onClose();
       } else {
         toast.error(response.message || "Error saving item");
       }
-    } catch(error) { toast.error("Something went wrong"); } 
-    finally { setIsSubmitting(false); }
+    } catch (error) {
+      toast.error("Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getBorderClass = (name) => {
@@ -182,25 +214,23 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 text-left z-[100] bg-black/60 backdrop-blur-sm">
-      <div className="flex flex-col w-full max-w-lg max-h-[90vh] overflow-hidden bg-white rounded-2xl">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-[100] bg-black/60 backdrop-blur-sm">
+      <div className="flex flex-col w-full max-w-lg max-h-[90vh] overflow-hidden bg-white rounded-2xl shadow-xl">
         
-        {/* header */}
-        <div className="flex items-center justify-between flex-shrink-0 p-6 border-b bg-gray-50">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b bg-gray-50">
           <div>
-            <h2 className="text-xl font-black leading-none tracking-tight text-gray-800 uppercase">
+            <h2 className="text-xl font-black text-gray-800 uppercase tracking-tight">
               {form.product_id ? 'Update Stock Item' : 'Add New Item'}
             </h2>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-              Inventory & Product Management
-            </p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Inventory Management</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 transition-all cursor-pointer hover:text-red-500">
+          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition-all cursor-pointer">
             <HiXCircle size={32}/>
           </button>
         </div>
 
-        {/* form */}
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-8 space-y-5 overflow-y-auto">
           <InputImage 
             label="Product Image" name="prod_pic" isPreview={true} 
@@ -212,125 +242,87 @@ export default function InventoryModal({ initialData, onClose, onRefresh, branch
           <Input 
             value={form.name} label="Product Name" name="name" 
             isImportant onChange={handleChange} error={errors.name} 
-            placeholder="Pedigree for dogs" 
+            placeholder="ex. Amoxicillin" 
           />
 
           <div className="grid grid-cols-2 gap-4">
+            {showBrandType && (
+              <div className="flex flex-col gap-1">
+                <label className="ml-1 text-sm font-medium text-gray-800">Brand Type *</label>
+                <select 
+                  name="brand_type" value={form.brand_type} onChange={handleChange}
+                  className={`w-full p-2.5 bg-white border rounded-lg text-sm outline-none transition-all ${getBorderClass('brand_type')}`}
+                >
+                  {brandTypes.map(bt => <option key={bt} value={bt}>{bt}</option>)}
+                </select>
+              </div>
+            )}
+            <div className={showBrandType ? "col-span-1" : "col-span-2"}>
+              <Input 
+                value={form.brand_name} label="Brand Name" name="brand_name" 
+                isImportant onChange={handleChange} error={errors.brand_name} 
+                placeholder="ex. Biogesic" 
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input 
+              value={form.dosage} 
+              label={form.category === 'Medication' ? "Dosage" : "Size / Volume"} 
+              name="dosage" 
+              isImportant={form.category === 'Medication'} 
+              onChange={handleChange} 
+              error={errors.dosage} 
+              placeholder={form.category === 'Medication' ? "ex. 500mg" : "ex. 5kg or 250ml"} 
+            />
             <div className="flex flex-col gap-1">
-              <label className="ml-1 text-sm font-medium tracking-tight text-gray-800">Category <span className="text-red-500">*</span></label>
+              <label className="ml-1 text-sm font-medium text-gray-800">Category *</label>
               <select 
                 name="category" value={form.category} onChange={handleChange}
                 className={`w-full p-2.5 bg-white border rounded-lg text-sm outline-none transition-all ${getBorderClass('category')}`}
               >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
-            <Input 
-              type="number" value={form.price} label="Retail Price (Sell)" 
-              name="price" isImportant onChange={handleChange} 
-              error={errors.price} placeholder="0.00" 
-            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input 
-              type="number" value={form.unit_cost} label="Unit Cost (Buy)" 
-              name="unit_cost" isImportant onChange={handleChange} 
-              error={errors.unit_cost} placeholder="0.00" 
-            />
-            <Input 
-              type="number" value={form.min_stock_level} label="Restock Level Alert" 
-              name="min_stock_level" isImportant onChange={handleChange} 
-              error={errors.min_stock_level} placeholder="Enter min stock..." 
-            />
+            <Input type="number" value={form.price} label="Retail Price (Sell)" name="price" isImportant onChange={handleChange} error={errors.price} placeholder="0.00" />
+            <Input type="number" value={form.unit_cost} label="Unit Cost (Buy)" name="unit_cost" isImportant onChange={handleChange} error={errors.unit_cost} placeholder="0.00" />
           </div>
 
-          {/* SPLIT INVENTORY UI */}
-          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl">
-            <Input 
-              type="number" 
-              value={initialData?.stock_level || 0} 
-              label="Current Stock" 
-              disabled={true} 
-            />
-            <Input 
-              type="number" 
-              value={form.stock_adjustment} 
-              label={form.product_id ? "Adjust Stock (+ / -)" : "Initial Stock Amount"} 
-              name="stock_adjustment" 
-              isImportant={!form.product_id} 
-              onChange={handleChange} 
-              error={errors.stock_adjustment} 
-              placeholder={form.product_id ? "e.g. 20 or -5" : "Enter amount..."} 
-            />
+          <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input type="number" value={initialData?.stock_level || 0} label="Current Stock" disabled={true} />
+              <Input type="number" value={form.stock_adjustment} label={form.product_id ? "Adjust (+/-)" : "Initial Stock"} name="stock_adjustment" isImportant={!form.product_id} onChange={handleChange} error={errors.stock_adjustment} placeholder="0" />
+            </div>
+            <Input type="number" value={form.min_stock_level} label="Low Stock Alert Level" name="min_stock_level" isImportant onChange={handleChange} error={errors.min_stock_level} placeholder="5" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Input 
-              value={form.supplier_name} label="Supplier Name" 
-              name="supplier_name" isImportant onChange={handleChange} 
-              error={errors.supplier_name} placeholder="PetCare Dist." 
-            />
-            <Input 
-              value={form.supplier_contact} label="Supplier Contact #" 
-              name="supplier_contact" isImportant onChange={handleChange} 
-              error={errors.supplier_contact} placeholder="0912 345 6789" 
-            />
+            <Input value={form.supplier_name} label="Supplier" name="supplier_name" isImportant onChange={handleChange} error={errors.supplier_name} placeholder="ex. Supplier Name" />
+            <Input value={form.supplier_contact} label="Contact #" name="supplier_contact" isImportant onChange={handleChange} error={errors.supplier_contact} placeholder="ex. 09123456789" />
           </div>
           
-          {/* 👇 MODIFIED: Wrapped in conditional check */}
           {form.category !== 'Accessories' && (
-            <div className="grid grid-cols-1">
-               <Input 
-                type="date" value={form.expiry_date} label="Expiry Date" 
-                name="expiry_date" isImportant onChange={handleChange} 
-                error={errors.expiry_date} 
-              />
-            </div>
+            <Input type="date" value={form.expiry_date} label="Expiry Date" name="expiry_date" isImportant onChange={handleChange} error={errors.expiry_date} />
           )}
 
           <div className="flex flex-col gap-1 pb-2">
-            <label className="ml-1 text-sm font-medium text-gray-700">Description <span className='text-red-500'>*</span></label>
+            <label className="ml-1 text-sm font-medium text-gray-700">Description *</label>
             <textarea 
-              name="description" value={form.description} onChange={handleChange}
-              placeholder="Enter product details..."
-              className={`w-full p-3 bg-white border rounded-lg text-sm min-h-[80px] outline-none transition-all ${getBorderClass('description')}`}
+              name="description" 
+              value={form.description} 
+              onChange={handleChange} 
+              placeholder="ex. Description of the product."
+              className={`w-full p-3 bg-white border rounded-lg text-sm min-h-[80px] outline-none transition-all ${getBorderClass('description')}`} 
             />
-            {errors.description && errors.description !== "valid" && (
-              <p className="flex items-center gap-0.5 text-xs text-red-500 mt-1">
-                <HiMiniExclamationCircle size={16} />
-                {errors.description}
-              </p>
-            )}
           </div>
 
-          <button 
-            type="submit" disabled={isSubmitting} 
-            className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black tracking-widest text-white uppercase bg-(--clr-primary) rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 mt-4 flex-shrink-0 hover:bg-(--clr-primary)/95 cursor-pointer"
-          >
+          <button type="submit" disabled={isSubmitting} className="flex items-center justify-center w-full gap-2 py-4 text-xs font-black text-white uppercase bg-(--clr-primary) rounded-xl hover:bg-(--clr-primary)/95 transition-all cursor-pointer">
             <HiSave size={18}/> {isSubmitting ? "Saving..." : "Save Product & Stock"}
           </button>
-
-          {/* AUDIT */}
-          {initialData?.product_id && (
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-              <div className="flex flex-col">
-                <div className="flex items-center gap-3">
-                  <p className="text-[10px] font-bold text-gray-700 uppercase italic">
-                    Last Updated: {initialData.updated_at ? formattedDateUpdate : '---'}
-                  </p>
-                  <span className="text-gray-300">|</span>
-                  <div className="flex items-center gap-1">
-                    <span className={`text-[10px] font-black uppercase ${!initialData.last_updated_by ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
-                      Updated By: {initialData.updated_by_staff_name || initialData.last_updated_by || 'No record yet'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </form>
       </div>
     </div>

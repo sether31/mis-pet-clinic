@@ -87,6 +87,45 @@ export default function BranchAdminView() {
     window.open(url, '_blank');
   };
 
+  const ProductTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      // Extract name, sales, brand, category, AND dosage/size
+      const { name, brand_name, category, sales, dosage, size } = payload[0].payload;
+
+      // Determine what to show in the parentheses
+      // Prioritize dosage for Medication, otherwise use size
+      const extraInfo = dosage || size;
+
+      return (
+        <div className="bg-gray-900 text-white p-3 rounded-xl shadow-xl border border-gray-700 text-[10px] font-black uppercase tracking-widest pointer-events-none">
+          {/* Header: Name (Dosage/Size) */}
+          <p className="border-b border-gray-700 pb-1 mb-2 text-purple-400">
+            {name} {extraInfo ? `(${extraInfo})` : ''}
+          </p>
+
+          <div className="space-y-1.5">
+            <p className="flex justify-between gap-4">
+              <span className="text-gray-500">Brand:</span>
+              <span className="text-gray-200">{brand_name || 'No Brand'}</span>
+            </p>
+
+            <p className="flex justify-between gap-4">
+              <span className="text-gray-500">Category:</span>
+              <span className="text-gray-200">{category}</span>
+            </p>
+
+            <p className="pt-1 mt-1 border-t border-gray-800 text-xs flex justify-between items-center">
+              <span className="text-gray-400">Total Sales:</span>
+              <span className="text-white text-sm">{sales}</span>
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
@@ -253,9 +292,22 @@ export default function BranchAdminView() {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={data.topProducts}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} 
+                      /* Shorten long product names on the axis to keep it clean */
+                      tickFormatter={(value) => value.length > 10 ? `${value.substring(0, 10)}...` : value}
+                    />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                    <Tooltip cursor={{ fill: '#f8fafc' }} />
+                    
+                    {/* ADD CUSTOM TOOLTIP HERE */}
+                    <Tooltip 
+                      content={<ProductTooltip />} 
+                      cursor={{ fill: '#f8fafc', radius: 6 }} 
+                    />
+                    
                     <Bar dataKey="sales" fill="#9333ea" radius={[6, 6, 0, 0]} barSize={40} />
                   </BarChart>
                 </ResponsiveContainer>

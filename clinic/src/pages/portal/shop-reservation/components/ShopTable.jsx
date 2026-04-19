@@ -222,21 +222,38 @@ export default function ShopTable({ data = [], onReview }) {
                 </td>
 
                 <td className="px-6 py-4 border-r border-gray-300">
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src={getMediaUrl(order.prod_pic)} 
-                      className="object-cover w-10 h-10 border border-gray-200 rounded-lg bg-gray-50" 
-                      onError={(e) => e.target.src = NoImage} 
-                      alt=""
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold leading-tight text-gray-800 uppercase truncate">{order.product_name}</p>
-                      <span className="px-2 py-0.5 bg-gray-100 text-[8px] font-black text-gray-500 rounded uppercase border border-gray-200 mt-1 inline-block">
-                        Qty: {order.quantity} <span className='text[6px]'>x</span> ₱{parseFloat(order.unit_price).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </td>
+  <div className="flex items-center gap-3">
+    <img 
+      src={getMediaUrl(order.prod_pic)} 
+      className="object-cover w-10 h-10 border border-gray-200 rounded-lg bg-gray-50" 
+      onError={(e) => e.target.src = NoImage} 
+      alt=""
+    />
+    <div className="flex-1 min-w-0">
+      <p className="font-bold leading-tight text-gray-800 uppercase truncate">
+        {order.product_name}
+        {order.brand_name && <span className="ml-1 text-gray-500 font-medium normal-case">({order.brand_name})</span>}
+      </p>
+      
+      {/* Brand Type and Dosage Row */}
+      <div className="flex flex-wrap gap-1 mt-1">
+        {order.brand_type && (
+          <span className="px-1.5 py-0.5 bg-blue-50 text-[8px] font-bold text-blue-600 rounded uppercase border border-blue-100">
+            {order.brand_type}
+          </span>
+        )}
+        {order.dosage && (
+          <span className="px-1.5 py-0.5 bg-purple-50 text-[8px] font-bold text-purple-600 rounded uppercase border border-purple-100">
+            {order.dosage}
+          </span>
+        )}
+        <span className="px-1.5 py-0.5 bg-gray-100 text-[8px] font-black text-gray-500 rounded uppercase border border-gray-200">
+          Qty: {order.quantity} x ₱{parseFloat(order.unit_price).toLocaleString()}
+        </span>
+      </div>
+    </div>
+  </div>
+</td>
 
                 <td className="px-6 py-4 text-center border-r border-gray-300">
                   <p className="text-sm font-black text-(--clr-primary) tracking-tight">

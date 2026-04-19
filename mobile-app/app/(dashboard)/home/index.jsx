@@ -265,8 +265,17 @@ export default function HomeTab() {
                               style={styles.prodImg} 
                             />
                             <View style={{flex: 1}}>
-                              <AppText style={styles.serviceName} numberOfLines={1}>{item.product_name}</AppText>
-                              <AppText style={styles.clinicName}>{item.branch_name}</AppText>
+                              {/* DISPLAY BRAND NAME WITH PRODUCT NAME */}
+                              <AppText style={styles.serviceName} numberOfLines={1}>
+                                {item.product_name}
+                                {item.brand_name ? ` (${item.brand_name})` : ''}
+                              </AppText>
+                              
+                              {/* DISPLAY DOSAGE NEXT TO CLINIC NAME */}
+                              <AppText style={styles.clinicName}>
+                                {item.branch_name}
+                                {item.dosage ? ` • ${item.dosage}` : ''}
+                              </AppText>
                             </View>
                           </View>
                         </View>

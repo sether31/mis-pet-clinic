@@ -120,16 +120,52 @@ try {
   foreach ($all_transactions as $trx) {
     
     // Fetch items for this specific transaction
-    $itemStmt = $pdo->prepare("SELECT oi.*, s.custom_name as service_name, prod.name as product_name FROM order_items_tb oi LEFT JOIN branch_service_tb s ON oi.service_id = s.branch_service_id LEFT JOIN products_tb prod ON oi.product_id = prod.product_id WHERE oi.order_id = :id");
+    $itemStmt = $pdo->prepare("
+        SELECT 
+            oi.*, 
+            s.custom_name as service_name, 
+            prod.name as product_name,
+            prod.brand_name,
+            prod.brand_type,
+            prod.dosage
+        FROM order_items_tb oi 
+        LEFT JOIN branch_service_tb s ON oi.service_id = s.branch_service_id 
+        LEFT JOIN products_tb prod ON oi.product_id = prod.product_id 
+        WHERE oi.order_id = :id
+    ");
     $itemStmt->execute([':id' => $trx['transaction_id']]);
     $items = $itemStmt->fetchAll();
 
     $itemsHtml = '';
     foreach ($items as $item) {
-      $name = ucwords(strtolower($item['service_name'] ?: $item['product_name']));
-      if(strlen($name) > 35) $name = substr($name, 0, 32) . '...';
-      $type = $item['service_id'] ? 'Service' : 'Product';
-      $itemsHtml .= "<tr><td style='padding: 10px; border-bottom: 1px solid #eee;'><strong>$name</strong><br><small style='color:#666; text-transform: uppercase; font-size: 8px;'>$type</small></td><td align='center' style='padding: 10px; border-bottom: 1px solid #eee;'>{$item['quantity']}</td><td align='right' style='padding: 10px; border-bottom: 1px solid #eee;'>PHP " . number_format($item['subtotal'], 2) . "</td></tr>";
+        $name = ucwords(strtolower($item['service_name'] ?: $item['product_name']));
+        if(strlen($name) > 35) $name = substr($name, 0, 32) . '...';
+        $type = $item['service_id'] ? 'Service' : 'Product';
+        $unitPrice = $item['subtotal'] / ($item['quantity'] ?: 1);
+
+        // PRODUCT DETAILS LOGIC: Filter out empty or "N/A" values
+        $details = [];
+        if (!empty($item['brand_name']) && strtoupper($item['brand_name']) !== 'N/A') $details[] = $item['brand_name'];
+        if (!empty($item['brand_type']) && strtoupper($item['brand_type']) !== 'N/A') $details[] = $item['brand_type'];
+        if (!empty($item['dosage']) && strtoupper($item['dosage']) !== 'N/A') $details[] = $item['dosage'];
+        
+        // Join details with a dot separator (e.g., Brand • Tablet • 10mg)
+        $detailsText = !empty($details) ? implode(' • ', $details) : $type;
+
+        $itemsHtml .= "
+        <tr>
+            <td style='padding: 10px; border-bottom: 1px solid #eee;'>
+                <strong>" . htmlspecialchars($name) . "</strong><br>
+                <small style='color:#666; text-transform: uppercase; font-size: 8px;'>$detailsText</small>
+            </td>
+            <td align='center' style='padding: 10px; border-bottom: 1px solid #eee; font-size: 10px;'>
+                " . number_format($unitPrice, 2) . "
+            </td>
+            <td align='center' style='padding: 10px; border-bottom: 1px solid #eee;'>{$item['quantity']}</td>
+            <td align='right' style='padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;'>
+                " . number_format($item['subtotal'], 2) . "
+            </td>
+        </tr>";
     }
 
     $ownerName = trim($trx['owner_name']);
@@ -170,7 +206,7 @@ try {
         </table>
 
         <table class='table'>
-          <thead><tr><th>Description</th><th align='center'>Qty</th><th align='right'>Subtotal</th></tr></thead>
+          <thead><tr><th>Description</th><th align='right'>Price</th><th align='right'>Qty</th><th align='right'>Subtotal</th></tr></thead>
           <tbody>$itemsHtml</tbody>
         </table>
 

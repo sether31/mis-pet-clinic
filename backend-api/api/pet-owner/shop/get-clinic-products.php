@@ -16,50 +16,43 @@ $branch_id = htmlspecialchars(strip_tags($_GET['branch_id']));
 try {
   $pdo = (new Database())->pdo;
 
-  $stmt = $pdo->prepare(
-    "SELECT 
-        p.product_id, 
-        p.name, 
-        p.description, 
-        p.category, 
-        p.prod_pic,
-        -- Calculate Sellable Stock (Active and not expired)
-        COALESCE(SUM(
-            CASE 
-                WHEN i.is_active = 1 AND (i.expiry_date > CURDATE() OR i.expiry_date IS NULL) 
-                THEN i.stock_level 
-                ELSE 0 
-            END
-        ), 0) as total_stock,
-        -- Price Logic (Prioritize price from active, non-expired batches)
-        COALESCE((
-            SELECT price 
-            FROM inventory_tb 
-            WHERE product_id = p.product_id 
-              AND branch_id = p.branch_id 
-              AND is_active = 1 
-            ORDER BY 
-              CASE WHEN (expiry_date > CURDATE() OR expiry_date IS NULL) THEN 0 ELSE 1 END ASC,
-              expiry_date ASC 
-            LIMIT 1
-        ), 0.00) as price
-        FROM products_tb p
-        INNER JOIN inventory_tb i 
-            ON p.product_id = i.product_id 
-            AND i.branch_id = p.branch_id
-        WHERE p.branch_id = :branch_id
-        GROUP BY p.product_id, p.name, p.description, p.category, p.prod_pic
-        -- THE HIDER: Only return products that have actual sellable stock remaining
-        HAVING SUM(
-            CASE 
-                WHEN i.is_active = 1 AND (i.expiry_date > CURDATE() OR i.expiry_date IS NULL) 
-                THEN i.stock_level 
-                ELSE 0 
-            END
-        ) > 0
-        ORDER BY p.category ASC, p.name ASC"
-    );
+  // We join p.* with a subquery that handles the complex Inventory logic
+  $query = "SELECT 
+              p.*, 
+              inv.total_stock,
+              inv.price
+            FROM products_tb p
+            INNER JOIN (
+                SELECT 
+                    product_id,
+                    -- Sum only active and non-expired stock
+                    SUM(CASE 
+                        WHEN is_active = 1 AND (expiry_date > CURDATE() OR expiry_date IS NULL) 
+                        THEN stock_level 
+                        ELSE 0 
+                    END) as total_stock,
+                    -- FEFO Price: Get price of the batch expiring soonest
+                    (
+                        SELECT price 
+                        FROM inventory_tb i2 
+                        WHERE i2.product_id = i1.product_id 
+                          AND i2.branch_id = i1.branch_id 
+                          AND i2.is_active = 1 
+                          AND (i2.expiry_date > CURDATE() OR i2.expiry_date IS NULL)
+                        ORDER BY 
+                          expiry_date IS NULL ASC, -- Put NULL expiries at the end
+                          expiry_date ASC 
+                        LIMIT 1
+                    ) as price
+                FROM inventory_tb i1
+                WHERE branch_id = :branch_id
+                GROUP BY product_id
+            ) inv ON p.product_id = inv.product_id
+            WHERE p.branch_id = :branch_id 
+              AND inv.total_stock > 0 -- The 'Hider': Only show items with stock
+            ORDER BY p.category ASC, p.name ASC";
 
+  $stmt = $pdo->prepare($query);
   $stmt->execute([':branch_id' => $branch_id]);
 
   $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -67,7 +60,8 @@ try {
 
   foreach ($results as $row) {
       $row['total_stock'] = (int)$row['total_stock'];
-      $row['price'] = number_format((float)$row['price'], 2, '.', '');
+      // Ensure price is formatted correctly for the frontend
+      $row['price'] = number_format((float)($row['price'] ?? 0), 2, '.', '');
       $products[] = $row;
   }
 

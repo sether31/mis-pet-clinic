@@ -151,15 +151,42 @@ export default function ShopModal({ order, onClose, onUpdate }) {
             <div className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl">
               <div className="flex items-center flex-1 gap-4">
                 <div className="w-12 h-12 overflow-hidden bg-gray-100 border border-gray-200 shrink-0 rounded-xl">
-                  <img src={order.prod_pic ? `${API_URL}/${order.prod_pic}` : noImage} alt={order.product_name} className="object-cover w-full h-full" />
+                  <img 
+                    src={order.prod_pic ? `${API_URL}/${order.prod_pic}` : noImage} 
+                    alt={order.product_name} 
+                    className="object-cover w-full h-full" 
+                  />
                 </div>
                 <div>
-                  <p className="text-[12px] font-black text-gray-800 uppercase">{order.product_name}</p>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
-                    ₱{parseFloat(order.unit_price).toLocaleString()} x {order.quantity}
+                  {/* Product Name + Brand Name */}
+                  <p className="text-[12px] font-black text-gray-800 uppercase leading-tight">
+                    {order.product_name}
+                    {order.brand_name && (
+                      <span className="ml-1 text-gray-500 font-bold normal-case">
+                        ({order.brand_name})
+                      </span>
+                    )}
                   </p>
+
+                  {/* Brand Type & Dosage Badges */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {order.brand_type && (
+                      <span className="px-1.5 py-0.5 bg-blue-50 text-[8px] font-black text-blue-600 rounded uppercase border border-blue-100">
+                        {order.brand_type}
+                      </span>
+                    )}
+                    {order.dosage && (
+                      <span className="px-1.5 py-0.5 bg-purple-50 text-[8px] font-black text-purple-600 rounded uppercase border border-purple-100">
+                        {order.dosage}
+                      </span>
+                    )}
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 self-center">
+                      ₱{parseFloat(order.unit_price).toLocaleString()} x {order.quantity}
+                    </p>
+                  </div>
                 </div>
               </div>
+
               <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-xl">
                 <span className="text-[10px] font-black text-gray-600 uppercase">
                   Subtotal: ₱{(parseFloat(order.unit_price) * parseInt(order.quantity)).toLocaleString()}

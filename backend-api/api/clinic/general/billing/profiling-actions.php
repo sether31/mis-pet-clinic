@@ -74,13 +74,18 @@ try {
 
       foreach ($transactions as &$tx) {
           $itemStmt = $pdo->prepare("
-              SELECT oi.quantity, oi.subtotal, 
-                     COALESCE(s.custom_name, p.name) as item_name
-              FROM order_items_tb oi
-              LEFT JOIN branch_service_tb s ON oi.service_id = s.branch_service_id
-              LEFT JOIN products_tb p ON oi.product_id = p.product_id
-              WHERE oi.order_id = :oid
-          ");
+            SELECT 
+                oi.quantity, 
+                oi.subtotal, 
+                COALESCE(s.custom_name, p.name) as item_name,
+                p.brand_name,
+                p.brand_type,  -- ADD THIS
+                p.dosage
+            FROM order_items_tb oi
+            LEFT JOIN branch_service_tb s ON oi.service_id = s.branch_service_id
+            LEFT JOIN products_tb p ON oi.product_id = p.product_id
+            WHERE oi.order_id = :oid
+        ");
           $itemStmt->execute([':oid' => $tx['order_id']]);
           $tx['items'] = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
       }
