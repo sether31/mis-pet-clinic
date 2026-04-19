@@ -49,14 +49,41 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
   if (!isOpen) return null;
 
   // ADDED: Filter history based on the pickup_date rule
+  // Change this section in your component
   const displayedHistory = history.filter(tx => {
-    // Check if pickup date exists and is not an empty string
-    const hasPickupDate = tx.pickup_date && tx.pickup_date.trim() !== '';
+    // Normalize the source type for easier comparison
+    const sourceType = tx.source_type?.toLowerCase() || '';
+
+    if (selectedType === 'product') {
+      // Look for "retail" or "product" in the source_type string
+      return sourceType.includes('product') || sourceType.includes('retail');
+    }
     
-    if (selectedType === 'product') return hasPickupDate; // Products MUST have a pickup date
-    if (selectedType === 'appointment') return !hasPickupDate; // Appointments MUST NOT have a pickup date
-    return true; // Fallback if 'all'
+    if (selectedType === 'appointment') {
+      // Only show if it's strictly an appointment
+      return sourceType === 'appointment';
+    }
+
+    return true; // Show all for 'all'
   });
+
+  const formatSafeDate = (dateString) => {
+  if (!dateString) return "N/A";
+  
+  // If it's a timestamp like "2026-04-19 10:00:00", 
+  // replacing the space with 'T' makes it ISO-compliant for JS
+  const formattedString = dateString.replace(' ', 'T');
+  const date = new Date(formattedString);
+  
+  // Check if the date is actually valid
+  if (isNaN(date.getTime())) return "Invalid Date";
+
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: '2-digit', 
+    year: 'numeric' 
+  });
+};
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-gray-900/60 backdrop-blur-sm">
@@ -177,7 +204,8 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                       <div className="flex items-center justify-between pb-2 mb-4 border-b border-gray-100">
                         <div className="flex gap-2">
                           <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded uppercase">
-                            {new Date(tx.transaction_date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                            {/* USE THE HELPER HERE */}
+                            {formatSafeDate(tx.display_date)}
                           </span>
                           <span className="text-[10px] font-black text-(--clr-primary) bg-blue-50 px-2 py-0.5 rounded uppercase">
                             Paid via {tx.payment_method || 'Cash'}
@@ -187,20 +215,69 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                       </div>
 
                       <div className="space-y-3">
-                        {tx.items?.map((item, idx) => (
-                          <div key={idx} className="flex justify-between items-center text-[11px] font-bold">
-                            <span className="text-gray-600 uppercase flex items-center gap-2">
-                              <span className="w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-[9px] font-black">{item.quantity}x</span>
-                              {item.display_name || item.item_name || item.product_name || item.service_name}
-                            </span>
-                            <span className="text-gray-800">₱{parseFloat(item.subtotal).toLocaleString()}</span>
-                          </div>
-                        ))}
-                      </div>
+                        {tx.items?.filter(item => {
+                          if (selectedType === 'appointment') return true; 
+                          if (selectedType === 'product') return item.product_id !== null;
+                          return true;
+                        }).map((item, idx) => {
+                          // Calculate unit price (subtotal divided by quantity)
+                          const unitPrice = parseFloat(item.subtotal) / (parseInt(item.quantity) || 1);
 
-                      <div className="mt-4 pt-4 border-t border-dashed border-gray-200 flex justify-between items-center">
-                        <p className="text-[9px] font-black text-gray-400 uppercase">Settled Amount</p>
-                        <p className="text-sm font-black text-gray-900 tracking-tight">₱{parseFloat(tx.amount || tx.total_amount).toLocaleString()}</p>
+                          return (
+                            <div key={idx} className="flex justify-between items-start text-[11px] font-bold py-1">
+                              <div className="flex flex-col flex-1">
+                                <div className="flex items-center gap-2">
+                                  {/* Quantity Badge */}
+                                  <span className="w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-[9px] font-black shrink-0">
+                                    {item.quantity}x
+                                  </span>
+                                  
+                                  <div className="flex flex-col">
+                                    <span className="text-gray-600 uppercase">
+                                      {item.display_name || item.item_name || item.product_name || item.service_name}
+                                    </span>
+                                    {/* ADDED: Unit Price Reference */}
+                                    <span className="text-[9px] text-gray-400 font-medium">
+                                      @ ₱{unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })} each
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                {/* Brand & Dosage Sub-labels */}
+                                {(item.brand_name || item.brand_type || item.dosage) && (
+                                  <div className="flex items-center gap-1.5 ml-7 mt-0.5">
+                                    {item.brand_name && item.brand_name.toUpperCase() !== 'N/A' && (
+                                      <span className="text-[8px] font-black text-gray-400 uppercase">
+                                        {item.brand_name}
+                                      </span>
+                                    )}
+                                    {item.brand_type && item.brand_type.toUpperCase() !== 'N/A' && (
+                                      <>
+                                        <span className="text-gray-300 text-[8px]">•</span>
+                                        <span className="text-[8px] font-black text-gray-500 uppercase italic">
+                                          {item.brand_type}
+                                        </span>
+                                      </>
+                                    )}
+                                    {item.dosage && item.dosage.toUpperCase() !== 'N/A' && (
+                                      <>
+                                        <span className="text-gray-300 text-[8px]">•</span>
+                                        <span className="text-[8px] font-black text-blue-500 uppercase">
+                                          {item.dosage}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Item Subtotal */}
+                              <span className="text-gray-800 shrink-0">
+                                ₱{parseFloat(item.subtotal).toLocaleString()}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )) : (

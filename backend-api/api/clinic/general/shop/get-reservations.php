@@ -46,17 +46,18 @@ try {
       u.profile_picture,            
       SUM(oi.quantity) AS quantity,
       MAX(p.name) AS product_name,
+      MAX(p.brand_name) AS brand_name,   -- Added
+      MAX(p.brand_type) AS brand_type,   -- Added
+      MAX(p.dosage) AS dosage,           -- Added
       MAX(p.prod_pic) AS prod_pic,  
       MAX(oi.price) AS unit_price,
-      -- Audit
       o.updated_at,
       CONCAT(u_updater.first_name, ' ', u_updater.last_name) AS updated_by_name
     FROM order_tb o
-    LEFT JOIN user_tb u ON o.user_id = u.user_id  -- 🔥 CHANGED TO LEFT JOIN
+    LEFT JOIN user_tb u ON o.user_id = u.user_id 
     LEFT JOIN order_items_tb oi ON o.order_id = oi.order_id 
     LEFT JOIN products_tb p ON oi.product_id = p.product_id 
     LEFT JOIN appointments_tb a ON o.order_id = a.order_id 
-
     LEFT JOIN user_tb u_updater ON o.last_updated_by = u_updater.user_id
     WHERE o.branch_id = ?
     AND a.appointment_id IS NULL
@@ -70,7 +71,6 @@ try {
       u.last_name,
       u.profile_picture,            
       o.created_at,
-      -- audit data
       o.updated_at,
       o.last_updated_by,
       u_updater.first_name,
@@ -79,7 +79,7 @@ try {
       CASE WHEN o.order_status = 'pending' THEN 1 ELSE 2 END,
       o.pickup_date ASC, 
       o.created_at DESC"
-  );
+);
   
   $stmt->execute([$branch_id]);
   $orders = $stmt->fetchAll();

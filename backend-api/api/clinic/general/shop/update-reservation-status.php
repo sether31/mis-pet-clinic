@@ -89,27 +89,49 @@ try {
       $pdo->prepare("UPDATE payments_tb SET payment_status = 'cancelled' WHERE order_id = ?")->execute([$order_id]);
   }
 
+  // Fetch detailed item list including brand and dosage
   $nameStmt = $pdo->prepare("
-      SELECT GROUP_CONCAT(p.name SEPARATOR ', ') as item_list
+      SELECT GROUP_CONCAT(
+          CONCAT(
+              p.name, 
+              IF(p.brand_name IS NOT NULL AND p.brand_name != '', CONCAT(' (', p.brand_name, ')'), ''),
+              IF(p.dosage IS NOT NULL AND p.dosage != '', CONCAT(' ', p.dosage), '')
+          ) SEPARATOR ', '
+      ) as item_list
       FROM order_items_tb oi
-      JOIN inventory_tb i ON oi.inventory_id = i.inventory_id
-      JOIN products_tb p ON i.product_id = p.product_id
+      JOIN products_tb p ON oi.product_id = p.product_id
       WHERE oi.order_id = ?
   ");
   $nameStmt->execute([$order_id]);
   $itemRow = $nameStmt->fetch();
   
   $order_names = $itemRow['item_list'] ?? 'Items';
+  
   if (strlen($order_names) > 60) {
       $order_names = substr($order_names, 0, 57) . '...';
   }
 
-  // 3. SEND NOTIFICATION TO PET OWNER
+  // Define the feedback string for rejections/cancellations
+  $feedback = !empty($reason) ? " Reason: " . $reason : " No specific reason provided.";
+
+  // 3. SEND NOTIFICATION TO PET OWNER (With Feedback added back)
   $notif_data = [
-      'confirmed' => ['title' => 'Reservation Ready for pick up!', 'msg' => "Your reservation #$order_id ($order_names) is ready for pickup at {$currentOrder['branch_name']}."],
-      'rejected'  => ['title' => 'Reservation Rejected', 'msg' => "Sorry, your reservation #$order_id ($order_names) was rejected. Reason: " . ($reason ?? 'No reason provided')],
-      'completed' => ['title' => 'Item Picked Up', 'msg' => "Thank you! Your order #$order_id ($order_names) has been marked as completed/picked up."],
-      'cancelled' => ['title' => 'Reservation Cancelled', 'msg' => "Your reservation #$order_id ($order_names) has been successfully cancelled."]
+      'confirmed' => [
+          'title' => 'Ready for Pickup!', 
+          'msg'   => "Your reservation for {$order_names} is now ready for pickup at {$currentOrder['branch_name']}."
+      ],
+      'rejected'  => [
+          'title' => 'Reservation Rejected', 
+          'msg'   => "Your reservation for {$order_names} was rejected by the clinic. {$feedback}"
+      ],
+      'completed' => [
+          'title' => 'Order Completed', 
+          'msg'   => "Thank you! Your order for {$order_names} has been marked as picked up."
+      ],
+      'cancelled' => [
+          'title' => 'Reservation Cancelled', 
+          'msg'   => "Your reservation for {$order_names} was cancelled by the clinic. {$feedback}"
+      ]
   ];
 
   if (isset($notif_data[$status])) {
@@ -123,8 +145,8 @@ try {
   }
 
   // AUDIT LOG
-  $action_map = ['cancelled' => 'CANCEL', 'rejected' => 'REJECT', 'completed' => 'COMPLETE', 'confirmed' => 'CONFIRM'];
-  log_audit($pdo, $admin_user_id, $currentOrder['clinic_id'], $currentOrder['branch_id'], $action_map[$status] ?? 'UPDATE', 'RESERVATION', $order_id);
+//   $action_map = ['cancelled' => 'CANCEL', 'rejected' => 'REJECT', 'completed' => 'COMPLETE', 'confirmed' => 'CONFIRM'];
+//   log_audit($pdo, $admin_user_id, $currentOrder['clinic_id'], $currentOrder['branch_id'], $action_map[$status] ?? 'UPDATE', 'RESERVATION', $order_id);
 
   $pdo->commit();
   echo json_encode(["success" => true, "message" => "Order marked as {$status}!"]);

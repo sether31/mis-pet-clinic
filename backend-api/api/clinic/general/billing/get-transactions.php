@@ -45,17 +45,26 @@ try {
   $branches = $stmtBranches->fetchAll();
 
   // 3. Fetch all raw transactions for this clinic/branch
+  // 3. Fetch all raw transactions for this clinic/branch
   $sql = "SELECT
     o.order_id as transaction_id,
     o.user_id,
     o.total_amount as amount,
     o.order_status as transaction_status,
+    -- ADDED: SMART DATE LOGIC
+    CASE 
+        WHEN (o.pickup_date IS NOT NULL AND o.pickup_date != '') THEN o.pickup_date
+        WHEN a.start_time IS NOT NULL THEN a.start_time
+        ELSE o.created_at
+    END as display_date,
     o.created_at as transaction_date,
+    o.pickup_date, -- We keep this for the React filter
     o.branch_id,
     pay.payment_method,
     pay.payment_status,
     b.name as branch_name,
     a.appointment_id,
+    a.start_time, -- We keep this for reference
     p.name as pet_name,
     p.pet_picture as pet_image,
     u_owner.profile_picture as user_image,
@@ -70,7 +79,7 @@ try {
     LEFT JOIN user_tb u_owner ON o.user_id = u_owner.user_id
     WHERE b.clinic_id = :clinic_id
     AND b.status = 'approved'
-    AND LOWER(o.order_status) NOT IN ('cancelled', 'rejected')";
+    AND LOWER(o.order_status) IN ('paid', 'completed', 'billed', 'fully paid')";
 
   $params = [':clinic_id' => $clinic_id];
 
@@ -108,7 +117,12 @@ try {
     $transactionIds = array_column($rawTransactions, 'transaction_id');
     $placeholders = implode(',', array_fill(0, count($transactionIds), '?'));
     $itemStmt = $pdo->prepare("
-      SELECT oi.*, s.custom_name as service_name, prod.name as product_name
+      SELECT oi.*, 
+             s.custom_name as service_name, 
+             prod.name as product_name,
+             prod.brand_name,   -- ADDED THIS
+             prod.brand_type,   -- ADDED THIS
+             prod.dosage        -- ADDED THIS
       FROM order_items_tb oi
       LEFT JOIN branch_service_tb s ON oi.service_id = s.branch_service_id
       LEFT JOIN products_tb prod ON oi.product_id = prod.product_id

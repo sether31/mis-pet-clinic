@@ -166,9 +166,13 @@ export default function OrderList({ activeTab }) {
                 />
                 <View style={{flex: 1}}>
                   <AppText style={styles.serviceName} numberOfLines={1}>
-                    {item.product_name}
+                    {item.product_name} 
+                    {/* Display brand and dosage if they exist */}
+                    {item.brand_name ? ` (${item.brand_name})` : ''}
                   </AppText>
-                  <AppText style={styles.clinicName}>{item.branch_name}</AppText>
+                  <AppText style={styles.clinicName}>
+                    {item.branch_name} {item.dosage ? `• ${item.dosage}` : ''}
+                  </AppText>
                 </View>
               </View>
               
@@ -265,6 +269,14 @@ export default function OrderList({ activeTab }) {
                   <View style={styles.detailRow}>
                     <AppText style={styles.detailLabel}>Product</AppText>
                     <AppText style={styles.detailValue}>{selectedOrder.product_name} (x{selectedOrder.quantity})</AppText>
+                  </View>
+
+                  <View style={styles.detailRow}>
+                    <AppText style={styles.detailLabel}>Product Details</AppText>
+                    <AppText style={styles.detailValue}>
+                      {selectedOrder.brand_name} {selectedOrder.brand_type} 
+                      {selectedOrder.dosage ? ` (${selectedOrder.dosage})` : ''}
+                    </AppText>
                   </View>
 
                   {(selectedOrder.order_status === 'cancelled' || selectedOrder.order_status === 'rejected') && selectedOrder.cancellation_reason && (

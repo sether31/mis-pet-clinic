@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
 
+// Validating roles
 validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']); 
 
 $branch_id = $_GET['branchId'] ?? null;
@@ -21,6 +22,9 @@ try {
             p.description,
             p.category,
             p.prod_pic, 
+            p.brand_type,    /* Added Brand Type */
+            p.brand_name,    /* Added Brand Name */
+            p.dosage,        /* Added Dosage */
             i.inventory_id,
             i.stock_level,
             i.unit_cost,
@@ -43,10 +47,9 @@ try {
     $inventory = $stmt->fetchAll();
 
     // 1. Initialize card data
-   // 1. Initialize card data
     $cardData = [
-        "total_items" => 0,      // This will count EVERYTHING (Active + Archived)
-        "active_products" => 0,  // This is for is_active = 1 only
+        "total_items" => 0,      // Counts EVERYTHING (Active + Archived)
+        "active_products" => 0,  // Counts is_active = 1 only
         "low_stock" => 0,
         "out_of_stock" => 0,
         "expiring_soon" => 0, 
@@ -62,19 +65,19 @@ try {
         $minStock = (int)$item['min_stock_level'];
         $isActive = ((int)$item['is_active'] === 1);
         
-        // RULE: Total items counts every row in the inventory table
+        // Count every row for total
         $cardData['total_items']++;
 
-        // If the item is archived, STOP HERE for this item.
+        // If archived, skip the deeper metrics
         if (!$isActive) {
             continue;
         }
 
-        // --- EVERYTHING BELOW ONLY APPLIES TO ACTIVE ITEMS ---
+        // --- ACTIVE ITEMS ONLY ---
         $cardData['active_products']++; 
         $isExpired = false;
 
-        // 1. Expiry Logic (Active only)
+        // 1. Expiry Logic
         if(!empty($item['expiry_date'])) {
             $expiry = new DateTime($item['expiry_date']);
             $expiry->setTime(0, 0, 0);
@@ -87,7 +90,7 @@ try {
             }
         }
 
-        // 2. Stock Logic (Active & Not Expired only)
+        // 2. Stock Logic (Only for non-expired active items)
         if(!$isExpired) {
             if($stock <= 0) {
                 $cardData['out_of_stock']++; 
@@ -97,7 +100,6 @@ try {
         }
     }
 
-    // Return the full inventory (including archived) but the filtered cardData
     echo json_encode([
         "success" => true, 
         "data" => $inventory, 

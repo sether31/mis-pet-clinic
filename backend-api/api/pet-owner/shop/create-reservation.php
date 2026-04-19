@@ -173,18 +173,30 @@ try {
   // audit
   log_audit($pdo, $userId, null, $branchId, 'CREATE', 'RESERVATION', $orderId);
 
-  // --- SAFE NOTIFICATION LOGIC ---
-  // Get Product Name
-  $prodStmt = $pdo->prepare("SELECT name FROM products_tb WHERE product_id = ? LIMIT 1");
+ // --- SAFE NOTIFICATION LOGIC ---
+  // Get Detailed Product Information
+  $prodStmt = $pdo->prepare("
+    SELECT name, brand_name, dosage 
+    FROM products_tb 
+    WHERE product_id = ? 
+    LIMIT 1
+  ");
   $prodStmt->execute([$productId]);
-  $prodName = $prodStmt->fetchColumn() ?: 'items';
+  $prod = $prodStmt->fetch(PDO::FETCH_ASSOC);
+
+  $prodName = $prod['name'] ?? 'item';
+  $brand = !empty($prod['brand_name']) ? " (" . $prod['brand_name'] . ")" : "";
+  $dosage = !empty($prod['dosage']) ? " " . $prod['dosage'] : "";
 
   // Format Pickup Date
   $formattedDate = date('M j, Y', strtotime($pickupDate));
   
   $notifTitle = "New Shop Reservation";
-  $notifMessage = "A new reservation for {$reqQty}x {$prodName} has been placed. Scheduled pickup: {$formattedDate}.";
 
+  // Natural sentence construction
+  $notifMessage = "A new reservation for {$reqQty}x {$prodName}{$brand}{$dosage} has been placed for pickup on {$formattedDate}.";
+
+  // Fetch target users (Branch Admin and Staff)
   $staffStmt = $pdo->prepare("
     SELECT bs.user_id 
     FROM branch_staff_tb bs
@@ -195,16 +207,14 @@ try {
     AND bs.status = 1
   ");
   $staffStmt->execute([$branchId]);
-  
-  // Fetch as a standard associative array
   $targetUsers = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
 
-  // Loop and explicitly pull the user_id out of the array
   foreach ($targetUsers as $row) {
     if (!empty($row['user_id'])) {
         send_notification($pdo, $row['user_id'], 'reservation', $notifTitle, $notifMessage);
     }
   }
+  // ------------------------------------
   // ------------------------------------
 
   $pdo->commit();
