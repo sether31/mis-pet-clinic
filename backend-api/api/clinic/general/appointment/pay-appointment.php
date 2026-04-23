@@ -17,14 +17,13 @@ try {
 
   $pdo->beginTransaction();
 
-  // get owner details
+  // 1. Get Owner & Appointment Details (Removed direct JOIN to branch_service_tb due to comma-separated IDs)
   $stmtInfo = $pdo->prepare(
     "SELECT 
       a.user_id, a.pet_id, a.start_time, a.staff_id as assigned_staff_id,
-      bs.custom_name, bs.price as service_price,
+      a.order_id, a.service_id as service_ids,
       p.name as pet_name, cb.name as clinic_name
     FROM appointments_tb a
-    INNER JOIN branch_service_tb bs ON a.service_id = bs.branch_service_id
     LEFT JOIN pet_tb p ON a.pet_id = p.pet_id
     LEFT JOIN clinic_branches_tb cb ON a.branch_id = cb.branch_id
     WHERE a.appointment_id = ?"
@@ -33,66 +32,99 @@ try {
   $appt = $stmtInfo->fetch();
 
   if (!$appt) throw new Exception("Appointment details not found.");
+  if (empty($appt['order_id'])) throw new Exception("No existing order found for this appointment.");
 
-  // if cash then appointment and order will be completed 
-  // if not cash then appointment billed and order pending
+  $order_id = $appt['order_id']; // Target the existing order!
+
   $is_card = (strtolower($data->payment_method ?? '') === 'card');
   
   $appointmentStatus = $is_card ? 'billed' : 'completed';
   $orderStatus = $is_card ? 'pending' : 'completed';
   $paymentStatus = $is_card ? 'unpaid' : 'paid';
-  // check if card then the method will be null until user pay
   $finalMethod = $is_card ? null : 'cash';
 
   $cashReceived = !$is_card ? ($data->cash_received ?? 0) : null;
   $cashChange = !$is_card ? ($data->cash_change ?? 0) : null;
 
-  // create order
-  $orderStmt = $pdo->prepare("INSERT INTO order_tb (user_id, branch_id, order_status, total_amount) VALUES (?, ?, ?, ?)");
-  $orderStmt->execute([$appt['user_id'], $data->branch_id, $orderStatus, $data->total]);
-  $order_id = $pdo->lastInsertId();
+  // 2. UPDATE the existing order (Do NOT create a new one)
+  $orderStmt = $pdo->prepare("UPDATE order_tb SET order_status = ?, total_amount = ? WHERE order_id = ?");
+  $orderStmt->execute([$orderStatus, $data->total, $order_id]);
 
-  // create payment
+  // 3. Create payment record linked to the EXISTING order
   $payStmt = $pdo->prepare(
     "INSERT INTO payments_tb (
-      branch_id, 
-      order_id, 
-      amount, 
-      cash_received, 
-      cash_change, 
-      payment_method, 
-      payment_status, 
-      payment_type
+      branch_id, order_id, amount, cash_received, cash_change, 
+      payment_method, payment_status, payment_type
     ) VALUES (?, ?, ?, ?, ?, ?, ?, 'appointment')"
   );
-  
   $payStmt->execute([
-    $data->branch_id, 
-    $order_id, 
-    $data->total, 
-    $cashReceived, 
-    $cashChange, 
-    $finalMethod, 
-    $paymentStatus
+    $data->branch_id, $order_id, $data->total, $cashReceived, 
+    $cashChange, $finalMethod, $paymentStatus
   ]);
-  // process order items
-  $itemStmt = $pdo->prepare("INSERT INTO order_items_tb (order_id, product_id, service_id, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?, ?)");
-  // update inventory
-  $invUpdate = $pdo->prepare("UPDATE inventory_tb SET stock_level = stock_level - ? WHERE product_id = ? AND branch_id = ?");
 
-  foreach($data->items as $item) {
-    $subtotal = $item->qty * $item->price;
-    $p_id = ($item->type === 'product') ? ($item->product_id ?? null) : null;
-    $s_id = ($item->type === 'service') ? ($item->service_id ?? null) : null;
+  // 4. Process Order Items Safely (Check existence so we don't delete original services or duplicate them)
+  $checkProduct = $pdo->prepare("SELECT order_item_id FROM order_items_tb WHERE order_id = ? AND inventory_id = ?");
+    $checkService = $pdo->prepare("SELECT order_item_id FROM order_items_tb WHERE order_id = ? AND service_id = ?");
+    
+    // Updated: Added product_id as the 4th column
+    $insertItem = $pdo->prepare("INSERT INTO order_items_tb (order_id, inventory_id, service_id, product_id, quantity, price, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $updateItem = $pdo->prepare("UPDATE order_items_tb SET quantity = ?, price = ?, subtotal = ? WHERE order_item_id = ?");
+    $invUpdate  = $pdo->prepare("UPDATE inventory_tb SET stock_level = stock_level - ? WHERE inventory_id = ? AND branch_id = ?");
 
-    $itemStmt->execute([$order_id, $p_id, $s_id, $item->qty, $item->price, $subtotal]);
+    foreach($data->items as $item) {
+        $subtotal = $item->qty * $item->price;
+        $foundItemId = null;
 
-    if($item->type === 'product' && !empty($p_id)) {
-      $invUpdate->execute([$item->qty, $p_id, $data->branch_id]);
+        if ($item->type === 'product') {
+          $inv_id = $item->inventory_id ?? $item->product_id ?? null; 
+          
+          // Check if product_id exists separately if your frontend sends it differently
+          $prod_id = $item->product_id ?? null; 
+
+          $checkProduct->execute([$order_id, $inv_id]);
+          $foundItemId = $checkProduct->fetchColumn();
+
+          if ($foundItemId) {
+              $updateItem->execute([$item->qty, $item->price, $subtotal, $foundItemId]);
+          } else {
+              // Updated: Passing $inv_id for inventory AND $prod_id for the product_id column
+              $insertItem->execute([$order_id, $inv_id, null, $prod_id, $item->qty, $item->price, $subtotal]);
+              $invUpdate->execute([$item->qty, $inv_id, $data->branch_id]);
+          }
+      } else if ($item->type === 'service') {
+            // Fix: Check if the service_id is actually provided, otherwise skip to prevent NULL inserts
+            $s_id = $item->service_id ?? null;
+            if (!$s_id) continue; 
+
+            $checkService->execute([$order_id, $s_id]);
+            $foundItemId = $checkService->fetchColumn();
+
+            if ($foundItemId) {
+                // Just update price/qty of existing service from the appointment
+                $updateItem->execute([$item->qty, $item->price, $subtotal, $foundItemId]);
+            } else {
+                // Only insert if it's a NEW service added at the clinic that wasn't in the original booking
+                $insertItem->execute([$order_id, null, $s_id, $item->qty, $item->price, $subtotal]);
+            }
+        }
     }
-  }
 
-  // initialize medical record
+  // 5. Fetch Service details properly for Medical Record & Notifications
+  $serviceIdsArray = explode(',', $appt['service_ids']);
+  $placeholders = implode(',', array_fill(0, count($serviceIdsArray), '?'));
+  $srvStmt = $pdo->prepare("SELECT custom_name, price FROM branch_service_tb WHERE branch_service_id IN ($placeholders)");
+  $srvStmt->execute($serviceIdsArray);
+  $servicesData = $srvStmt->fetchAll(PDO::FETCH_ASSOC);
+
+  $serviceNames = [];
+  $serviceTotalPrice = 0;
+  foreach ($servicesData as $srv) {
+      $serviceNames[] = $srv['custom_name'];
+      $serviceTotalPrice += (float)$srv['price'];
+  }
+  $combinedServiceNames = implode(', ', $serviceNames);
+
+  // 6. Initialize medical record
   $medStmt = $pdo->prepare(
     "INSERT INTO medrecord_tb (
       pet_id, appointment_id, branch_id, vet_id, record_date, service_name_at_time, service_price_at_time
@@ -100,33 +132,31 @@ try {
   );
   $medStmt->execute([
     $appt['pet_id'], $data->appointment_id, $data->branch_id, $appt['assigned_staff_id'],        
-    $appt['start_time'], $appt['custom_name'], $appt['service_price']  
+    $appt['start_time'], $combinedServiceNames, $serviceTotalPrice  
   ]);
   $medRecordId = $pdo->lastInsertId();
 
-  // update appointment status
+  // 7. Update appointment status
   $pdo->prepare(
     "UPDATE appointments_tb 
     SET status = ?, 
-      order_id = ?, 
-      last_updated_by = ? 
+        last_updated_by = ? 
     WHERE appointment_id = ?"
-  )->execute([$appointmentStatus, $order_id, $actorId, $data->appointment_id]);
+  )->execute([$appointmentStatus, $actorId, $data->appointment_id]);
 
   // get clinic for audit
   $stmtClinic = $pdo->prepare("SELECT clinic_id FROM clinic_branches_tb WHERE branch_id = ?");
   $stmtClinic->execute([$data->branch_id]);
   $clinicId = $stmtClinic->fetchColumn() ?: 0;
 
-  // audit create order bill
-  log_audit($pdo, $actorId, $clinicId, $data->branch_id, 'CREATE', 'BILLING_TRANSACTION', $order_id);
-  // audit medical record create
+  // audits
+  log_audit($pdo, $actorId, $clinicId, $data->branch_id, 'UPDATE', 'BILLING_TRANSACTION', $order_id);
   log_audit($pdo, $actorId, $clinicId, $data->branch_id, 'CREATE', 'MEDICAL_RECORD', $medRecordId);
 
   // --- 🔔 SMART NOTIFICATION LOGIC ---
   $petName = ucwords($appt['pet_name'] ?? 'your pet');
   $formattedTotal = number_format($data->total, 2);
-  $serviceName = $appt['custom_name'] ?? 'service';
+  $serviceName = !empty($combinedServiceNames) ? $combinedServiceNames : 'service';
   $notifiedUsers = []; 
 
   // 1. Fetch Actor's Name AND Role Name
@@ -140,10 +170,7 @@ try {
   $actor = $actorStmt->fetch(PDO::FETCH_ASSOC);
 
   $actorName = $actor ? trim($actor['first_name'] . ' ' . $actor['last_name']) : 'Staff';
-  // Format Role (e.g., 'clinic_admin' -> 'Clinic Admin')
   $actorRole = $actor ? ucwords(str_replace('_', ' ', $actor['role_name'])) : 'Staff';
-
-  // Combined Actor String: "Clinic Admin (Seth Hernandez)"
   $actorDisplay = "{$actorRole} ({$actorName})";
 
   if($is_card) {

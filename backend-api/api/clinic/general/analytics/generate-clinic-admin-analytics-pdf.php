@@ -289,7 +289,7 @@ try {
     $dompdf->render();
     
     if (ob_get_length()) ob_end_clean();
-    $dompdf->stream("Executive_Report_" . date("Ymd") . ".pdf", ["Attachment" => false]);
+    $dompdf->stream("Executive_Report_" . date("Ymd") . ".pdf", ["Attachment" => true]);
 
 } catch (Exception $e) {
     die("Error: " . $e->getMessage());

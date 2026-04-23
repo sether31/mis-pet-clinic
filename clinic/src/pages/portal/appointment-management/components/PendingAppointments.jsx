@@ -5,7 +5,7 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
   const now = new Date();
 
   return (
-    <aside className="flex flex-col w-full bg-[#F9FBFC] border border-gray-300 overflow-hidden h-full rounded-lg min-h-[550px]">
+    <aside className="flex flex-col w-full bg-[#F9FBFC] border border-gray-300 overflow-hidden h-full rounded-lg min-h-[550px] max-h-[650px]">
       {/* header */}
       <div className="p-6 bg-white border-b border-gray-300">
         <div className="flex items-center justify-between">
@@ -31,6 +31,12 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
         ) : (
           pendingAppointment.map((app) => {
             const isPast = new Date(app.start) < now;
+            
+            // LOGIC: Prioritize Order Items for a complete list (Services + Products)
+            // If order_items exists, join their names. Otherwise, fallback to service_names string.
+            const displayList = app.order_items?.length > 0 
+              ? app.order_items.map(item => item.item_name).join(', ')
+              : (app.service_names || "General Service");
 
             return (
               <div 
@@ -44,7 +50,7 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
               >
                 {/* show if expired */}
                 {isPast && (
-                  <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-600">
+                  <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-600 z-10">
                     <HiExclamation size={10} />
                     <span className="text-[7px] font-black uppercase tracking-tighter">Schedule Outdated</span>
                   </div>
@@ -59,15 +65,15 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
                     </p>
                   </div>
                   
-                  <h3 className={`text-sm font-black truncate ${isPast ? "text-amber-900" : ""}`}>
+                  <h3 className={`text-sm font-black truncate ${isPast ? "text-amber-900" : "text-gray-700"}`}>
                     {app.pet_name}
                   </h3>
                   
-                  <p className={`text-[9px] font-bold uppercase tracking-widest mt-1 opacity-80 ${isPast ? "text-amber-700" : "text-gray-400"}`}>
-                    {app.service_name?.replace(/_/g, ' ')}
+                  {/* Shows the dynamic list of items (e.g. "Deworming, Vitamins") */}
+                  <p className={`text-[9px] font-bold uppercase tracking-widest mt-1 opacity-80 truncate ${isPast ? "text-amber-700" : "text-gray-400"}`}>
+                    {displayList.replace(/_/g, ' ')}
                   </p>
 
-                  {/* Show simple date warning */}
                   {isPast && (
                     <p className="text-[8px] font-black text-amber-600 uppercase mt-1">
                       The requested time has passed.
@@ -77,22 +83,17 @@ export default function PendingAppointments({ pendingAppointment = [], loading, 
 
                 {/* card right section */}
                 <div className="pl-2">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelect(app)
-                    }}
-                    className={`p-2 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-2 whitespace-nowrap cursor-pointer transition-all active:scale-95
+                  <div className={`p-2 rounded-md transition-all active:scale-95
                       ${isPast 
-                        ? 'bg-amber-600 text-white hover:bg-amber-700' 
-                        : 'bg-(--clr-black) text-white hover:bg-(--clr-primary)'
+                        ? 'bg-amber-600 text-white group-hover:bg-amber-700' 
+                        : 'bg-black text-white group-hover:bg-(--clr-primary)'
                       }`}
                   >
                     <HiOutlineChevronRight size={12} />
-                  </button>
+                  </div>
                 </div>
               </div>
-            )
+            );
           })
         )}
       </div>

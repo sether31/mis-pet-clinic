@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HiChevronLeft, HiXCircle, HiOutlineShoppingCart, HiOutlineClipboardCheck, HiDownload, HiReceiptTax } from 'react-icons/hi';
-import Swal from 'sweetalert2';
+import { HiChevronLeft, HiXCircle, HiOutlineShoppingCart, HiOutlineClipboardCheck, HiDownload, HiReceiptTax, HiMail, HiPhone } from 'react-icons/hi';
 import NoImage from '../../../../assets/images/no-image.jpg';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -48,42 +47,34 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
 
   if (!isOpen) return null;
 
-  // ADDED: Filter history based on the pickup_date rule
-  // Change this section in your component
   const displayedHistory = history.filter(tx => {
-    // Normalize the source type for easier comparison
     const sourceType = tx.source_type?.toLowerCase() || '';
 
     if (selectedType === 'product') {
-      // Look for "retail" or "product" in the source_type string
       return sourceType.includes('product') || sourceType.includes('retail');
     }
     
     if (selectedType === 'appointment') {
-      // Only show if it's strictly an appointment
       return sourceType === 'appointment';
     }
 
-    return true; // Show all for 'all'
+    return true; 
   });
 
   const formatSafeDate = (dateString) => {
-  if (!dateString) return "N/A";
-  
-  // If it's a timestamp like "2026-04-19 10:00:00", 
-  // replacing the space with 'T' makes it ISO-compliant for JS
-  const formattedString = dateString.replace(' ', 'T');
-  const date = new Date(formattedString);
-  
-  // Check if the date is actually valid
-  if (isNaN(date.getTime())) return "Invalid Date";
+    if (!dateString) return "N/A";
+    
+    const formattedString = dateString.replace(' ', 'T');
+    const date = new Date(formattedString);
+    
+    if (isNaN(date.getTime())) return "Invalid Date";
 
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: '2-digit', 
-    year: 'numeric' 
-  });
-};
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: '2-digit', 
+      year: 'numeric' 
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-gray-900/60 backdrop-blur-sm">
@@ -94,7 +85,7 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
           <div className="flex items-center gap-3">
             {step > 1 && !isGuest ? (
               <button 
-                onClick={() => { setStep(1); setSelectedType('all'); }} // Reset type on back
+                onClick={() => { setStep(1); setSelectedType('all'); }} 
                 className="p-2 text-gray-500 transition-all bg-gray-200 cursor-pointer rounded-xl hover:bg-gray-300 active:scale-90"
               >
                 <HiChevronLeft size={20} />
@@ -136,20 +127,32 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
           {/* OWNER/GUEST INFO BOX */}
           <div className="flex items-start gap-4 p-4 border border-gray-400 rounded-2xl bg-white">
             <img 
-              src={owner.user_image || getAvatarUrl(owner.owner_name)}
+              src={isGuest ? getAvatarUrl('Guest') : (owner.user_image || getAvatarUrl(owner.owner_name))}
               className="object-cover bg-white border border-gray-200 w-14 h-14 rounded-2xl shrink-0" 
               alt="avatar" 
               onError={(e) => { e.target.src = NoImage; }}
             />
             <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-black text-(--clr-primary) uppercase leading-none block mb-1 tracking-widest">
-                {isGuest ? 'Temporary Payer' : 'Client Identity'}
+              <span className="text-[9px] font-black text-(--clr-primary) uppercase leading-none block mb-1 tracking-wider">
+                {isGuest ? 'Guest' : 'Client Identity'}
               </span>
               <h3 className="text-sm font-black leading-none text-gray-800 uppercase truncate">
                 {owner.owner_name || "Guest Walk-in"}
               </h3>
+              {!isGuest && (
+                <div className="flex flex-wrap items-center gap-3 mt-2">
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <HiMail size={12}/>
+                    <span className="text-[10px] font-medium uppercase">{owner.owner_email || 'No Email'}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <HiPhone size={12}/>
+                    <span className="text-[10px] font-medium uppercase">{owner.owner_phone || 'No Phone'}</span>
+                  </div>
+                </div>
+              )}
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1.5">
-                {isGuest ? `Branch Transaction ID: #${owner.transaction_id}` : `Account ID: #${owner.user_id}`}
+                {!isGuest && (`Account ID: #${owner.user_id}`)}
               </p>
             </div>
           </div>
@@ -168,13 +171,11 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* UPDATED: Added setSelectedType('appointment') */}
                   <div onClick={() => { setSelectedType('appointment'); setStep(2); }} className="flex flex-col items-center justify-center p-8 text-center transition-all bg-white border border-gray-400 rounded-2xl hover:border-(--clr-primary) hover:bg-green-50/50 cursor-pointer active:scale-98 min-h-[160px] group">
                     <div className="p-4 mb-3 rounded-full text-(--clr-primary) bg-green-100 group-hover:scale-105 transition-transform"><HiOutlineClipboardCheck size={28} /></div>
                     <p className="text-[11px] font-black uppercase leading-tight text-gray-800 tracking-widest">Appointment Billing</p>
                   </div>
                   
-                  {/* UPDATED: Added setSelectedType('product') */}
                   <div onClick={() => { setSelectedType('product'); setStep(2); }} className="flex flex-col items-center justify-center p-8 text-center transition-all bg-white border border-gray-400 rounded-2xl hover:border-purple-600 hover:bg-purple-50/50 cursor-pointer active:scale-98 min-h-[160px] group">
                     <div className="p-4 mb-3 rounded-full text-purple-600 bg-purple-100 group-hover:scale-105 transition-transform"><HiOutlineShoppingCart size={28} /></div>
                     <p className="text-[11px] font-black uppercase leading-tight text-gray-800 tracking-widest">Product Sales</p>
@@ -198,13 +199,11 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                 </div>
 
                 <div className="space-y-3">
-                  {/* UPDATED: Use displayedHistory instead of history */}
                   {displayedHistory.length > 0 ? displayedHistory.map((tx, i) => (
                     <div key={i} className="p-5 border border-gray-400 bg-white rounded-2xl cursor-default transition-all">
                       <div className="flex items-center justify-between pb-2 mb-4 border-b border-gray-100">
                         <div className="flex gap-2">
                           <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded uppercase">
-                            {/* USE THE HELPER HERE */}
                             {formatSafeDate(tx.display_date)}
                           </span>
                           <span className="text-[10px] font-black text-(--clr-primary) bg-blue-50 px-2 py-0.5 rounded uppercase">
@@ -220,30 +219,27 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                           if (selectedType === 'product') return item.product_id !== null;
                           return true;
                         }).map((item, idx) => {
-                          // Calculate unit price (subtotal divided by quantity)
                           const unitPrice = parseFloat(item.subtotal) / (parseInt(item.quantity) || 1);
 
                           return (
                             <div key={idx} className="flex justify-between items-start text-[11px] font-bold py-1">
                               <div className="flex flex-col flex-1">
                                 <div className="flex items-center gap-2">
-                                  {/* Quantity Badge */}
                                   <span className="w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-[9px] font-black shrink-0">
                                     {item.quantity}x
                                   </span>
                                   
                                   <div className="flex flex-col">
                                     <span className="text-gray-600 uppercase">
-                                      {item.display_name || item.item_name || item.product_name || item.service_name}
+                                      {/* ADDED: Fallback string just in case data is entirely empty */}
+                                      {item.display_name || item.item_name || item.product_name || item.service_name || "Unknown Item"}
                                     </span>
-                                    {/* ADDED: Unit Price Reference */}
                                     <span className="text-[9px] text-gray-400 font-medium">
                                       @ ₱{unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })} each
                                     </span>
                                   </div>
                                 </div>
                                 
-                                {/* Brand & Dosage Sub-labels */}
                                 {(item.brand_name || item.brand_type || item.dosage) && (
                                   <div className="flex items-center gap-1.5 ml-7 mt-0.5">
                                     {item.brand_name && item.brand_name.toUpperCase() !== 'N/A' && (
@@ -271,13 +267,44 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                                 )}
                               </div>
 
-                              {/* Item Subtotal */}
                               <span className="text-gray-800 shrink-0">
                                 ₱{parseFloat(item.subtotal).toLocaleString()}
                               </span>
                             </div>
                           );
                         })}
+
+                        {selectedType === 'appointment' && (() => {
+    // Calculate the total from the items array
+    const calculatedTotal = tx.items?.reduce((acc, item) => acc + parseFloat(item.subtotal || 0), 0) || 0;
+    const cashReceived = parseFloat(tx.cash_received || 0);
+    const cashChange = parseFloat(tx.cash_change || 0);
+
+    return (
+      <div className="pt-3 mt-2 border-t border-dashed border-gray-200 space-y-1.5">
+        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-tight text-gray-800">
+          <span>Total Amount</span>
+          <span className="text-sm">
+            ₱{calculatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+        
+        <div className="flex justify-between items-center text-[10px] font-bold uppercase text-gray-500">
+          <span>Cash Received</span>
+          <span>
+            ₱{cashReceived.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center text-[10px] font-bold uppercase text-(--clr-primary)">
+          <span>Cash Change</span>
+          <span>
+            ₱{cashChange.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </span>
+        </div>
+      </div>
+    );
+  })()}
                       </div>
                     </div>
                   )) : (

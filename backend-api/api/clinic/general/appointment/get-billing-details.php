@@ -21,10 +21,13 @@ try {
       oi.quantity AS qty,
       pay.payment_method,
       pay.payment_status,
+      pay.cash_received,
+      pay.cash_change,
       inv.expiry_date,
       inv.supplier_name,
       inv.stock_level,
-      COALESCE(inv.inventory_id, oi.product_id) as inventory_id,
+      -- FIX: Use the specific inventory_id linked in order_items_tb
+      oi.inventory_id, 
 
       a.updated_at,
       CONCAT(u.first_name, ' ', u.last_name) as updated_by_name
@@ -33,11 +36,11 @@ try {
     LEFT JOIN order_items_tb oi ON o.order_id = oi.order_id
     LEFT JOIN payments_tb pay ON o.order_id = pay.order_id
     LEFT JOIN products_tb p ON oi.product_id = p.product_id
-    LEFT JOIN inventory_tb inv ON oi.product_id = inv.product_id
-    -- Join user_tb to get the name of the last updater
+    -- FIX: Join on the inventory_id specifically to avoid batch duplication
+    LEFT JOIN inventory_tb inv ON oi.inventory_id = inv.inventory_id
     LEFT JOIN user_tb u ON a.last_updated_by = u.user_id
     WHERE a.appointment_id = ?"
-  );
+);
   $stmt->execute([$appointment_id]);
   $items = $stmt->fetchAll();
 

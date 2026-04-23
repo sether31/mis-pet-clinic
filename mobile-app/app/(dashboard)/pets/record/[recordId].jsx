@@ -203,6 +203,12 @@ export default function MedicalRecordDetail() {
   const branchImageSource = getMediaUrl(record?.branch_image) ? { uri: getMediaUrl(record?.branch_image) } : NO_IMAGE;
   const vetImageSource = getMediaUrl(record?.vet_image) ? { uri: getMediaUrl(record?.vet_image) } : NO_IMAGE;
 
+  const formatName = (str) => {
+    if (!str) return "";
+    // Capitalizes the first letter and makes the rest lowercase
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -366,45 +372,97 @@ export default function MedicalRecordDetail() {
       {/* RECEIPT MODAL */}
       <Modal visible={billModalVisible} transparent animationType="slide" onRequestClose={() => setBillModalVisible(false)}>
         <View style={styles.modalOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setBillModalVisible(false)} />
-            <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                    <AppText style={styles.modalTitle}>Receipt Detail</AppText>
-                    
-                    {/* 💥 CLOSE BUTTON: Turns Colors.primary when pressed */}
-                    <Pressable onPress={() => setBillModalVisible(false)}>
-                      {({ pressed }) => (
-                        <Ionicons 
-                          name="close-circle" 
-                          size={28} 
-                          color={pressed ? Colors.primary : "#D1D5DB"} 
-                        />
-                      )}
-                    </Pressable>
-                </View>
-
-                <View style={styles.receiptPaper}>
-                    <AppText style={styles.receiptClinicName}>{record?.branch_name}</AppText>
-                    <AppText style={styles.receiptSub}>Official Visit Receipt</AppText>
-                    <View style={styles.dashedLine} />
-                    <View style={styles.receiptRow}>
-                        <AppText style={styles.receiptItemName}>{record?.service_name_at_time}</AppText>
-                        <AppText style={styles.receiptItemPrice}>₱{parseFloat(record?.base_service_price || 0).toFixed(2)}</AppText>
-                    </View>
-                    {record?.items?.map((item, index) => (
-                        <View key={index} style={styles.receiptRow}>
-                            <AppText style={styles.receiptItemName}>{item.item_name} (x{item.quantity})</AppText>
-                            <AppText style={styles.receiptItemPrice}>₱{parseFloat(item.subtotal).toFixed(2)}</AppText>
-                        </View>
-                    ))}
-                    <View style={styles.dashedLine} />
-                    <View style={styles.receiptTotalRow}>
-                        <AppText style={styles.receiptTotalLabel}>TOTAL</AppText>
-                        <AppText style={styles.receiptTotalValue}>₱{parseFloat(record?.total_amount || 0).toFixed(2)}</AppText>
-                    </View>
-                    <AppText style={styles.paymentNote}>Paid via {record?.payment_method || 'CASH'}</AppText>
-                </View>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setBillModalVisible(false)} />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <AppText style={styles.modalTitle}>Receipt Detail</AppText>
+              <Pressable onPress={() => setBillModalVisible(false)}>
+                {({ pressed }) => (
+                  <Ionicons 
+                    name="close-circle" 
+                    size={28} 
+                    color={pressed ? 'red' : "#D1D5DB"} 
+                  />
+                )}
+              </Pressable>
             </View>
+
+            <View style={styles.receiptPaper}>
+              <AppText style={styles.receiptClinicName}>{record?.branch_name}</AppText>
+              <AppText style={styles.receiptSub}>Official Visit Receipt</AppText>
+              <View style={styles.dashedLine} />
+
+              {/* Main Service Row */}
+              <View style={styles.receiptRow}>
+                <AppText style={styles.receiptItemName}>{formatName(record?.service_name_at_time)}</AppText>
+                <AppText style={styles.receiptItemPrice}>₱{parseFloat(record?.base_service_price || 0).toFixed(2)}</AppText>
+              </View>
+
+              {/* Additional Items: Filtered to remove the main service redundancy */}
+              {record?.items?.filter(item => 
+    item.item_name?.toLowerCase() !== record?.service_name_at_time?.toLowerCase()
+).map((item, index) => (
+    <View key={index} style={styles.receiptItemContainer}>
+        <View style={styles.receiptRow}>
+            <View style={{ flex: 1 }}>
+                {/* Item Name (e.g., PARACETAMOL) */}
+                <AppText style={styles.receiptItemName}>
+                    {item.item_name?.toUpperCase()} (x{item.quantity})
+                </AppText>
+
+                {/* UNIT PRICE LINE (e.g., @ ₱222.00 each) */}
+                <AppText style={styles.unitPriceText}>
+                    @ ₱{parseFloat(item.price || 0).toFixed(2)} each
+                </AppText>
+                
+                {/* SUB-DETAILS LINE: BRAND • GENERIC • DOSAGE */}
+                {(item.brand_name || item.dosage || item.brand_type?.toLowerCase() === 'medicine') && (
+                    <View style={styles.subDetailRow}>
+                        {item.brand_name && (
+                            <AppText style={styles.subDetailText}>
+                                {item.brand_name.toUpperCase()}
+                            </AppText>
+                        )}
+
+                        {item.brand_type?.toLowerCase() === 'medicine' && (
+                            <>
+                                {item.brand_name && <AppText style={styles.dotSeparator}> • </AppText>}
+                                <AppText style={[styles.subDetailText, styles.genericText]}>
+                                    GENERIC
+                                </AppText>
+                            </>
+                        )}
+
+                        {item.dosage && (
+                            <>
+                                {(item.brand_name || item.brand_type?.toLowerCase() === 'medicine') && (
+                                    <AppText style={styles.dotSeparator}> • </AppText>
+                                )}
+                                <AppText style={[styles.subDetailText, styles.dosageBlueText]}>
+                                    {item.dosage.toUpperCase()}
+                                </AppText>
+                            </>
+                        )}
+                    </View>
+                )}
+            </View>
+
+            {/* Subtotal on the right */}
+            <AppText style={styles.receiptItemPrice}>
+                ₱{parseFloat(item.subtotal).toFixed(2)}
+            </AppText>
+        </View>
+    </View>
+))}
+
+              <View style={styles.dashedLine} />
+              <View style={styles.receiptTotalRow}>
+                <AppText style={styles.receiptTotalLabel}>TOTAL</AppText>
+                <AppText style={styles.receiptTotalValue}>₱{parseFloat(record?.total_amount || 0).toFixed(2)}</AppText>
+              </View>
+              <AppText style={styles.paymentNote}>Paid via {record?.payment_method || 'CASH'}</AppText>
+            </View>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -476,10 +534,93 @@ const styles = StyleSheet.create({
   receiptSub: { fontSize: 12, color: '#9CA3AF', textAlign: 'center', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 },
   dashedLine: { height: 1, borderBottomWidth: 1, borderBottomColor: '#CBD5E1', borderStyle: 'dashed', marginVertical: 20 },
   receiptRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  receiptItemName: { fontSize: 14, color: '#4B5563', flex: 1 },
-  receiptItemPrice: { fontSize: 14, fontWeight: '700', color: '#111827' },
   receiptTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
   receiptTotalLabel: { fontSize: 16, fontWeight: '900', color: '#111827' },
   receiptTotalValue: { fontSize: 24, fontWeight: '900', color: Colors.primary },
-  paymentNote: { textAlign: 'center', color: '#9CA3AF', fontSize: 12, marginTop: 20, fontWeight: '700' }
+  paymentNote: { textAlign: 'center', color: '#9CA3AF', fontSize: 12, marginTop: 20, fontWeight: '700' },
+
+  subDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  unitPriceText: {
+    fontSize: 12,
+    color: '#94A3B8',   // Light gray (Slate-400)
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  subDetailText: {
+    fontSize: 10,       // Keep it small
+    color: '#94A3B8',   // Light slate/gray
+    fontWeight: '800',  // Bold look like the image
+  },
+  genericText: {
+    fontStyle: 'italic',
+    color: '#64748B',   // Slightly darker gray for the italic part
+  },
+  dosageBlueText: {
+    color: '#3B82F6',   // Bright Blue like your image
+  },
+  dotSeparator: {
+    fontSize: 12,
+    color: '#CBD5E1',
+    paddingHorizontal: 4,
+    fontWeight: '900',
+  },
+  receiptItemName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  receiptItemPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+
+  receiptItemContainer: {
+    marginBottom: 14,
+    width: '100%',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  brandText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  verticalDivider: {
+    width: 1,
+    height: 10,
+    backgroundColor: '#D1D5DB',
+    marginHorizontal: 8,
+  },
+  brandTypeBadge: {
+    fontSize: 10,
+    color: Colors.primary,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  dosageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0F9FF', // Light blue background
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  dosageText: {
+    fontSize: 12,
+    color: '#0369A1', // Dark blue text
+    fontWeight: '600',
+    flex: 1,
+  },
 });

@@ -56,7 +56,6 @@ try {
   $stmtClinic->execute([':branch_id' => $branch_id]);
   $clinic = $stmtClinic->fetch(); 
 
-  // Only throw an error if the clinic literally does not exist in the database
   if (!$clinic) {
     throw new Exception("Clinic not found.");
   }
@@ -65,28 +64,28 @@ try {
   $base_address = trim($clinic['address']);
   $muni = trim($clinic['municipality']);
   $prov = trim($clinic['province']);
-
   $full_address = $base_address;
 
   if(!empty($muni) && stripos($full_address, $muni) === false) {
     $full_address .= ', ' . $muni;
   }
-
   if(!empty($prov) && stripos($full_address, $prov) === false) {
     $full_address .= ', ' . $prov;
   }
-
   $clinic['full_address'] = $full_address;
 
-  // Fetch Services specifically for this branch
+  // --- CRITICAL FIX HERE ---
+  // We alias the column to 'custom_name' so the React carousel can find it.
+  // We also select 'assigned_role' so staff-filtering works.
   $stmtServices = $pdo->prepare(
     "SELECT 
       bsrv.branch_service_id,
       bsrv.service_id,
-      COALESCE(NULLIF(bsrv.custom_name, ''), srv.name) as service_name,
+      COALESCE(NULLIF(bsrv.custom_name, ''), srv.name) as custom_name, 
       COALESCE(NULLIF(bsrv.custom_description, ''), srv.description) as description,
       bsrv.price,
-      bsrv.duration 
+      bsrv.duration,
+      bsrv.assigned_role
     FROM branch_service_tb bsrv
     LEFT JOIN service_tb srv ON bsrv.service_id = srv.service_id
     WHERE bsrv.branch_id = :branch_id 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 // utils
@@ -97,6 +97,14 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
   // Helper variables to handle fallbacks for names based on your DB columns
   const ownerName = selectedAppointment?.owner_name || `${selectedAppointment?.owner_fname || ''} ${selectedAppointment?.owner_lname || ''}`.trim() || 'N/A';
   const staffName = selectedAppointment?.staff_name || (selectedAppointment?.staff_fname ? `Dr. ${selectedAppointment.staff_fname} ${selectedAppointment.staff_lname}` : 'Unassigned');
+
+  const calculatedTotal = useMemo(() => {
+      if (!selectedAppointment?.order_items) return Number(selectedAppointment?.total_service_fee || 0);
+      
+      return selectedAppointment.order_items.reduce((sum, item) => {
+        return sum + (Number(item.price || 0) * (item.quantity || 1));
+      }, 0);
+    }, [selectedAppointment?.order_items, selectedAppointment?.total_service_fee]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 text-left z-[100] bg-black/60 backdrop-blur-sm">
@@ -228,30 +236,65 @@ export default function PendingAppointmentModal({ selectedAppointment, onClose, 
           </div>
 
           {/* --- Service & Schedule Highlight Card --- */}
+          {/* --- Service & Schedule Highlight Card --- */}
           <div className="relative p-6 transition-all border-2 border-green-100 bg-green-50 rounded-3xl">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <span className="text-[9px] font-black text-(--clr-primary) uppercase">Service Requested</span>
-                <h4 className="text-2xl font-black text-(--clr-primary) uppercase leading-none">
-                  {selectedAppointment?.service_name?.replace(/_/g, ' ') || 'Service'}
-                </h4>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">
+                  Services
+                </span>
+                <span className="bg-green-200 text-(--clr-primary) text-[9px] font-black px-2 py-0.5 rounded-sm uppercase">
+                  {selectedAppointment?.order_items?.length || 0} Items
+                </span>
               </div>
-              <div className="text-right">
-                <span className="text-[9px] font-black text-(--clr-primary) uppercase">Service Fee</span>
-                <p className="text-2xl font-black text-(--clr-primary)">
-                  ₱{Number(selectedAppointment?.service_fee || 0).toLocaleString()}
-                </p>
+
+              {/* Dynamic List of Services/Products */}
+              <div className="space-y-3">
+                {selectedAppointment?.order_items?.length > 0 ? (
+                  selectedAppointment.order_items.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between group">
+                      <div className="flex flex-col">
+                        <h4 className="text-sm font-black text-(--clr-primary) uppercase leading-none">
+                          {item.item_name?.replace(/_/g, ' ')}
+                        </h4>
+                        {item.quantity > 1 && (
+                          <span className="text-[8px] font-bold text-(--clr-primary) uppercase">
+                            Qty: {item.quantity}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-black text-(--clr-primary)">
+                        ₱{Number(item.price || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  /* Fallback for legacy data without order_items */
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-black text-(--clr-primary) uppercase">
+                      {selectedAppointment?.service_names?.replace(/_/g, ' ') || 'General Service'}
+                    </h4>
+                    <p className="text-sm font-black text-(--clr-primary)">
+                      ₱{Number(selectedAppointment?.total_service_fee || 0).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Total Fee Section */}
+              <div className="pt-4 mt-4 border-t-2 border-dashed border-green-200">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <span className="text-[9px] font-black text-(--clr-primary) uppercase">Total Amount</span>
+                    <p className="text-3xl font-black text-(--clr-primary) leading-none">
+                      ₱{calculatedTotal}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* --- ADDED: Service Description --- */}
-            <div className="pt-4 mt-4 border-t border-green-200/50">
-              <p className="text-sm italic font-medium leading-relaxed text-(--clr-primary)">
-                "{selectedAppointment?.service_description || "Standard consultation and professional health assessment."}"
-              </p>
-            </div>
-            
-            {/* Schedule Segment mapped into the Service Card */}
+            {/* Schedule Segment */}
             <div className="pt-4 mt-4 border-t border-green-200">
               <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest block mb-2">Requested Schedule</span>
               <div className="flex items-center gap-2 p-3 text-sm font-bold text-blue-800 border border-blue-200 bg-blue-50 rounded-xl">

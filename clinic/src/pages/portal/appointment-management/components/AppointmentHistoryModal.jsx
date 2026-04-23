@@ -1,7 +1,8 @@
 import { HiXCircle, HiCalendar, HiUserCircle, HiClock, HiInformationCircle, HiShieldCheck } from 'react-icons/hi';
 import { HiMiniExclamationCircle } from 'react-icons/hi2';
-import { LuPhone } from 'react-icons/lu';
+import { LuPhone, LuPackage2 } from 'react-icons/lu';
 import { MdOutlineMailOutline } from 'react-icons/md';
+import { FaStethoscope } from 'react-icons/fa6';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -25,13 +26,13 @@ export default function AppointmentHistoryModal({ appointment, onClose }) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 text-left z-[100] bg-black/60 backdrop-blur-sm">
-      <div className="flex flex-col w-full max-w-xl max-h-[90vh] overflow-hidden bg-white rounded-2xl">
+      <div className="flex flex-col w-full max-w-xl max-h-[90vh] overflow-hidden bg-white rounded-2xl shadow-2xl">
         
         {/* --- Header --- */}
         <div className="flex items-center justify-between p-6 border-b bg-gray-50/50">
           <div>
             <h2 className="text-xl font-black tracking-tight text-gray-800 uppercase">Appointment Record</h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">History & Details • ID: #{appointment.id}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">ID: #{appointment.id}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 transition-all cursor-pointer hover:text-red-500">
             <HiXCircle size={32}/>
@@ -56,13 +57,13 @@ export default function AppointmentHistoryModal({ appointment, onClose }) {
               
               {/* Pet Image */}
               <div className="flex-none mx-auto sm:mx-0">
-                <div className="relative w-32 h-32 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                <div className="relative w-32 h-32 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
                   <img 
                     src={appointment?.pet_picture 
                       ? `${API_URL}/${appointment.pet_picture}` 
                       : `https://ui-avatars.com/api/?name=${encodeURIComponent(appointment?.pet_name || 'Pet')}&background=d1fae5&color=42756C&bold=true`
                     } 
-                    className="object-cover w-full h-full rounded-xl" 
+                    className="object-cover w-full h-full" 
                     alt="pet" 
                     onError={(e) => {
                       e.target.onerror = null;
@@ -137,23 +138,95 @@ export default function AppointmentHistoryModal({ appointment, onClose }) {
           </div>
 
           {/* --- Service & Schedule Card --- */}
-          <div className="relative p-6 transition-all border-2 border-green-100 bg-green-50 rounded-3xl">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <span className="text-[9px] font-black text-(--clr-primary) uppercase">Service Availed</span>
-                <h4 className="text-2xl font-black text-(--clr-primary) uppercase leading-none">
-                  {appointment?.service_name?.replace(/_/g, ' ') || 'Service'}
-                </h4>
+          <div className="relative p-6 transition-all border-2 border-green-100 bg-green-50 rounded-3xl space-y-4">
+            <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Billing Breakdown</span>
+                <span className="bg-green-200 text-(--clr-primary) text-[9px] font-black px-2 py-0.5 rounded-sm uppercase">
+                    {appointment?.order_items?.length || 1} Item(s)
+                </span>
+            </div>
+
+            {/* List of Services and Products */}
+            <div className="space-y-3">
+              {appointment?.order_items?.length > 0 ? (
+                appointment.order_items.map((item, idx) => (
+                  <div key={idx} className="flex items-start justify-between group border-b border-green-200/50 pb-2 last:border-0 last:pb-0">
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col">
+                        <h4 className="text-xs font-black text-(--clr-primary) uppercase leading-none">
+                          {item.item_name?.replace(/_/g, ' ') || 'Item'}
+                        </h4>
+                        
+                        {/* New: Brand and Dosage (Only for Medicines) */}
+                        {item.type === 'product' && (
+                          <div className="flex flex-wrap gap-x-2 mt-1">
+                            {item.brand_name && (
+                              <span className="text-[8px] px-1.5 py-0.5 bg-green-200 text-green-800 font-black uppercase rounded">
+                                {item.brand_name}
+                              </span>
+                            )}
+                            {item.dosage && (
+                              <span className="text-[8px] font-bold text-gray-500 uppercase">
+                                {item.dosage}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <span className="text-[8px] font-bold text-(--clr-primary) uppercase mt-1">
+                          Qty: {item.quantity || 1} × ₱{Number(item.price || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs font-black text-(--clr-primary)">
+                      ₱{(Number(item.price || 0) * Number(item.quantity || 1)).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                /* Fallback for single service data */
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-white rounded-lg text-(--clr-primary) border border-green-100">
+                      <FaStethoscope size={14} />
+                    </div>
+                    <h4 className="text-xs font-black text-(--clr-primary) uppercase leading-none">
+                      {appointment?.service_name?.replace(/_/g, ' ') || 'Service Availed'}
+                    </h4>
+                  </div>
+                  <p className="text-xs font-black text-(--clr-primary)">
+                    ₱{Number(appointment?.service_fee || 0).toLocaleString()}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Grand Total, Cash Received, and Change */}
+            <div className="pt-4 border-t-2 border-dashed border-green-200">
+              <div className="flex items-end justify-between">
+                <div>
+                  <span className="text-[9px] font-black text-(--clr-primary) uppercase">Grand Total</span>
+                  <p className="text-3xl font-black text-(--clr-primary) leading-none tracking-tighter">
+                    ₱{Number(appointment?.total_amount || appointment?.service_fee || 0).toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-[9px] font-black text-(--clr-primary) uppercase">Total Fee</span>
-                <p className="text-2xl font-black text-(--clr-primary)">
-                  ₱{Number(appointment?.service_fee || 0).toLocaleString()}
-                </p>
+
+              {/* New: Cash Received and Change Section */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="p-3 bg-white/60 rounded-xl border border-green-100">
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Cash Received</p>
+                  <p className="text-sm font-black text-gray-700">₱{Number(appointment?.cash_received || 0).toLocaleString()}</p>
+                </div>
+                <div className="p-3 bg-white/60 rounded-xl border border-green-100">
+                  <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Change</p>
+                  <p className="text-sm font-black text-(--clr-primary)">₱{Number(appointment?.cash_change || 0).toLocaleString()}</p>
+                </div>
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t border-green-200">
+            {/* Schedule Section */}
+            <div className="pt-4 border-t border-green-200">
               <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest block mb-2">Schedule Log</span>
               <div className="flex items-center gap-2 p-3 text-sm font-bold text-blue-800 border border-blue-200 bg-blue-50 rounded-xl">
                 <HiMiniExclamationCircle size={18} className="text-blue-600 shrink-0" />
@@ -178,7 +251,6 @@ export default function AppointmentHistoryModal({ appointment, onClose }) {
         {/* --- Footer Audit Trail --- */}
         <div className="p-6 border-t border-gray-100 bg-gray-50/50">
           <div className="flex flex-wrap items-center gap-3">
-            {/* date */}
             <p className="text-[10px] font-bold text-gray-700 uppercase italic">
               Last Updated: {appointment.updated_at 
                 ? new Date(appointment.updated_at).toLocaleString('en-US', { 
@@ -186,10 +258,7 @@ export default function AppointmentHistoryModal({ appointment, onClose }) {
                   }) 
                 : '---'}
             </p>
-            
             <span className="hidden md:block text-gray-300">|</span>
-            
-            {/* staff */}
             <div className="flex items-center gap-1">
               <span className={`text-[10px] font-black uppercase ${!appointment.updated_by_name ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
                 Updated By: {appointment.updated_by_name || 'System Generated'}

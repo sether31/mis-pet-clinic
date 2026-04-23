@@ -2,8 +2,6 @@
 require_once __DIR__ . '/../../../../middleware/auth-middleware.php';
 require_once __DIR__ . '/../../../../config/Database.php';
 
-
-
 $decoded = validate_auth(['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff']);
 $branch_id_filter = $_GET['branch_id'] ?? 'all';
 $user_id = $decoded->user_id;
@@ -12,8 +10,6 @@ $role = $decoded->role;
 try {
   $database = new Database();
   $pdo = $database->pdo;
-
-
 
   // 1. Get clinic context
   $clinic_id = null;
@@ -34,7 +30,6 @@ try {
   if (!$clinic_id) throw new Exception("Unauthorized: Clinic association not found.");
 
   // 2. Get approved branches
-
   $stmtBranches = $pdo->prepare(
     "SELECT DISTINCT b.branch_id as id, b.name FROM clinic_branches_tb b
      INNER JOIN branch_subscriptions_tb s ON b.branch_id = s.branch_id
@@ -45,30 +40,31 @@ try {
   $branches = $stmtBranches->fetchAll();
 
   // 3. Fetch all raw transactions for this clinic/branch
-  // 3. Fetch all raw transactions for this clinic/branch
   $sql = "SELECT
     o.order_id as transaction_id,
     o.user_id,
     o.total_amount as amount,
     o.order_status as transaction_status,
-    -- ADDED: SMART DATE LOGIC
     CASE 
         WHEN (o.pickup_date IS NOT NULL AND o.pickup_date != '') THEN o.pickup_date
         WHEN a.start_time IS NOT NULL THEN a.start_time
         ELSE o.created_at
     END as display_date,
     o.created_at as transaction_date,
-    o.pickup_date, -- We keep this for the React filter
+    o.pickup_date, 
     o.branch_id,
     pay.payment_method,
     pay.payment_status,
+    pay.cash_received,
+    pay.cash_change,
     b.name as branch_name,
     a.appointment_id,
-    a.start_time, -- We keep this for reference
+    a.start_time, 
     p.name as pet_name,
     p.pet_picture as pet_image,
     u_owner.profile_picture as user_image,
     u_owner.email as owner_email,
+    u_owner.phone_number as owner_phone,
     CONCAT(u_owner.first_name, ' ', u_owner.last_name) as owner_name,
     CASE WHEN a.appointment_id IS NOT NULL THEN 'Appointment' ELSE 'Retail/Product' END as source_type
     FROM order_tb o
@@ -93,15 +89,12 @@ try {
     $params[':user_id'] = $user_id;
   }
 
-
-
   $sql .= " ORDER BY o.created_at DESC";
   $stmt = $pdo->prepare($sql);
   $stmt->execute($params);
   $rawTransactions = $stmt->fetchAll();
 
   // 4. Summaries & Grouping by Owner Profile
-
   $summary = [
     "total_billings" => 0,
     "amount_collected" => 0,
@@ -113,18 +106,23 @@ try {
   $profiles = [];
 
   if(count($rawTransactions) > 0) {
-    // Fetch all items for these transactions at once
     $transactionIds = array_column($rawTransactions, 'transaction_id');
     $placeholders = implode(',', array_fill(0, count($transactionIds), '?'));
+    
+    // ==========================================
+    // THIS IS THE FIX: Subquery with FIND_IN_SET
+    // ==========================================
     $itemStmt = $pdo->prepare("
       SELECT oi.*, 
-             s.custom_name as service_name, 
-             prod.name as product_name,
-             prod.brand_name,   -- ADDED THIS
-             prod.brand_type,   -- ADDED THIS
-             prod.dosage        -- ADDED THIS
+        (SELECT GROUP_CONCAT(custom_name SEPARATOR ', ') 
+         FROM branch_service_tb 
+         WHERE FIND_IN_SET(branch_service_id, REPLACE(COALESCE(oi.service_id, ''), ' ', ''))
+        ) as service_name, 
+        prod.name as product_name,
+        prod.brand_name,   
+        prod.brand_type,   
+        prod.dosage        
       FROM order_items_tb oi
-      LEFT JOIN branch_service_tb s ON oi.service_id = s.branch_service_id
       LEFT JOIN products_tb prod ON oi.product_id = prod.product_id
       WHERE oi.order_id IN ($placeholders)
     ");
@@ -142,12 +140,11 @@ try {
     foreach ($rawTransactions as $t) {
       $amount = (float)$t['amount'];
       $isPaid = (strtolower($t['transaction_status']) === 'paid' || strtolower($t['payment_status'] ?? '') === 'paid');
-      // Update Global Summary
+      
       $summary['total_billings'] += $amount;
       if($isPaid) $summary['amount_collected'] += $amount; else $summary['amount_uncollected'] += $amount;
       if($t['source_type'] === 'Appointment') $summary['total_appointments']++; else $summary['total_retail']++;
 
-      // Create/Update Owner Profile
       $uid = $t['user_id'];
       if(!isset($profiles[$uid])) {
         $profiles[$uid] = [
@@ -162,7 +159,6 @@ try {
         ];
       }
 
-      // Add transaction to this owner's history
       $t['items'] = $itemsByOrder[$t['transaction_id']] ?? [];
       $profiles[$uid]['total_spent'] += $amount;
       $profiles[$uid]['transaction_count']++;
@@ -172,7 +168,7 @@ try {
 
   echo json_encode([
     "success" => true,
-    "data" => array_values($profiles), // Now returns an array of unique profiles
+    "data" => array_values($profiles), 
     "summary" => $summary,
     "branches" => $branches
   ]);
@@ -181,5 +177,4 @@ try {
   http_response_code(500);
   echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }
-
 ?>
