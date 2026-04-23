@@ -55,8 +55,17 @@ export default function ServicesTab({ services, branchId }) {
   const fetchPets = async () => {
     try {
       const res = await authFetch(`${API_URL}/api/pet-owner/pet/get-pets.php`);
-      if (res?.success) setMyPets(res.data);
-    } catch (e) { console.error(e); }
+      if (res?.success) {
+        // Filter out archived (status != 1) and deceased (is_deceased != 0) pets
+        const eligiblePets = res.data.filter(
+          (pet) => Number(pet.status) === 1 && Number(pet.is_deceased) === 0
+        );
+        
+        setMyPets(eligiblePets);
+      }
+    } catch (e) { 
+      console.error(e); 
+    }
   };
 
   const fetchStaffForDate = async (dateObj) => {

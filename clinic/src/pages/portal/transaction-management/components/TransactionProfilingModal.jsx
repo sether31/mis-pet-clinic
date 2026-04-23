@@ -207,7 +207,7 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                             {formatSafeDate(tx.display_date)}
                           </span>
                           <span className="text-[10px] font-black text-(--clr-primary) bg-blue-50 px-2 py-0.5 rounded uppercase">
-                            Paid via {tx.payment_method || 'Cash'}
+                            Paid via {tx.payment_method ? tx.payment_method.replace('_', ' ') : 'Cash'}
                           </span>
                         </div>
                         <span className="text-[10px] font-black text-gray-800">TRANSAC ID: #{tx.order_id || tx.transaction_id}</span>
@@ -274,37 +274,37 @@ export default function TransactionProfilingModal({ isOpen, onClose, owner, bran
                           );
                         })}
 
-                        {selectedType === 'appointment' && (() => {
-    // Calculate the total from the items array
-    const calculatedTotal = tx.items?.reduce((acc, item) => acc + parseFloat(item.subtotal || 0), 0) || 0;
-    const cashReceived = parseFloat(tx.cash_received || 0);
-    const cashChange = parseFloat(tx.cash_change || 0);
+                        {(() => {
+                          // Calculate the total from the items array
+                          const calculatedTotal = tx.items?.reduce((acc, item) => acc + parseFloat(item.subtotal || 0), 0) || 0;
+                          const cashReceived = parseFloat(tx.cash_received || 0);
+                          const cashChange = parseFloat(tx.cash_change || 0);
 
-    return (
-      <div className="pt-3 mt-2 border-t border-dashed border-gray-200 space-y-1.5">
-        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-tight text-gray-800">
-          <span>Total Amount</span>
-          <span className="text-sm">
-            ₱{calculatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-        
-        <div className="flex justify-between items-center text-[10px] font-bold uppercase text-gray-500">
-          <span>Cash Received</span>
-          <span>
-            ₱{cashReceived.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </span>
-        </div>
+                          return (
+                            <div className="pt-3 mt-2 border-t border-dashed border-gray-200 space-y-1.5">
+                              <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-tight text-gray-800">
+                                <span>Total Amount</span>
+                                <span className="text-sm">
+                                  ₱{calculatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                              
+                              <div className="flex justify-between items-center text-[10px] font-bold uppercase text-gray-500">
+                                <span>Cash Received</span>
+                                <span>
+                                  ₱{cashReceived.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
 
-        <div className="flex justify-between items-center text-[10px] font-bold uppercase text-(--clr-primary)">
-          <span>Cash Change</span>
-          <span>
-            ₱{cashChange.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-      </div>
-    );
-  })()}
+                              <div className="flex justify-between items-center text-[10px] font-bold uppercase text-(--clr-primary)">
+                                <span>Cash Change</span>
+                                <span>
+                                  ₱{cashChange.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   )) : (

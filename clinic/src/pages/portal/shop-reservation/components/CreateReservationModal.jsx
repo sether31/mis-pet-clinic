@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 // hooks
 import { useUI } from '../../../../hooks/useUI';
 // utils
@@ -115,31 +116,141 @@ export default function CreateReservationModal({ branchId, onClose, onRefresh })
     if (isSubmitting) return;
     if (billedItems.length === 0) return toast.error("Add items to bill.");
 
-    setIsSubmitting(true);
-    showLoader('Processing...');
-    try {
-      const res = await authFetch(`${API_URL}/api/clinic/general/shop/create-reservation.php`, {
-        method: 'POST',
-        body: JSON.stringify({
-          branch_id: branchId,
-          is_anonymous: true,
-          items: billedItems,
-          total_amount: totalAmount
-        })
+    // 1. GENERATE MULTI-ITEM HTML
+    const itemsListHtml = billedItems.map(item => {
+      const unitPrice = parseFloat(item.price);
+      const quantity = parseInt(item.qty) || 0;
+      const itemTotal = unitPrice * quantity;
+      const brandRow = (item.category === 'Medication' || item.category === 'Supplies') && item.brand_type !== 'N/A'
+        ? `${item.brand_name || 'No Brand'} • ${item.brand_type}`
+        : `${item.brand_name || 'No Brand'}`;
+
+      return `
+        <div class="mb-2 border-b border-gray-100 pb-2 last:border-0 last:mb-0">
+          <div class="flex justify-between items-start">
+            <div class="text-left">
+              <div class="text-[10px] font-black uppercase text-gray-800 leading-tight">${item.name}</div>
+              <div class="text-[8px] font-bold text-gray-400 uppercase mt-0.5">${brandRow}</div>
+            </div>
+            <div class="text-right shrink-0 ml-4">
+              <div class="text-[9px] font-black text-gray-800">x${quantity}</div>
+              <div class="text-[9px] font-black text-(--clr-primary)">₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const sharedModalHtml = `
+      <div class="text-left bg-gray-50 p-4 rounded-2xl border border-gray-200">
+        <div class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">Cart Summary</div>
+        <div class="max-h-36 overflow-y-auto pr-1 mb-2 custom-scrollbar">
+          ${itemsListHtml}
+        </div>
+        <div class="border-t-2 border-dashed border-gray-300 my-3"></div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-black text-gray-800 uppercase tracking-tight">Total Amount</span> 
+          <span class="text-xl font-black text-(--clr-primary) tracking-tighter">₱${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+        </div>
+      </div>
+    `;
+
+    // 2. STEP 1: INPUT CASH
+    const { value: cashAmount, isConfirmed } = await Swal.fire({
+      title: 'Receive Payment',
+      html: sharedModalHtml,
+      input: 'number',
+      inputAttributes: { min: totalAmount, step: '0.01', placeholder: '0.00' },
+      inputLabel: 'Amount Received (₱)',
+      showCancelButton: true,
+      confirmButtonText: 'Calculate Change',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        container: '!z-[99999]',
+        popup: '!rounded-2xl !border !border-gray-300 !max-w-md !py-8 !px-4',
+        title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+        input: '!rounded-xl !text-lg !border-gray-300 !font-black !m-4 !w-[calc(100%-2rem)]',
+        confirmButton: 'rounded-lg px-6 py-2.5 text-white text-xs font-black uppercase bg-(--clr-primary) mx-1 cursor-pointer active:scale-95 transition-all',
+        cancelButton: 'rounded-lg px-6 py-2.5 text-xs font-black uppercase bg-gray-100 text-gray-500 mx-1 cursor-pointer active:scale-95 transition-all'
+      },
+      preConfirm: (value) => {
+        if (!value || parseFloat(value) < totalAmount) {
+          Swal.showValidationMessage(`Insufficient amount. Min: ₱${totalAmount.toLocaleString()}`);
+          return false;
+        }
+        return value;
+      }
+    });
+
+    // 3. STEP 2: SHOW CHANGE AND FINAL CONFIRM
+    if (isConfirmed && cashAmount) {
+      const change = cashAmount - totalAmount;
+      
+      const finalResult = await Swal.fire({
+        icon: 'success',
+        iconColor: 'var(--clr-primary)',
+        title: 'Payment Summary',
+        html: `
+          <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 mt-4">
+            <div class="flex justify-between text-[10px] font-black text-gray-400 uppercase mb-1">
+              <span>Total Due:</span> 
+              <span>₱${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+            <div class="flex justify-between text-[10px] font-black text-gray-400 uppercase mb-3">
+              <span>Cash Paid:</span> 
+              <span>₱${parseFloat(cashAmount).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+            <div class="border-t-2 border-dashed border-gray-300 pt-3 flex justify-between items-center">
+              <span class="text-sm font-black text-gray-800 uppercase">Change:</span>
+              <span class="text-3xl font-black text-(--clr-primary) tracking-tighter">₱${change.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Complete Sale',
+        cancelButtonText: 'Go Back',
+        buttonsStyling: false,
+        customClass: {
+          container: '!z-[99999]',
+          popup: '!rounded-2xl !border !border-gray-300 !max-w-md !py-8 !px-4',
+          title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+          confirmButton: 'rounded-lg px-6 py-2.5 text-white text-xs font-black uppercase bg-(--clr-primary) mx-1 cursor-pointer active:scale-95 transition-all',
+          cancelButton: 'rounded-lg px-6 py-2.5 text-xs font-black uppercase bg-gray-100 text-gray-500 mx-1 cursor-pointer active:scale-95 transition-all'
+        }
       });
 
-      if (res?.success) {
-        toast.success("Transaction successful!");
-        if (onRefresh) onRefresh();
-        onClose(); 
-      } else {
-          toast.error(res.message || "Failed to complete transaction.");
+      // 4. EXECUTE API CALL IF FINALLY CONFIRMED
+      if (finalResult.isConfirmed) {
+        setIsSubmitting(true);
+        showLoader('Processing Sale...');
+        try {
+          const res = await authFetch(`${API_URL}/api/clinic/general/shop/create-reservation.php`, {
+            method: 'POST',
+            body: JSON.stringify({
+              branch_id: branchId,
+              is_anonymous: true,
+              items: billedItems,
+              total_amount: totalAmount,
+              cash_received: cashAmount,
+              cash_change: change
+            })
+          });
+
+          if (res?.success) {
+            toast.success("Transaction successful!");
+            if (onRefresh) onRefresh();
+            onClose(); 
+          } else {
+              toast.error(res.message || "Failed to complete transaction.");
+          }
+        } catch(err) {
+          toast.error("Error creating sale.");
+        } finally {
+          hideLoader();
+          setIsSubmitting(false);
+        }
       }
-    } catch(err) {
-      toast.error("Error creating sale.");
-    } finally {
-      hideLoader();
-      setIsSubmitting(false);
     }
   };
 

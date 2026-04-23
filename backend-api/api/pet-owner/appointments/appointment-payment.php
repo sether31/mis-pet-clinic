@@ -22,9 +22,14 @@ try {
     throw new Exception("Missing appointment ID.");
   }
 
-  // 💥 NEW: Read the payment method selected from the Mobile App
   $method_input = $data->payment_method ?? 'GCASH';
   $selectedMethod = strtoupper((string)$method_input);
+
+  // ADD THIS VALIDATION:
+  $allowed_methods = ['GCASH', 'PAYMAYA', 'CREDIT_CARD'];
+  if (!in_array($selectedMethod, $allowed_methods)) {
+    throw new Exception("Invalid payment method selected.");
+  }
 
   // 1. Get the order_id linked to this appointment
   $stmtAppt = $pdo->prepare("SELECT order_id FROM appointments_tb WHERE appointment_id = ?");

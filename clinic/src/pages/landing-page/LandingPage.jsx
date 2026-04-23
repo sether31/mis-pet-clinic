@@ -180,8 +180,6 @@ export default function LandingPage() {
       }
     ];
 
-    console.log(faqs)
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* nav */}

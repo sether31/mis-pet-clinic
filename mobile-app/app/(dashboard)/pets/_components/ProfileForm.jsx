@@ -107,17 +107,24 @@ export default function ProfileForm({
       </AnimatedWrapper>
 
       <AnimatedWrapper index={2} style={styles.inputGroup}>
-        <AppText style={styles.label}>Breed {isEditing && <AppText style={{color: '#EF4444'}}>*</AppText>}</AppText>
-        <View style={[styles.inputWrapper, isEditing && styles.inputWrapperActive, errors.breed && styles.inputErrorBorder]}>
-          <Ionicons name="color-filter-outline" size={20} color={errors.breed ? '#EF4444' : (isEditing ? Colors.primary : "#9CA3AF")} style={styles.inputIcon} />
-          <TextInput 
-            style={styles.input} 
-            value={form?.breed} 
-            editable={isEditing} 
-            onChangeText={(t) => { setForm({...form, breed: t}); validateField('breed', t); }} 
-          />
+        <AppText style={styles.label}>Breed</AppText>
+        <View style={styles.inputWrapper}>
+          {isEditing ? (
+            <TextInput 
+              value={form.breed}
+              onChangeText={(val) => {
+                setForm({...form, breed: val});
+                validateField('breed', val);
+              }}
+              placeholder="Enter breed"
+            />
+          ) : (
+            // If NOT editing, show N/A if it's empty
+            <AppText style={styles.displayValue}>
+              {form.breed && form.breed.trim() !== "" ? form.breed : 'N/A'}
+            </AppText>
+          )}
         </View>
-        {errors.breed && isEditing && <AppText style={styles.errorText}>{errors.breed}</AppText>}
       </AnimatedWrapper>
 
       <AnimatedWrapper index={3} style={styles.inputGroup}>
@@ -175,12 +182,14 @@ export default function ProfileForm({
               onPress={() => setShowDatePicker(true)}
             >
               <Ionicons name="calendar-outline" size={20} color={errors.birthdate ? '#EF4444' : (isEditing ? Colors.primary : "#9CA3AF")} style={styles.inputIcon} />
-              <AppText style={styles.input}>{displayDate(form?.birthdate)}</AppText>
+              <AppText style={styles.input}>{form.birthdate && !form.birthdate.startsWith('0000') 
+        ? displayDate(form.birthdate) 
+        : 'N/A'}</AppText>
             </TouchableOpacity>
             {errors.birthdate && isEditing && <AppText style={styles.errorText}>{errors.birthdate}</AppText>}
             {showDatePicker && isEditing && (
               <DateTimePicker 
-                value={form.birthdate ? new Date(form.birthdate) : new Date()} 
+                value={form.birthdate && !form.birthdate.startsWith('0000') ? new Date(form.birthdate) : new Date()} 
                 mode="date" 
                 display="default" 
                 maximumDate={new Date()} 

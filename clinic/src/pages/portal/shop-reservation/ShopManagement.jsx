@@ -66,31 +66,34 @@ export default function ShopManagement() {
     fetchReservations();
   }, [fetchReservations]);
 
-  const handleUpdateStatus = async (orderId, newStatus, rejectReason = '') => {
-    showLoader(`Updating to ${newStatus}...`);
-    try {
-      const res = await authFetch(`${API_URL}/api/clinic/general/shop/update-reservation-status.php`, {
-        method: 'POST',
-        body: JSON.stringify({ 
-          order_id: orderId, 
-          status: newStatus,
-          reason: (newStatus === 'cancelled' || newStatus === 'rejected') ? rejectReason : ''
-        })
-      });
+  // Add 'payment = null' as the 4th parameter
+const handleUpdateStatus = async (orderId, newStatus, rejectReason = '', payment = null) => {
+  showLoader(`Updating to ${newStatus}...`);
+  try {
+    const res = await authFetch(`${API_URL}/api/clinic/general/shop/update-reservation-status.php`, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        order_id: orderId, 
+        status: newStatus,
+        reason: (newStatus === 'cancelled' || newStatus === 'rejected') ? rejectReason : '',
+        // FIX: Spread the payment object (cash_received, cash_change) into the body
+        ...payment 
+      })
+    });
 
-      if(res.success) {
-        toast.success(`Order marked as ${newStatus}!`);
-        setIsModalOpen(false);
-        fetchReservations(); 
-      } else {
-        toast.error("Something went wrong.");
-      }
-    } catch(error) {
-      toast.error("Something went wrong.");
-    } finally {
-      hideLoader();
+    if(res.success) {
+      toast.success(`Order marked as ${newStatus}!`);
+      setIsModalOpen(false);
+      fetchReservations(); 
+    } else {
+      toast.error(res.message || "Something went wrong.");
     }
-  };
+  } catch(error) {
+    toast.error("Something went wrong.");
+  } finally {
+    hideLoader();
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">

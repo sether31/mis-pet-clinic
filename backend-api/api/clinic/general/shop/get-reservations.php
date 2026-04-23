@@ -15,6 +15,7 @@ if(!$branch_id) {
 try {
   $pdo = (new Database)->pdo;
 
+  // 1. Subscription Check
   $subCheck = $pdo->prepare(
     "SELECT s.has_shop 
     FROM branch_subscriptions_tb bs
@@ -34,56 +35,66 @@ try {
     exit;
   }
 
+  // 2. Fetch all orders (excluding appointment-linked ones)
   $stmt = $pdo->prepare(
-    "SELECT 
-      o.order_id, 
-      o.order_status, 
-      o.pickup_date, 
-      o.total_amount, 
-      o.cancellation_reason,
-      u.first_name,        
-      u.last_name, 
-      u.profile_picture,            
-      SUM(oi.quantity) AS quantity,
-      MAX(p.name) AS product_name,
-      MAX(p.brand_name) AS brand_name,   -- Added
-      MAX(p.brand_type) AS brand_type,   -- Added
-      MAX(p.dosage) AS dosage,           -- Added
-      MAX(p.prod_pic) AS prod_pic,  
-      MAX(oi.price) AS unit_price,
-      o.updated_at,
-      CONCAT(u_updater.first_name, ' ', u_updater.last_name) AS updated_by_name
-    FROM order_tb o
-    LEFT JOIN user_tb u ON o.user_id = u.user_id 
-    LEFT JOIN order_items_tb oi ON o.order_id = oi.order_id 
-    LEFT JOIN products_tb p ON oi.product_id = p.product_id 
-    LEFT JOIN appointments_tb a ON o.order_id = a.order_id 
-    LEFT JOIN user_tb u_updater ON o.last_updated_by = u_updater.user_id
-    WHERE o.branch_id = ?
-    AND a.appointment_id IS NULL
-    GROUP BY 
-      o.order_id, 
-      o.order_status, 
-      o.pickup_date, 
-      o.total_amount, 
-      o.cancellation_reason,
-      u.first_name,
-      u.last_name,
-      u.profile_picture,            
-      o.created_at,
-      o.updated_at,
-      o.last_updated_by,
-      u_updater.first_name,
-      u_updater.last_name
-    ORDER BY 
-      CASE WHEN o.order_status = 'pending' THEN 1 ELSE 2 END,
-      o.pickup_date ASC, 
-      o.created_at DESC"
+  "SELECT 
+    o.order_id, 
+    o.order_status, 
+    o.pickup_date, 
+    o.total_amount, 
+    pay.cash_received,   -- Selected from payments_tb instead of order_tb
+    pay.cash_change,     -- Selected from payments_tb instead of order_tb
+    o.cancellation_reason,
+    u.first_name,         
+    u.last_name, 
+    u.profile_picture,            
+    o.updated_at,
+    o.created_at,
+    CONCAT(u_updater.first_name, ' ', u_updater.last_name) AS updated_by_name
+  FROM order_tb o
+  LEFT JOIN user_tb u ON o.user_id = u.user_id 
+  LEFT JOIN appointments_tb a ON o.order_id = a.order_id 
+  LEFT JOIN user_tb u_updater ON o.last_updated_by = u_updater.user_id
+  LEFT JOIN payments_tb pay ON o.order_id = pay.order_id -- Join to get cash details
+  WHERE o.branch_id = ?
+  AND a.appointment_id IS NULL
+  ORDER BY 
+    CASE WHEN o.order_status = 'pending' THEN 1 ELSE 2 END,
+    o.pickup_date ASC, 
+    o.created_at DESC"
 );
-  
-  $stmt->execute([$branch_id]);
-  $orders = $stmt->fetchAll();
 
+$stmt->execute([$branch_id]);
+$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+  // 3. Fetch all items related to these specific orders
+  $itemsByOrder = [];
+  if (!empty($orders)) {
+      $orderIds = array_column($orders, 'order_id');
+      $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+      
+      $itemStmt = $pdo->prepare(
+        "SELECT 
+          oi.*, 
+          p.name AS product_name, 
+          p.prod_pic, 
+          p.brand_name, 
+          p.brand_type, 
+          p.dosage 
+         FROM order_items_tb oi
+         JOIN products_tb p ON oi.product_id = p.product_id
+         WHERE oi.order_id IN ($placeholders)"
+      );
+      $itemStmt->execute($orderIds);
+      $allItems = $itemStmt->fetchAll(PDO::FETCH_ASSOC);
+
+      // Group items by order_id for easy lookup
+      foreach ($allItems as $item) {
+          $itemsByOrder[$item['order_id']][] = $item;
+      }
+  }
+
+  // 4. Statistics counter
   $cardData = [
     "pending" => 0,
     "confirmed" => 0,
@@ -93,35 +104,36 @@ try {
     "total" => count($orders)
   ];
 
-  $formattedOrders = array_map(function($order) use (&$cardData) {
-    // 🔥 Handle Anonymous Guest Name
-    if (empty($order['first_name']) && empty($order['last_name'])) {
-        $order['owner_name'] = null; 
+  // 5. Format the Final Response
+  $formattedOrders = array_map(function($order) use (&$itemsByOrder, &$cardData) {
+    // Determine Owner Name
+    $order['owner_name'] = trim(($order['first_name'] ?? '') . ' ' . ($order['last_name'] ?? '')) ?: null;
+    
+    // Attach Nested Items (for Modal)
+    $order['items'] = $itemsByOrder[$order['order_id']] ?? [];
+    
+    // Flattened data fallback (for Table View)
+    if (!empty($order['items'])) {
+        $firstItem = $order['items'][0];
+        $order['product_name'] = count($order['items']) > 1 
+            ? implode(', ', array_column($order['items'], 'product_name')) 
+            : $firstItem['product_name'];
+            
+        $order['quantity'] = array_sum(array_column($order['items'], 'quantity'));
+        $order['prod_pic'] = $firstItem['prod_pic'];
+        $order['unit_price'] = $firstItem['price'];
+        $order['brand_name'] = $firstItem['brand_name'];
+        $order['brand_type'] = $firstItem['brand_type'];
+        $order['dosage'] = $firstItem['dosage'];
     } else {
-        $order['owner_name'] = trim(($order['first_name'] ?? '') . ' ' . ($order['last_name'] ?? ''));
+        $order['product_name'] = 'No Items Found';
+        $order['quantity'] = 0;
     }
 
-    $order['product_name'] = $order['product_name'] ?? 'Multiple / Custom Items';
-    $order['quantity'] = $order['quantity'] ?? 1;
-    $order['unit_price'] = $order['unit_price'] ?? 0;
-
-    $order['profile_picture'] = $order['profile_picture'] ?? null;
-    $order['prod_pic'] = $order['prod_pic'] ?? null;
-
-    $order['order_status'] = strtolower(trim($order['order_status']));
-
-    // Count 
-    $status = $order['order_status'];
-    if ($status === 'pending') {
-      $cardData['pending']++;
-    } elseif ($status === 'confirmed') {
-      $cardData['confirmed']++;
-    } elseif ($status === 'completed') {
-      $cardData['completed']++;
-    } elseif ($status === 'cancelled') {
-      $cardData['cancelled']++; 
-    } elseif ($status === 'rejected') {
-      $cardData['rejected']++; 
+    // Update Card Stats
+    $status = strtolower(trim($order['order_status']));
+    if (isset($cardData[$status])) {
+        $cardData[$status]++;
     }
 
     return $order;
