@@ -307,6 +307,14 @@ export default function AppointmentsList({ activeTab }) {
                         </View>
                       ) : (
                         <>
+                        <Pressable 
+                          style={({ pressed }) => [styles.walletBtn, { backgroundColor: '#1F2937' }, pressed && styles.walletBtnPressed]}
+                          onPress={() => handlePayNow(selectedAppointment.appointment_id, 'CREDIT_CARD')}
+                        >
+                          <Ionicons name="card" size={24} color="#FFF" style={{ marginRight: 10 }} />
+                          <AppText style={styles.walletBtnText}>Credit / Debit Card</AppText>
+                        </Pressable>
+
                           <Pressable 
                             style={({ pressed }) => [styles.walletBtn, { backgroundColor: '#005CEE' }, pressed && styles.walletBtnPressed]}
                             onPress={() => handlePayNow(selectedAppointment.appointment_id, 'GCASH')}

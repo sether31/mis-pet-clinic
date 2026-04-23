@@ -164,6 +164,24 @@ try {
         $displayChange = $trx['cash_change'] ?? 0; // Using cash_change per request
     }
 
+    $rawCashReceived = $trx['cash_received'] ?? 0;
+    $rawCashChange = $trx['cash_change'] ?? 0;
+    $paymentMethod = strtoupper($trx['payment_method'] ?? 'CASH');
+
+    // 2. Decide what to display
+    if ($paymentMethod !== 'CASH') {
+        // For GCash/Card, we usually show the exact amount and 0 change
+        $displayCashReceived = $trx['gross_amount'];
+        $displayChange = 0;
+    } else {
+        // For Cash, prioritize the actual payment data
+        // If cash_received is 0 (old records), fallback to the total amount
+        $displayCashReceived = ($rawCashReceived > 0) ? $rawCashReceived : $trx['gross_amount'];
+        $displayChange = $rawCashChange;
+    }
+
+    
+
     $html .= "
       <div class='container'>
         <div class='header'>
