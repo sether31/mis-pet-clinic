@@ -156,16 +156,30 @@ try {
     }, $svcStmt->fetchAll(PDO::FETCH_ASSOC));
 
     $pStmt = $pdo->prepare("
-        SELECT pr.name, SUM(oi.quantity) as sales 
+        SELECT 
+            pr.name, 
+            pr.brand_name, 
+            pr.category, 
+            pr.dosage,
+            SUM(oi.quantity) as sales 
         FROM order_items_tb oi 
         JOIN products_tb pr ON oi.product_id = pr.product_id 
         JOIN order_tb o ON oi.order_id = o.order_id 
-        WHERE o.branch_id = :bid AND LOWER(o.order_status) IN ('completed', 'paid') 
-        $orderDateClause GROUP BY pr.product_id ORDER BY sales DESC LIMIT 5
+        WHERE o.branch_id = :bid 
+        AND LOWER(o.order_status) IN ('completed', 'paid') 
+        $orderDateClause 
+        GROUP BY pr.product_id 
+        ORDER BY sales DESC 
+        LIMIT 5
     ");
     $pStmt->execute([':bid' => $branch_id]);
+
     $topProducts = array_map(function($item) {
+        // Clean up the strings for a professional look
         $item['name'] = ucwords(strtolower($item['name']));
+        $item['brand_name'] = $item['brand_name'] ? ucwords(strtolower($item['brand_name'])) : 'No Brand';
+        $item['category'] = $item['category'] ? ucwords(strtolower($item['category'])) : 'General';
+        $item['dosage'] = $item['dosage'] ? ucwords(strtolower($item['dosage'])) : 'N/A';
         return $item;
     }, $pStmt->fetchAll(PDO::FETCH_ASSOC));
 

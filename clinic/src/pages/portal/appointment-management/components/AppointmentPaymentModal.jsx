@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'; 
+import { useState, useEffect, useRef, useMemo } from 'react'; 
 import { toast } from 'react-toastify';
 // hooks
 import { useUI } from '../../../../hooks/useUI';
@@ -12,7 +12,6 @@ import {
 } from 'react-icons/hi';
 import { FaRectangleList } from "react-icons/fa6";
 // images
-import noImage from '../../../../assets/images/no-image.jpg'
 import { IoLockClosedOutline } from 'react-icons/io5';
 import Swal from 'sweetalert2';
 import { formatDateTime } from '../../../../utils/dateFormatter';
@@ -32,12 +31,183 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [auditData, setAuditData] = useState({ updated_at: null, updated_by_name: null });
 
-  const [isFetchingData, setIsFetchingData] = useState(true);
-
   // search and dropdown state
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const handlePaymentAction = async () => {
+    const servicesListHtml = activeTask?.order_items?.length > 0 
+    ? activeTask.order_items.map(s => `
+        <div class="mb-2 border-b border-gray-100 pb-2 last:border-0 last:mb-0">
+          <div class="flex justify-between items-start">
+            <div class="text-left">
+              <div class="text-[10px] font-black uppercase text-gray-800 leading-tight">
+                ${(s.item_name || 'Service').replace(/_/g, ' ')}
+              </div>
+              <div class="text-[8px] font-bold text-blue-500 uppercase tracking-tighter mt-0.5">
+                Medical Service
+              </div>
+            </div>
+            <div class="text-right shrink-0 ml-4">
+              <div class="text-[9px] font-black text-gray-800">x${s.quantity || 1}</div>
+              <div class="text-[9px] font-black text-(--clr-primary)">
+                ₱${Number(s.price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('')
+    : `
+        <div class="flex justify-between items-center py-2">
+          <div class="text-[10px] font-black uppercase text-gray-800">${activeTask?.service_names?.replace(/_/g, ' ') || 'General Service'}</div>
+          <div class="text-[9px] font-black text-(--clr-primary)">₱${Number(calculatedTotal).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+        </div>
+      `;
+
+  // 2. GENERATE PRODUCT ITEMS LIST HTML
+  const itemsListHtml = billedItems.length > 0 
+    ? billedItems.map(item => {
+        const unitPrice = parseFloat(item.price);
+        const quantity = parseInt(item.qty) || 0;
+        const itemTotal = unitPrice * quantity;
+        const brandRow = (item.category === 'Medication' || item.category === 'Supplies') && item.brand_type !== 'N/A'
+          ? `${item.brand_name} • ${item.brand_type}`
+          : `${item.brand_name}`;
+
+        return `
+          <div class="mb-2 border-b border-gray-100 pb-2 last:border-0 last:mb-0">
+            <div class="flex justify-between items-start">
+              <div class="text-left">
+                <div class="text-[10px] font-black uppercase text-gray-800 leading-tight">${item.name}</div>
+                <div class="text-[8px] font-bold text-gray-400 uppercase mt-0.5">${brandRow}</div>
+              </div>
+              <div class="text-right shrink-0 ml-4">
+                <div class="text-[9px] font-black text-gray-800">x${quantity}</div>
+                <div class="text-[9px] font-black text-(--clr-primary)">₱${itemTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')
+    : `<div class="text-[10px] text-gray-400 font-bold uppercase text-center py-2 italic">No additional items</div>`;
+
+  // 3. SHARED MODAL (Common breakdown structure)
+  const sharedModalHtml = `
+    <div class="text-left bg-gray-50 p-4 rounded-2xl border border-gray-200 max-h-[300px] overflow-y-auto custom-scrollbar">
+      <div class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">Services Summary</div>
+      <div class="mb-4">${servicesListHtml}</div>
+      <div class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">Items Summary</div>
+      <div class="max-h-36 pr-1 mb-2">${itemsListHtml}</div>
+      <div class="border-t-2 border-dashed border-gray-300 my-3"></div>
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-black text-gray-800 uppercase tracking-tight">Total Amount</span> 
+        <span class="text-xl font-black text-(--clr-primary) tracking-tighter">₱${pricing.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+      </div>
+    </div>
+  `;
+
+  if (paymentMethod === 'cash') {
+    const { value: cashAmount, isConfirmed } = await Swal.fire({
+      title: 'Receive Payment',
+      html: `
+        ${sharedModalHtml}
+      `,
+      input: 'number',
+      inputAttributes: { min: pricing.total, step: '0.01', placeholder: '0.00' },
+      inputLabel: 'Amount Received (₱)',
+      showCancelButton: true,
+      confirmButtonText: 'Calculate Change',
+      cancelButtonText: 'Cancel',
+      buttonsStyling: false,
+      customClass: {
+        container: '!z-[99999]',
+        popup: '!rounded-2xl !border !border-gray-300 !max-w-md !py-8 !px-4',
+        title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+        input: '!rounded-xl !text-lg !border-gray-300 !font-black !m-4 !w-[calc(100%-2rem)]',
+        confirmButton: 'rounded-lg px-6 py-2.5 text-white text-xs font-black uppercase bg-(--clr-primary) mx-1',
+        cancelButton: 'rounded-lg px-6 py-2.5 text-xs font-black uppercase bg-gray-100 text-gray-500 mx-1'
+      }
+    });
+
+    if (isConfirmed && cashAmount) {
+      const change = cashAmount - pricing.total;
+      
+      const finalResult = await Swal.fire({
+        icon: 'success',
+        iconColor: 'var(--clr-primary)',
+        title: 'Payment Success',
+        html: `
+          <div class="text-[10px] font-bold text-gray-400 mb-3 text-left uppercase tracking-widest">Transaction Summary:</div>
+          
+          <div class="bg-white p-4 rounded-xl border border-gray-200 mb-4 h-64 overflow-y-auto custom-scrollbar text-left shadow-inner">
+            <div class="text-[9px] font-black text-gray-400 uppercase mb-3 border-b pb-1">Receipt Itemization</div>
+            ${servicesListHtml}
+            <div class="my-4 border-t border-gray-100"></div>
+            ${itemsListHtml}
+          </div>
+
+          <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+            <div class="flex justify-between text-[10px] font-black text-gray-400 uppercase mb-1">
+              <span>Total Due:</span> 
+              <span>₱${pricing.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+            <div class="flex justify-between text-[10px] font-black text-gray-400 uppercase mb-3">
+              <span>Cash Paid:</span> 
+              <span>₱${parseFloat(cashAmount).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+            <div class="border-t-2 border-dashed border-gray-300 pt-3 flex justify-between items-center">
+              <span class="text-sm font-black text-gray-800 uppercase">Change:</span>
+              <span class="text-3xl font-black text-(--clr-primary) tracking-tighter">₱${change.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            </div>
+          </div>
+        `,
+        showCancelButton: true, // Restored the button
+        confirmButtonText: 'Complete Transaction',
+        cancelButtonText: 'Go Back / Edit',
+        buttonsStyling: false,
+        customClass: {
+          container: '!z-[99999]',
+          popup: '!rounded-2xl !border !border-gray-300 !max-w-md !py-8 !px-4',
+          title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+          confirmButton: 'rounded-lg px-6 py-2.5 text-white text-xs font-black uppercase bg-(--clr-primary) mx-1',
+          cancelButton: 'rounded-lg px-6 py-2.5 text-xs font-black uppercase bg-gray-100 text-gray-500 mx-1'
+        }
+      });
+
+      if (finalResult.isConfirmed) {
+        handleSubmit(cashAmount, change);
+      }
+    }
+
+  // --- CASE: CARD ---
+  } else if (paymentMethod === 'card') {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Review Bill',
+      html: `
+        <div class="text-[10px] font-bold text-gray-400 mb-4 text-left px-1 uppercase tracking-widest leading-relaxed">
+          Proceeding will generate a digital invoice for the customer, which can be paid within the application.
+        </div>
+        ${sharedModalHtml}
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Generate Bill',
+      cancelButtonText: 'Back',
+      buttonsStyling: false,
+      customClass: {
+        container: '!z-[99999]',
+        popup: '!rounded-2xl !py-8 !px-4 !border !border-gray-300 !max-w-md',
+        title: '!text-xl !font-black !uppercase !tracking-tight !text-gray-800',
+        confirmButton: 'rounded-lg px-6 py-2.5 cursor-pointer duration-300 ease-in-out active:scale-95 text-white text-xs font-black uppercase bg-(--clr-primary) hover:opacity-90 mx-1',
+        cancelButton: 'rounded-lg px-6 py-2.5 active:scale-95 duration-300 ease-in-out cursor-pointer text-xs font-black uppercase bg-gray-100 text-gray-500 hover:bg-gray-200 mx-1'
+      }
+    });
+
+    if (isConfirmed) {
+      handleSubmit(); 
+    }
+  }
+};
 
   const serviceFee = parseFloat(activeTask?.service_fee || 0);
   const isLocked = ['billed', 'completed'].includes(activeTask?.status);
@@ -85,10 +255,10 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
   useEffect(() => {
     if(activeTask?.id) {
       const fetchBilledDetails = async () => {
-        setIsFetchingData(true);
         try {
           const res = await authFetch(`${API_URL}/api/clinic/general/appointment/get-billing-details.php?appointment_id=${activeTask.id}`);
           if(res?.success) {
+            // Only extract products (items with inventory_id)
             const productsOnly = res.data
               .filter(item => item.inventory_id !== null)
               .map(item => ({
@@ -97,21 +267,11 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                 name: item.name,
                 price: parseFloat(item.price), 
                 qty: parseInt(item.qty),
-                supplier_name: item.supplier_name,
-                expiry_date: item.expiry_date,
                 type: 'product'
               }));
             setBilledItems(productsOnly);
-            if(res.payment_method) setPaymentMethod(res.payment_method.toLowerCase());
-            if(res.payment_status) setPaymentStatus(res.payment_status.toLowerCase());
-
-            setAuditData({ updated_at: res.updated_at, updated_by_name: res.updated_by_name });
           }
-        } catch(err) {
-          toast.error("Something went wrong.");
-        } finally {
-          setIsFetchingData(false); 
-        }
+        } catch(err) { toast.error("Error loading items"); }
       };
       fetchBilledDetails();
     }
@@ -165,12 +325,29 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
     setSearchTerm("");
   };
 
-  const getPricingBreakdown = () => {
-    const itemsSubtotal = billedItems.reduce((sum, i) => sum + (parseFloat(i.price) * (parseInt(i.qty) || 0)), 0);
-    return { service: serviceFee, items: itemsSubtotal, total: serviceFee + itemsSubtotal };
-  };
+  const serviceItemsOnly = useMemo(() => {
+    return (activeTask?.order_items || []).filter(item => item.service_id && !item.product_id);
+  }, [activeTask?.order_items]);
 
-  const pricing = getPricingBreakdown();
+  const calculatedTotal = useMemo(() => {
+    if (serviceItemsOnly.length > 0) {
+      return serviceItemsOnly.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 1)), 0);
+    }
+    return Number(activeTask?.total_service_fee || 0);
+  }, [serviceItemsOnly, activeTask?.total_service_fee]);
+
+  // 2. PRICING LOGIC FOR PAYMENT (Total = Services + Billed Products)
+  const pricing = useMemo(() => {
+    const serviceSubtotal = Number(calculatedTotal || 0);
+    const productsSubtotal = billedItems.reduce((sum, i) => sum + (parseFloat(i.price) * (parseInt(i.qty) || 0)), 0);
+    
+    return {
+      service: serviceSubtotal,
+      products: productsSubtotal,
+      total: serviceSubtotal + productsSubtotal
+    };
+  }, [calculatedTotal, billedItems]);
+
 
   const handleCancel = async () => {
     const { value: reason, isConfirmed } = await Swal.fire({
@@ -236,37 +413,64 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
     }
   };
 
-  const handleSubmit = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    showLoader('Processing...');
-    try {
-      const payload = {
-        appointment_id: activeTask.id,
-        branch_id: branchId,
-        total: parseFloat(pricing.total.toFixed(2)),
-        payment_method: paymentMethod,
-        items: [
-          { service_id: activeTask.branch_service_id, name: activeTask?.service_name || 'Service', price: serviceFee, qty: 1, type: 'service' },
-          ...billedItems.map(i => ({ inventory_id: i.inventory_id, product_id: i.product_id, name: i.name, price: i.price, qty: i.qty, type: 'product' }))
-        ]
-      };
-      const res = await authFetch(`${API_URL}/api/clinic/general/appointment/pay-appointment.php`, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      if(res?.success) {
-        toast.success("Payment successful");
-        if (onRefresh) onRefresh();
-        onClose(); 
-      }
-    } catch(err) {
-      toast.error("Transaction failed");
-    } finally {
-      hideLoader();
-      setIsSubmitting(false);
+  const handleSubmit = async (received = null, change = null) => {
+  if (isSubmitting) return;
+  setIsSubmitting(true);
+  showLoader('Processing...');
+
+  try {
+    // Map the services from the details tab
+    const services = activeTask?.order_items?.map(s => ({
+      service_id: s.branch_service_id || activeTask.branch_service_id, 
+      name: s.item_name || 'Service',
+      price: s.price,
+      qty: s.quantity || 1,
+      type: 'service'
+    })) || [{ 
+      service_id: activeTask.branch_service_id, 
+      name: activeTask?.service_name || 'Service', 
+      price: calculatedTotal, 
+      qty: 1, 
+      type: 'service' 
+    }];
+
+    const payload = {
+      appointment_id: activeTask.id,
+      branch_id: branchId,
+      total: parseFloat(pricing.total.toFixed(2)),
+      payment_method: paymentMethod,
+      cash_received: paymentMethod === 'cash' ? received : null,
+      cash_change: paymentMethod === 'cash' ? change : null,
+      items: [
+        ...services, // Spread all services found in details
+        ...billedItems.map(i => ({ 
+          inventory_id: i.inventory_id, 
+          product_id: i.product_id, 
+          name: i.name, 
+          price: i.price, 
+          qty: i.qty, 
+          type: 'product' 
+        }))
+      ]
+    };
+
+    const res = await authFetch(`${API_URL}/api/clinic/general/appointment/pay-appointment.php`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    if(res?.success) {
+      toast.success("Payment successful");
+      if (onRefresh) onRefresh();
+      onClose(); 
     }
-  };
+  } catch(err) {
+    toast.error("Transaction failed");
+  } finally {
+    hideLoader();
+    setIsSubmitting(false);
+  }
+};
 
   // search filter
   // 1. Group and filter by earliest non-expired expiry date
@@ -292,6 +496,23 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
       return acc;
     }, {})
   );
+
+  const groupedBilledItems = useMemo(() => {
+    return billedItems.reduce((acc, item) => {
+      const productId = item.product_id;
+      if (!acc[productId]) {
+        // Create a new entry for this product
+        acc[productId] = { ...item };
+      } else {
+        // If it exists, just add the quantity
+        acc[productId].qty = (parseInt(acc[productId].qty) || 0) + (parseInt(item.qty) || 0);
+      }
+      return acc;
+    }, {});
+  }, [billedItems]);
+
+  // Convert the object back to an array for mapping
+  const displayBilledItems = Object.values(groupedBilledItems);
   
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-10000 bg-black/70 backdrop-blur-sm">
@@ -309,7 +530,7 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
         </div>
 
         {/* content */}
-        <div className="p-8 h-[550px] flex flex-col">
+        <div className="p-8 h-[590px] flex flex-col">
           <div className="flex-1 pr-2 overflow-y-auto custom-scrollbar">
             {activeTab === 'overview' ? (
               <div className="space-t-6 animate-in fade-in slide-in-from-bottom-4">
@@ -424,41 +645,80 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                 </div>
 
                 {/* Service Highlight Card */}
-                <div className="relative p-6 transition-all border-2 border-green-100 bg-green-50 rounded-2xl">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Service Procedure</span>
-                      <h4 className="text-2xl font-black text-(--clr-primary) uppercase leading-none">
-                        {activeTask?.service_name || 'Service'}
-                      </h4>
+                <div className="relative p-6 transition-all border-2 border-green-100 bg-green-50 rounded-3xl">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">
+                        Services
+                      </span>
+                      {/* Update count to only reflect services */}
+                      <span className="bg-green-200 text-(--clr-primary) text-[9px] font-black px-2 py-0.5 rounded-sm uppercase">
+                        {activeTask?.order_items?.filter(item => item.service_id && !item.product_id).length || 0} Items
+                      </span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest">Service Fee</span>
-                      <p className="text-2xl font-black text-(--clr-primary)">₱{serviceFee.toLocaleString()}</p>
+
+                    {/* Filtered List: Only show items that are Services */}
+                    <div className="space-y-3">
+                      {activeTask?.order_items?.filter(item => item.service_id && !item.product_id).length > 0 ? (
+                        activeTask.order_items
+                          .filter(item => item.service_id && !item.product_id)
+                          .map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between group">
+                              <div className="flex flex-col">
+                                <h4 className="text-sm font-black text-(--clr-primary) uppercase leading-none">
+                                  {item.item_name?.replace(/_/g, ' ')}
+                                </h4>
+                                {item.quantity > 1 && (
+                                  <span className="text-[8px] font-bold text-(--clr-primary) uppercase">
+                                    Qty: {item.quantity}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm font-black text-(--clr-primary)">
+                                ₱{Number(item.price || 0).toLocaleString()}
+                              </p>
+                            </div>
+                          ))
+                      ) : (
+                        /* Fallback */
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-black text-(--clr-primary) uppercase">
+                            {activeTask?.service_names?.replace(/_/g, ' ') || 'General Service'}
+                          </h4>
+                          <p className="text-sm font-black text-(--clr-primary)">
+                            ₱{Number(activeTask?.total_service_fee || 0).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Total Fee Section */}
+                    <div className="pt-4 mt-4 border-t-2 border-dashed border-green-200">
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <span className="text-[9px] font-black text-(--clr-primary) uppercase">Total Amount</span>
+                          <p className="text-3xl font-black text-(--clr-primary) leading-none">
+                            ₱{calculatedTotal}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Description Section */}
-                  <div className="pt-4 mt-4 border-t border-green-200/50">
-                    <p className="text-sm italic font-medium leading-relaxed text-(--clr-primary)">
-                      "{activeTask?.service_description || "Standard consultation and professional health assessment."}"
-                    </p>
-                  </div>
-
-                  {/* Appointment Time Section - Integrated Inside */}
-                  <div className="pt-4 mt-4 border-t border-green-200/50">
-                    <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest block mb-2">Service Schedule</span>
-                    <div className="flex items-center gap-3 p-3 text-sm font-bold text-blue-800 border bg-white/60 rounded-xl border-green-100/50">
+                  {/* Schedule Segment */}
+                  <div className="pt-4 mt-4 border-t border-green-200">
+                    <span className="text-[9px] font-black text-(--clr-primary) uppercase tracking-widest block mb-2">Requested Schedule</span>
+                    <div className="flex items-center gap-2 p-3 text-sm font-bold text-blue-800 border border-blue-200 bg-blue-50 rounded-xl">
                       <HiMiniExclamationCircle size={18} className="text-blue-600 shrink-0" />
                       <div className="flex flex-wrap items-center gap-2">
-                        {/* Using formatDateTime utility or your preferred date formatter */}
                         <span>{formatDateTime(activeTask?.start)}</span>
-                        <span className="opacity-30">—</span>
+                        <span className="opacity-40">—</span>
                         <span>{formatDateTime(activeTask?.end)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
+
               </div>
             ) : (
               <div className="space-y-6">
@@ -481,11 +741,11 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                       <HiInformationCircle size={18}/>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Service Price</p>
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Total Service Price</p>
                       <p className="text-sm font-black text-blue-900 uppercase">{activeTask?.service_name}</p>
                     </div>
                   </div>
-                  <p className="font-black tracking-tighter text-blue-600">₱{serviceFee.toLocaleString()}</p>
+                  <p className="font-black tracking-tighter text-blue-600">₱{calculatedTotal}</p>
                 </div>
 
                 {/* payment */}
@@ -537,39 +797,48 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                                   className="flex flex-col gap-1 p-4 transition-colors border-b cursor-pointer last:border-none hover:bg-green-50"
                                 >
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-black uppercase text-gray-700">
-                                      {p.name}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] font-black uppercase text-gray-700">{p.name}</span>
+                                      
+                                      {/* DOSAGE BADGE - Shown for medical items */}
+                                      {(p.category === 'Medication' || p.category === 'Supplies') && p.dosage && (
+                                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 uppercase">
+                                          {p.dosage}
+                                        </span>
+                                      )}
+
+                                      {/* CATEGORY TAG */}
+                                      <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 uppercase border border-gray-200">
+                                        {p.category}
+                                      </span>
+                                    </div>
                                     <span className="text-[10px] font-black text-(--clr-primary)">
                                       ₱{parseFloat(p.price).toLocaleString()}
                                     </span>
                                   </div>
                                   
                                   <div className="flex flex-wrap gap-3 text-[8px] font-bold uppercase tracking-tighter">
-                                    {/* FIFO Visual Indicator */}
-                                    <span className="text-amber-600 font-black px-1.5 py-0.5 bg-amber-50 rounded border border-amber-100">
-                                      Dispatch Priority
+                                    <span className="mt-1 text-gray-400">
+                                      {p.brand_name || 'No Brand'} 
+                                      {/* Hide N/A Brand Types for Accessories/Others */}
+                                      {(p.category === 'Medication' || p.category === 'Supplies') && p.brand_type !== 'N/A' && ` • ${p.brand_type}`}
+                                    </span>
+
+                                    <span className="mt-1 font-black text-blue-500">
+                                      Exp: {formatExpiry(p.expiry_date, p.category)}
                                     </span>
                                     
                                     <span className="mt-1 text-gray-400">
-                                      Dist: {p.supplier_name || 'N/A'}
+                                      Stock: {p.stock_level}
                                     </span>
-        
-        <span className="mt-1 font-black text-blue-500">
-          Exp: {formatExpiry(p.expiry_date)}
-        </span>
-        
-        <span className="mt-1 text-gray-400">
-          Stock: {p.stock_level}
-        </span>
-      </div>
-    </div>
-  ))
-) : (
-  <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">
-    No active items found
-  </div>
-)}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="p-6 text-center text-[10px] font-black text-gray-400 uppercase">
+                                No active items found
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -578,46 +847,94 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
 
                   {/* billed items */}
                   <div className="space-y-3">
-                    {billedItems.map(item => {
+                    {displayBilledItems.map(item => {
                       const originalProd = availableProducts.find(p => String(p.inventory_id) === String(item.inventory_id));
 
+                      // Fallbacks to grab data from originalProd if item doesn't have it
+                      const displayName = item.name || originalProd?.name;
+                      const displayDosage = item.dosage || originalProd?.dosage;
+                      const displayCategory = item.category || originalProd?.category || 'Item';
+                      const displayPrice = item.price || originalProd?.price || 0;
+                      const displayBrandName = item.brand_name || originalProd?.brand_name || 'No Brand';
+                      const displayBrandType = item.brand_type || originalProd?.brand_type;
+                      const displayExpiry = item.expiry_date || originalProd?.expiry_date;
+                      
                       return (
-                        <div key={item.inventory_id} className="flex items-center justify-between p-4 bg-white border border-gray-300 rounded-2xl">
-                          <div className="flex-1">
-                            <p className="text-[11px] font-black text-gray-800 uppercase flex gap-2 items-center">
-                              {item.name} 
-                              <span className="text-(--clr-primary)">₱{parseFloat(item.price).toLocaleString()}</span>
-                            </p>
-                            <div className="flex flex-wrap gap-3 mt-1">
-                              <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">
-                                Exp: {formatExpiry(item.expiry_date)}
+                        <div 
+                          key={item.inventory_id} 
+                          className="flex flex-col p-4 border border-gray-300 rounded-2xl bg-white"
+                        >
+                          {/* ROW 1: Name, Dosage, Category and Price */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-black text-gray-800 uppercase tracking-tight">
+                                {displayName}
                               </span>
-                              <span className="text-[9px] font-black text-gray-700 uppercase tracking-tighter">
-                                Stock: {originalProd?.stock_level || item.stock_level}
-                              </span>
-                              <span className="text-[9px] font-black text-gray-700 uppercase tracking-tighter">
-                                Dist: {item.supplier_name}
+                              
+                              {/* DOSAGE BADGE */}
+                              {displayDosage && (
+                                <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 uppercase">
+                                  {displayDosage}
+                                </span>
+                              )}
+
+                              {/* CATEGORY TAG */}
+                              <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-gray-100 text-gray-400 uppercase border border-gray-200">
+                                {displayCategory}
                               </span>
                             </div>
+
+                            <span className="text-xs font-black text-(--clr-primary)">
+                              ₱{parseFloat(displayPrice).toLocaleString()}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-3">
-                          {isLocked ? (
-                              <div className="px-4 py-2 border border-gray-200 bg-gray-50 rounded-xl">
-                                <span className="text-[10px] font-black text-gray-500 uppercase">Qty: {item.qty}</span>
+                          
+                          {/* ROW 2: Brand, Date Info & Controls */}
+                          <div className="flex items-end justify-between mt-3">
+                            <div className="flex flex-col gap-1">
+                              {/* BRAND & TYPE */}
+                              <div className="text-[9px] font-bold uppercase tracking-tighter text-gray-400">
+                                <span>{displayBrandName}</span>
+                                {displayBrandType && displayBrandType !== 'N/A' && (
+                                  <> • {displayBrandType}</>
+                                )}
                               </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center px-2 bg-gray-100 border border-transparent rounded-xl focus-within:border-(--clr-primary) focus-within:bg-white">
-                                  <button onClick={() => handleQtyChange(item.inventory_id, (parseInt(item.qty) || 0) - 1)} className="p-2 cursor-pointer hover:text-(--clr-primary)"><HiMinus size={14}/></button>
-                                  <input type="number" value={item.qty} onChange={(e) => handleQtyChange(item.inventory_id, e.target.value)} onBlur={(e) => handleQtyBlur(item.inventory_id, e.target.value)} className="w-10 text-xs font-black text-center bg-transparent border-none outline-none" />
-                                  <button onClick={() => handleQtyChange(item.inventory_id, (parseInt(item.qty) || 0) + 1)} className="p-2 cursor-pointer hover:text-(--clr-primary)"><HiPlus size={14}/></button>
+
+                              <div className="flex items-center gap-3 text-[8px] font-bold uppercase tracking-tighter">
+                                {/* DATE COLOR BLUE */}
+                                <span className="font-black text-blue-500">
+                                  Exp: {formatExpiry(displayExpiry, displayCategory)}
+                                </span>
+                                <span className="text-gray-400">
+                                  Stock: {originalProd?.stock_level || item.stock_level || 0}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* CONTROLS / QTY DISPLAY */}
+                            <div className="flex items-center gap-3 shrink-0 ml-2">
+                              {isLocked ? (
+                                /* CLEAN QTY BADGE (No icon, simple border) */
+                                <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+                                  <span className="text-[10px] font-black text-gray-500 uppercase">
+                                    Qty: {item.qty}
+                                  </span>
                                 </div>
-                                <button onClick={() => setBilledItems(billedItems.filter(i => i.inventory_id !== item.inventory_id))} className="text-gray-300 cursor-pointer hover:text-red-500"><HiTrash size={18}/></button>
-                              </>
-                            )}
+                              ) : (
+                                /* EDITABLE CONTROLS */
+                                <>
+                                  <div className="flex items-center px-1 bg-gray-100 border border-transparent rounded-xl focus-within:border-(--clr-primary) focus-within:bg-white">
+                                    <button onClick={() => handleQtyChange(item.inventory_id, (parseInt(item.qty) || 0) - 1)} className="p-1 cursor-pointer text-gray-400 hover:text-(--clr-primary)"><HiMinus size={12}/></button>
+                                    <input type="number" value={item.qty} onChange={(e) => handleQtyChange(item.inventory_id, e.target.value)} onBlur={(e) => handleQtyBlur(item.inventory_id, e.target.value)} className="w-8 text-[10px] font-black text-center bg-transparent border-none outline-none text-gray-700" />
+                                    <button onClick={() => handleQtyChange(item.inventory_id, (parseInt(item.qty) || 0) + 1)} className="p-1 cursor-pointer text-gray-400 hover:text-(--clr-primary)"><HiPlus size={12}/></button>
+                                  </div>
+                                  <button onClick={() => setBilledItems(billedItems.filter(i => i.inventory_id !== item.inventory_id))} className="text-gray-300 cursor-pointer hover:text-red-500 transition-colors"><HiTrash size={16}/></button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 </div>
@@ -652,11 +969,27 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                     <span>Service Fee</span>
                     <span>₱{pricing.service.toLocaleString()}</span>
                   </div>
-                  {pricing.items > 0 && (
+                  {pricing.products > 0 && (
                     <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
                       <span>Products ({billedItems.length})</span>
-                      <span>₱{pricing.items.toLocaleString()}</span>
+                      <span>₱{pricing.products.toLocaleString()}</span>
                     </div>
+                  )}
+                  {isLocked && (
+                    <>
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                        <span>Cash Received</span>
+                        <span>
+                          ₱{(activeTask?.cash_received || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                        <span>Cash Change</span>
+                        <span>
+                          ₱{(activeTask?.cash_change || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </>
                   )}
                 </div>
 
@@ -681,11 +1014,11 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
                     </div>
                   ) : (
                     <button 
-                      onClick={handleSubmit} 
+                      onClick={handlePaymentAction} 
                       disabled={isSubmitting} 
                       className="px-8 py-4 font-black text-[10px] uppercase tracking-widest bg-(--clr-primary) text-white rounded-xl hover:brightness-110 active:scale-95 transition-all cursor-pointer"
                     >
-                      {paymentMethod === 'cash' ? 'Process Payment' : 'Confirm & Bill'}
+                      {paymentMethod === 'cash' ? 'Process Payment' : 'Confirm Bill'}
                     </button>
                   )}
                 </div>
@@ -694,33 +1027,25 @@ export default function AppointmentPaymentModal({ user, activeTask, branchId, on
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <div className="flex flex-col">
-                {isFetchingData ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase italic tracking-widest">
-                      Loading...
+                <div className="flex items-center gap-3">
+                  {/* date */}
+                  <p className="text-[10px] font-bold text-gray-700 uppercase italic">
+                    Last Updated: {(auditData.updated_at || activeTask?.updated_at) 
+                    ? new Date(auditData.updated_at || activeTask.updated_at).toLocaleString('en-US', { 
+                        month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                      }) 
+                    : '---'}
+                  </p>
+                  
+                  <span className="text-gray-300">|</span>
+                  
+                  {/* staff */}
+                  <div className="flex items-center gap-1">
+                    <span className={`text-[10px] font-black uppercase ${!(auditData.updated_by_name || activeTask?.updated_by_name) ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
+                      Updated By: {(auditData.updated_by_name || activeTask?.updated_by_name) || 'No record yet'}
                     </span>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    {/* date */}
-                    <p className="text-[10px] font-bold text-gray-700 uppercase italic">
-                      Last Updated: {(auditData.updated_at || activeTask?.updated_at) 
-                      ? new Date(auditData.updated_at || activeTask.updated_at).toLocaleString('en-US', { 
-                          month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
-                        }) 
-                      : '---'}
-                    </p>
-                    
-                    <span className="text-gray-300">|</span>
-                    
-                    {/* staff */}
-                    <div className="flex items-center gap-1">
-                      <span className={`text-[10px] font-black uppercase ${!(auditData.updated_by_name || activeTask?.updated_by_name) ? 'text-amber-500' : 'text-(--clr-primary)'}`}>
-                        Updated By: {(auditData.updated_by_name || activeTask?.updated_by_name) || 'No record yet'}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

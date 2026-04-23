@@ -9,7 +9,6 @@ const LeaderList = ({ title, items, icon: Icon, type, timeFilter }) => (
         </div>
         <h3 className="text-sm font-black uppercase tracking-widest text-gray-800">{title}</h3>
       </div>
-      {/* Visual Indicator of the filter */}
       <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded-md uppercase">
         {timeFilter}
       </span>
@@ -18,14 +17,44 @@ const LeaderList = ({ title, items, icon: Icon, type, timeFilter }) => (
     <div className="space-y-4">
       {items.length > 0 ? items.map((item, idx) => (
         <div key={idx} className="flex items-center justify-between group">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-gray-700 transition-colors">
+          <div className="flex flex-col gap-0.5">
+            {/* Main Name */}
+            <span className="text-xs font-bold text-gray-700">
                 {item.name}
             </span>
-            <span className="text-[10px] text-gray-400 font-medium uppercase">
-                {type === 'service' ? `${item.total_sold} Bookings` : `${item.total_qty} Sold`}
+
+            {/* PRODUCT DETAILS (Brand, Type, Dosage) */}
+            {/* PRODUCT DETAILS (Brand, Type, Dosage) */}
+            {type === 'product' && (
+              <div className="flex items-center gap-1 text-[9px] text-gray-400 font-bold uppercase">
+                <span>{item.brand_name || 'Generic'}</span>
+                
+                {/* Show brand_type ONLY if medication and not N/A */}
+                {item.category?.toLowerCase() === 'medication' && 
+                item.brand_type && item.brand_type.toLowerCase() !== 'n/a' && (
+                  <>
+                    <span className="text-gray-300">•</span>
+                    <span>{item.brand_type}</span>
+                  </>
+                )}
+
+                {/* Show dosage ONLY if medication and not N/A */}
+                {item.category?.toLowerCase() === 'medication' && 
+                item.dosage && item.dosage.toLowerCase() !== 'n/a' && (
+                  <>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-(--clr-primary)">{item.dosage}</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Units/Bookings Sold */}
+            <span className="text-[9px] text-gray-400 font-medium uppercase tracking-tighter">
+                {type === 'service' ? `${item.total_sold} Bookings` : `${item.total_qty} Units Sold`}
             </span>
           </div>
+
           <span className="text-xs font-black text-(--clr-primary)">
             ₱{Number(item.total_revenue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </span>

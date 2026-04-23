@@ -18,6 +18,7 @@ try {
   
   $stmt = $pdo->prepare(
     "SELECT 
+      c.brand_logo,
       c.name as main_branding_name,
       b.logo_picture,
       b.name, b.address, b.municipality, b.province, b.zip_code, 

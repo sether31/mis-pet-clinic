@@ -116,23 +116,61 @@ try {
     }
 
     // 2. PRODUCTS TABLE (CHANGED TO BROAD: To include pending products tied to appointments)
-    $prdStmt = $pdo->prepare("SELECT pr.name, SUM(oi.quantity) as qty, SUM(oi.subtotal) as revenue 
+    // 2. PRODUCTS TABLE (Updated with brand, type, and dosage)
+    // 2. PRODUCTS TABLE (Updated with category, brand, type, and dosage)
+    // 2. PRODUCTS TABLE (Sorted Highest to Lowest by Units Sold)
+    $prdStmt = $pdo->prepare("SELECT 
+            pr.name, 
+            pr.brand_name, 
+            pr.brand_type, 
+            pr.dosage, 
+            pr.category,
+            SUM(oi.quantity) as qty, 
+            SUM(oi.subtotal) as revenue 
         FROM order_items_tb oi 
         JOIN payments_tb p ON oi.order_id = p.order_id 
         JOIN products_tb pr ON oi.product_id = pr.product_id 
         WHERE $broadCondition AND oi.product_id IS NOT NULL 
-        GROUP BY pr.name 
-        ORDER BY revenue DESC");
+        GROUP BY pr.name, pr.brand_name, pr.brand_type, pr.dosage, pr.category 
+        ORDER BY qty DESC"); // <--- Changed from revenue to qty
     $prdStmt->execute([':cid' => $clinic_id]);
     $allProducts = $prdStmt->fetchAll();
 
-    $prodRowsHtml = ""; $grandTotalProdRev = 0; $grandTotalProdQty = 0;
+    $prodRowsHtml = ""; 
+    $grandTotalProdRev = 0; 
+    $grandTotalProdQty = 0;
+
     foreach ($allProducts as $pr) {
         $grandTotalProdRev += $pr['revenue'];
         $grandTotalProdQty += $pr['qty'];
+
+        // 1. Basic Brand Info
+        $brandName = !empty($pr['brand_name']) ? ucwords(strtolower($pr['brand_name'])) : 'Generic';
+        
+        // 2. Conditional Metadata (Only for Medication category)
+        $extraInfo = "";
+        // Using strcasecmp for a safer case-insensitive comparison
+        if (isset($pr['category']) && strcasecmp($pr['category'], 'medication') === 0) {
+            $type = (!empty($pr['brand_type']) && strcasecmp($pr['brand_type'], 'n/a') !== 0) 
+                    ? " &bull; " . ucwords(strtolower($pr['brand_type'])) 
+                    : "";
+            
+            $dosage = (!empty($pr['dosage']) && strcasecmp($pr['dosage'], 'n/a') !== 0) 
+                    ? " &bull; <span style='color: #42756C; font-weight: bold;'>" . strtoupper($pr['dosage']) . "</span>" 
+                    : "";
+            
+            $extraInfo = $type . $dosage;
+        }
+        
+        // Inline style for PDF compatibility
+        $metaData = "<div style='font-size: 8px; color: #777; margin-top: 2px; text-transform: uppercase;'>{$brandName}{$extraInfo}</div>";
+
         $prodRowsHtml .= "<tr>
-            <td style='padding: 8px; border: 1px solid #ddd;'>" . ucwords(strtolower(htmlspecialchars($pr['name']))) . "</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>{$pr['qty']} Units</td>
+            <td style='padding: 8px; border: 1px solid #ddd;'>
+                <div style='font-weight: bold; color: #333; font-size: 9px;'>" . ucwords(strtolower(htmlspecialchars($pr['name']))) . "</div>
+                $metaData
+            </td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align:center;'>{$pr['qty']} Units</td>
             <td style='padding: 8px; border: 1px solid #ddd; text-align:right;'>PHP " . number_format($pr['revenue'], 2) . "</td>
         </tr>";
     }

@@ -171,6 +171,14 @@ export default function AppointmentsList({ activeTab }) {
   const renderAppointmentCard = ({ item, index }) => {
     const statusStyle = getStatusStyle(item.status);
     const dateObj = new Date(item.start_time);
+
+    const filteredItems = (item.items || [])
+    .filter(i => i.item_type === 'service')
+    .map(i => i.item_name)
+    .join(', ');
+
+  // 2. Decide what to show: Prioritize the filtered list, then the DB string
+  const displayServices = filteredItems || item.service_names || "General Service";
     
     return (
       <AnimatedWrapper index={index}>
@@ -179,7 +187,6 @@ export default function AppointmentsList({ activeTab }) {
           onPress={() => {
             if(item.status === 'completed') {
               router.push(`/pets/record/${item.record_id}?from=activity`);
-              
             } else {
               setSelectedAppointment(item);
               setModalVisible(true);
@@ -204,9 +211,11 @@ export default function AppointmentsList({ activeTab }) {
                 </View>
               </View>
 
-              <AppText style={styles.serviceName}>
-                {item.service_name || "Custom Service"}
+              {/* FIX: Show all services, limited to 2 lines for neatness */}
+              <AppText numberOfLines={2} style={[styles.serviceName, { textTransform: 'capitalize' }]}>
+                {displayServices}
               </AppText>
+              
               <AppText style={styles.clinicName}>{item.branch_name || "Unknown Branch"}</AppText>
               
               <View style={styles.cardFooter}>
@@ -298,6 +307,14 @@ export default function AppointmentsList({ activeTab }) {
                         </View>
                       ) : (
                         <>
+                        <Pressable 
+                          style={({ pressed }) => [styles.walletBtn, { backgroundColor: '#1F2937' }, pressed && styles.walletBtnPressed]}
+                          onPress={() => handlePayNow(selectedAppointment.appointment_id, 'CREDIT_CARD')}
+                        >
+                          <Ionicons name="card" size={24} color="#FFF" style={{ marginRight: 10 }} />
+                          <AppText style={styles.walletBtnText}>Credit / Debit Card</AppText>
+                        </Pressable>
+
                           <Pressable 
                             style={({ pressed }) => [styles.walletBtn, { backgroundColor: '#005CEE' }, pressed && styles.walletBtnPressed]}
                             onPress={() => handlePayNow(selectedAppointment.appointment_id, 'GCASH')}
@@ -350,8 +367,21 @@ export default function AppointmentsList({ activeTab }) {
                       </View>
 
                       <View style={styles.detailRow}>
-                        <AppText style={styles.detailLabel}>Service</AppText>
-                        <AppText style={[styles.detailValue, { textTransform: 'capitalize' }]}>{selectedAppointment.service_name}</AppText>
+                        <AppText style={styles.detailLabel}>Services</AppText>
+                        {/* Use flexShrink and textAlign to handle long strings of services */}
+                        <View style={{ flex: 1, paddingLeft: 20 }}>
+                          <AppText numberOfLines={1} style={[
+                            styles.detailValue, 
+                            { textTransform: 'capitalize', textAlign: 'right' } // Ensures capitalization in Modal
+                          ]}>
+                            {selectedAppointment.items?.length > 0 
+                              ? selectedAppointment.items
+                                  .filter(i => i.item_type === 'service') // <--- Filter out products/medicine
+                                  .map(i => i.item_name)
+                                  .join(', ')
+                              : selectedAppointment.service_names || "No Services"}
+                          </AppText>
+                        </View>
                       </View>
 
                       <View style={styles.detailRow}>
@@ -362,9 +392,9 @@ export default function AppointmentsList({ activeTab }) {
                       </View>
 
                       <View style={styles.detailRow}>
-                        <AppText style={styles.detailLabel}>Service Fee</AppText>
+                        <AppText style={styles.detailLabel}>Base Service Fee</AppText>
                         <AppText style={[styles.detailValue, { color: Colors.primary }]}>
-                          ₱{parseFloat(selectedAppointment.service_fee || 0).toFixed(2)}
+                          ₱{parseFloat(selectedAppointment.total_service_fee || 0).toFixed(2)}
                         </AppText>
                       </View>
 
@@ -385,7 +415,7 @@ export default function AppointmentsList({ activeTab }) {
                           {(selectedAppointment.items || []).map((item, idx) => (
                             <View key={idx} style={styles.receiptItemRow}>
                               <View style={{flex: 1, paddingRight: 10}}>
-                                <AppText style={styles.receiptItemName}>{item.item_name}</AppText>
+                                <AppText style={[styles.receiptItemName, { textTransform: 'capitalize' }]}>{item.item_name}</AppText>
                                 <AppText style={styles.receiptItemQty}>
                                   {item.quantity} x ₱{parseFloat(item.price).toFixed(2)}
                                 </AppText>

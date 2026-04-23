@@ -18,28 +18,27 @@ const ProductCard = ({ item, index, branchId }) => {
   const imageSource = getMediaUrl(item.prod_pic) ? { uri: getMediaUrl(item.prod_pic) } : NO_IMAGE;
   const isOutOfStock = parseInt(item.total_stock) <= 0;
 
+  // Logic: Only show brand type for Medicines or Medication
+  const categoryLower = item.category?.toLowerCase() || '';
+  const isMedicine = categoryLower.includes('medicine') || categoryLower.includes('medication');
+
   const handlePressIn = () => {
     if (isOutOfStock) return;
-
-    Animated.timing(scaleAnim, {
-      toValue: 1.1, 
-      duration: 300, 
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(scaleAnim, { toValue: 1.05, duration: 200, useNativeDriver: true }).start();
   };
 
   const handlePressOut = () => {
-    Animated.timing(scaleAnim, {
-      toValue: 1, 
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
   };
 
   return (
     <AnimatedWrapper index={index} style={styles.cardWrapper}>
       <Pressable 
-        style={({ pressed }) => [styles.card, isOutOfStock && styles.cardOutOfStock, pressed && !isOutOfStock && { borderColor: Colors.primary }]}
+        style={({ pressed }) => [
+          styles.card, 
+          isOutOfStock && styles.cardOutOfStock, 
+          pressed && !isOutOfStock && { borderColor: Colors.primary }
+        ]}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         onPress={() => {
@@ -66,17 +65,33 @@ const ProductCard = ({ item, index, branchId }) => {
               </View>
 
               <View style={styles.infoContainer}>
-                <AppText style={styles.categoryText}>{item.category}</AppText>
+                <View style={styles.tagRow}>
+                  <AppText style={styles.categoryText}>{item.category}</AppText>
+                  {item.brand_name && item.brand_name !== 'NULL' && (
+                    <AppText style={styles.brandText}>{item.brand_name}</AppText>
+                  )}
+                </View>
+
+                {/* Brand Type Badge - Only for Medicines/Medication */}
+                {isMedicine && item.brand_type && item.brand_type !== 'N/A' && item.brand_type !== 'NULL' && (
+                  <View style={styles.brandTypeBadge}>
+                    <AppText style={styles.brandTypeText}>{item.brand_type}</AppText>
+                  </View>
+                )}
                 
-                <AppText style={[styles.productName, isActive]} numberOfLines={2}>
-                  {item.name}
+                <AppText style={[styles.productName, isActive && { color: Colors.primary }]} numberOfLines={2}>
+                  {item.name} 
+                  {item.dosage && item.dosage !== 'NULL' ? ` (${item.dosage})` : ''}
                 </AppText>
                 
                 <View style={styles.bottomRow}>
-                  <AppText style={styles.priceText}>₱{parseFloat(item.price).toFixed(2)}</AppText>
+                  <AppText style={styles.priceText}>₱{parseFloat(item.price || 0).toFixed(2)}</AppText>
                   
-                  <View style={[styles.smallReserveBtn, isOutOfStock ? styles.btnDisabled : isActive && { backgroundColor: Colors.primary }]}>
-                    <Ionicons name="chevron-forward" size={16} color={isOutOfStock ? '#9CA3AF' : '#FFF'} />
+                  <View style={[
+                    styles.smallReserveBtn, 
+                    isOutOfStock ? styles.btnDisabled : isActive && { backgroundColor: Colors.primary }
+                  ]}>
+                    <Ionicons name="chevron-forward" size={14} color={isOutOfStock ? '#9CA3AF' : '#FFF'} />
                   </View>
                 </View>
               </View>
@@ -131,7 +146,11 @@ export default function ProductsTab({ branchId }) {
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      // Allow searching by both Name and Brand
+      const matchesSearch = 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+        
       const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
@@ -151,7 +170,7 @@ export default function ProductsTab({ branchId }) {
         <Ionicons name="search" size={20} color="#9CA3AF" />
         <TextInput 
           style={styles.searchInput}
-          placeholder="Search products..."
+          placeholder="Search products or brands..."
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -212,21 +231,22 @@ const styles = StyleSheet.create({
   
   // Card Styles
   cardWrapper: { width: '48%', marginBottom: 16 }, 
-  card: { backgroundColor: '#FFF', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: Colors.border300 || '#E5E7EB' },
+  card: { backgroundColor: '#FFF', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E5E7EB' },
   cardOutOfStock: { opacity: 0.6, backgroundColor: '#F9FAFB' },
-  
   imageContainer: { width: '100%', aspectRatio: 1, backgroundColor: '#F3F4F6', position: 'relative', overflow: 'hidden' },
   productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  outOfStockOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  outOfStockText: { color: '#FFF', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
-  
-  infoContainer: { padding: 12 },
-  categoryText: { fontSize: 10, fontWeight: '800', color: Colors.primary, textTransform: 'uppercase', marginBottom: 4 },
-  productName: { fontSize: 14, fontWeight: '700', color: '#111827', lineHeight: 20, height: 40 }, 
-  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
-  priceText: { fontSize: 16, fontWeight: '900', color: '#111827' },
-  
-  smallReserveBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' },
+  outOfStockOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  outOfStockText: { color: '#FFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  infoContainer: { padding: 10 },
+  tagRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  categoryText: { fontSize: 9, fontWeight: '800', color: Colors.primary, textTransform: 'uppercase' },
+  brandText: { fontSize: 9, fontWeight: '600', color: '#6B7280', flexShrink: 1, textAlign: 'right' },
+  brandTypeBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, alignSelf: 'flex-start', marginBottom: 4, borderWidth: 0.5, borderColor: '#E5E7EB' },
+  brandTypeText: { fontSize: 8, fontWeight: '700', color: '#4B5563', textTransform: 'uppercase' },
+  productName: { fontSize: 13, fontWeight: '700', color: '#111827', lineHeight: 18, minHeight: 36 }, 
+  bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  priceText: { fontSize: 15, fontWeight: '900', color: '#111827' },
+  smallReserveBtn: { width: 24, height: 24, borderRadius: 6, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' },
   btnDisabled: { backgroundColor: '#E5E7EB' },
   
   emptyContainer: { width: '100%', alignItems: 'center', marginTop: 40, padding: 20 },

@@ -16,14 +16,9 @@ try {
       o.cancellation_reason,
       cb.name as branch_name,
       cb.branch_id,
-      
-      -- Check Maintenance
       cb.is_maintenance, 
-      
-      -- Check Clinic Approval Status
       cb.status as clinic_status, 
       
-      -- Check Active Subscription (Returns 1 if active, 0 if expired/none)
       (SELECT IF(COUNT(*) > 0, 1, 0) 
       FROM branch_subscriptions_tb bs 
       WHERE bs.branch_id = cb.branch_id 
@@ -33,6 +28,21 @@ try {
 
       GROUP_CONCAT(p.name SEPARATOR ', ') as product_names,
       SUM(oi.quantity) as total_qty,
+
+      -- FETCH BRAND/DOSAGE DETAILS (Coalesce/Max used for grouping)
+      (SELECT p2.brand_name FROM order_items_tb oi2 
+        JOIN products_tb p2 ON oi2.product_id = p2.product_id 
+        WHERE oi2.order_id = o.order_id LIMIT 1) as brand_name,
+      (SELECT p2.brand_type FROM order_items_tb oi2 
+        JOIN products_tb p2 ON oi2.product_id = p2.product_id 
+        WHERE oi2.order_id = o.order_id LIMIT 1) as brand_type,
+      (SELECT p2.dosage FROM order_items_tb oi2 
+        JOIN products_tb p2 ON oi2.product_id = p2.product_id 
+        WHERE oi2.order_id = o.order_id LIMIT 1) as dosage,
+      (SELECT p2.category FROM order_items_tb oi2 
+        JOIN products_tb p2 ON oi2.product_id = p2.product_id 
+        WHERE oi2.order_id = o.order_id LIMIT 1) as category_name,
+
       (SELECT p2.prod_pic FROM order_items_tb oi2 
         JOIN products_tb p2 ON oi2.product_id = p2.product_id 
         WHERE oi2.order_id = o.order_id LIMIT 1) as main_pic,
@@ -66,6 +76,12 @@ try {
       'branch_id' => $order['branch_id'],
       'product_id' => $order['product_id'],
       'cancellation_reason' => $order['cancellation_reason'],
+      
+      // MEDICINE DATA FOR YOUR MODAL
+      'brand_name' => $order['brand_name'] ?? '',
+      'brand_type' => $order['brand_type'] ?? '',
+      'dosage' => $order['dosage'] ?? '',
+      'category_name' => $order['category_name'] ?? '',
       
       'is_maintenance' => $order['is_maintenance'],
       'clinic_status' => $order['clinic_status'],

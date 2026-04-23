@@ -158,6 +158,8 @@ try {
     }
 
     // 6. TOP SERVICES & PRODUCTS
+    
+    // Top Services (Keeping your existing logic)
     $stmtTopServices = $pdo->prepare("
         SELECT bs.custom_name as name, COUNT(oi.service_id) as total_sold, SUM(oi.subtotal) as total_revenue
         FROM order_items_tb oi
@@ -169,21 +171,41 @@ try {
         GROUP BY bs.custom_name ORDER BY total_revenue DESC LIMIT 5
     ");
     $stmtTopServices->execute([$clinicId]);
-    $topServices = array_map(function($i) { $i['name'] = ucwords(strtolower($i['name'])); return $i; }, $stmtTopServices->fetchAll(PDO::FETCH_ASSOC));
+    $topServices = array_map(function($i) { 
+        $i['name'] = ucwords(strtolower($i['name'])); 
+        return $i; 
+    }, $stmtTopServices->fetchAll(PDO::FETCH_ASSOC));
 
+    // Top Products (Updated with brand_name, dosage, and brand_type)
+    // 6. TOP SERVICES & PRODUCTS - Update the SELECT statement
     $stmtTopProducts = $pdo->prepare("
-        SELECT prd.name as name, SUM(oi.quantity) as total_qty, SUM(oi.subtotal) as total_revenue
+        SELECT 
+            prd.name, 
+            prd.brand_name, 
+            prd.dosage, 
+            prd.brand_type, 
+            prd.category,
+            SUM(oi.quantity) as total_qty, 
+            SUM(oi.subtotal) as total_revenue
         FROM order_items_tb oi
         JOIN payments_tb p ON oi.order_id = p.order_id
         JOIN products_tb prd ON oi.product_id = prd.product_id
         WHERE p.branch_id IN (SELECT branch_id FROM clinic_branches_tb WHERE clinic_id = ?)
-          AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed')
-          AND oi.product_id IS NOT NULL AND $revDateClause
-        GROUP BY prd.name ORDER BY total_revenue DESC LIMIT 5
+        AND LOWER(p.payment_status) IN ('paid', 'completed', 'success', 'fully paid', 'billed')
+        AND oi.product_id IS NOT NULL AND $revDateClause
+        GROUP BY prd.name, prd.brand_name, prd.dosage, prd.brand_type, prd.category
+        ORDER BY total_qty DESC LIMIT 5 -- Changed from total_revenue to total_qty
     ");
     $stmtTopProducts->execute([$clinicId]);
-    $topProducts = array_map(function($i) { $i['name'] = ucwords(strtolower($i['name'])); return $i; }, $stmtTopProducts->fetchAll(PDO::FETCH_ASSOC));
+    $topProducts = array_map(function($i) { 
+        $i['name'] = ucwords(strtolower($i['name'])); 
+        // fallback for generic products
+        $i['brand_name'] = ucwords(strtolower($i['brand_name'] ?? 'Generic')); 
+        $i['brand_type'] = ucwords(strtolower($i['brand_type'] ?? ''));
+        return $i; 
+    }, $stmtTopProducts->fetchAll(PDO::FETCH_ASSOC));
 
+    // Use null coalescing (?? []) to ensure React always gets an array
     echo json_encode([
         "success" => true,
         "data" => [
@@ -198,8 +220,8 @@ try {
                 "total_product_orders" => $totalProductOrders
             ],
             "branches" => $branchDataList,
-            "topServices" => $topServices,
-            "topProducts" => $topProducts
+            "topServices" => $topServices ?? [],
+            "topProducts" => $topProducts ?? []
         ]
     ]);
 

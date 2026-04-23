@@ -6,7 +6,6 @@ export default function ClinicsLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="product/[productId]" />
       <Stack.Screen name="[id]" />
-      <Stack.Screen name="BookAppointment" />
     </Stack>
   );
 }

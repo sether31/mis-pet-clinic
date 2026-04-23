@@ -10,6 +10,9 @@ $data = json_decode(file_get_contents("php://input"), true);
 $branchId = $data['branch_id'] ?? null;
 $items = $data['items'] ?? [];
 $totalAmount = $data['total_amount'] ?? 0;
+// ADD THIS LINE:
+$cashReceived = $data['cash_received'] ?? null;
+$cashChange = $data['cash_change'] ?? 0;
 
 if (!$branchId || empty($items)) {
   echo json_encode(["success" => false, "message" => "Invalid transaction data."]);
@@ -21,7 +24,6 @@ try {
   $pdo->beginTransaction();
 
   // 1. Create the Order (Guest = user_id is null)
-  // 👇 Added updated_at and explicitly passing $adminId to last_updated_by
   $stmtOrder = $pdo->prepare("
       INSERT INTO order_tb (user_id, branch_id, order_status, total_amount, last_updated_by, pickup_date, created_at, updated_at) 
       VALUES (NULL, ?, 'completed', ?, ?, NOW(), NOW(), NOW())
@@ -30,11 +32,13 @@ try {
   $orderId = $pdo->lastInsertId();
 
   // 2. Create the Payment record
-  $stmtPay = $pdo->prepare("
-      INSERT INTO payments_tb (branch_id, order_id, payment_type, amount, payment_method, payment_status, created_at, updated_at) 
-      VALUES (?, ?, 'product', ?, 'cash', 'paid', NOW(), NOW())
+  // UPDATE THIS QUERY to include cash_received
+$stmtPay = $pdo->prepare("
+      INSERT INTO payments_tb (branch_id, order_id, payment_type, amount, cash_received, cash_change, payment_method, payment_status, created_at, updated_at) 
+      VALUES (?, ?, 'product', ?, ?, ?, 'cash', 'paid', NOW(), NOW())
   ");
-  $stmtPay->execute([$branchId, $orderId, $totalAmount]);
+  // ADD $cashChange to the execute array
+  $stmtPay->execute([$branchId, $orderId, $totalAmount, $cashReceived, $cashChange]);
 
   // 3. Process Items & Inventory
   $stmtUpdateInv = $pdo->prepare("UPDATE inventory_tb SET stock_level = stock_level - ?, last_updated_by = ?, updated_at = NOW() WHERE inventory_id = ?");

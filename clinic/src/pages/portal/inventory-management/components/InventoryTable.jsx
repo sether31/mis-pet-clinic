@@ -25,7 +25,6 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
     return unique.sort();
   }, [data]);
 
-  // 👇 UPDATE THIS FUNCTION
   const formatDate = (dateString, category) => {
     if (!dateString) {
       return category === 'Accessories' ? "—" : "Not Set";
@@ -87,19 +86,22 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
         if (selectedCategory === "all") return true;
         return item.category === selectedCategory;
       })
-      .filter(item => 
-        !search || 
-        item.name?.toLowerCase().includes(search.toLowerCase()) || 
-        item.category?.toLowerCase().includes(search.toLowerCase()) ||
-        item.supplier_name?.toLowerCase().includes(search.toLowerCase())
-      );
+      .filter(item => {
+        const searchTerm = search.toLowerCase();
+        return !search || 
+        item.name?.toLowerCase().includes(searchTerm) || 
+        item.brand_name?.toLowerCase().includes(searchTerm) || 
+        item.dosage?.toLowerCase().includes(searchTerm) || 
+        item.category?.toLowerCase().includes(searchTerm) ||
+        item.supplier_name?.toLowerCase().includes(searchTerm)
+      });
 
     if(sortConfig.key) {
       result.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
 
-        if(['stock_level', 'unit_cost', 'price', 'is_archived'].includes(sortConfig.key)) {
+        if(['stock_level', 'unit_cost', 'price', 'is_active'].includes(sortConfig.key)) {
           aValue = Number(aValue) || 0;
           bValue = Number(bValue) || 0;
         }
@@ -131,7 +133,7 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
   };
 
   return (
-    <div className="flex flex-col w-full overflow-hidden text-left bg-white border border-gray-300 rounded-xl">
+    <div className="flex flex-col w-full overflow-hidden text-left bg-white border border-gray-300 rounded-xl shadow-sm">
       <div className="flex flex-col justify-between gap-4 p-4 bg-white border-b border-gray-300 xl:flex-row">
         
         {/* tabs */}
@@ -143,7 +145,7 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
             { id: "expiring", label: "Expiring Soon" },
             { id: "archived", label: "Archived" }
           ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2 text-[10px] font-bold rounded-md transition-all uppercase cursor-pointer ${activeTab === tab.id ? "bg-(--clr-primary) text-white" : "text-gray-500 hover:text-(--clr-text-primary)"}`}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-2 text-[10px] font-bold rounded-md transition-all uppercase cursor-pointer ${activeTab === tab.id ? "bg-(--clr-primary) text-white shadow-sm" : "text-gray-500 hover:text-(--clr-text-primary)"}`}>
               {tab.label}
             </button>
           ))}
@@ -170,7 +172,7 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
 
           <div className="relative">
             <HiSearch className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-            <input type="text" placeholder="Search products..." className="w-64 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg outline-none bg-gray-50 focus:ring-1 focus:ring-(--clr-primary)" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input type="text" placeholder="Search name, brand, dosage..." className="w-64 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg outline-none bg-gray-50 focus:ring-1 focus:ring-(--clr-primary)" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
 
           <SubscriptionGate type="inventory">
@@ -185,11 +187,11 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
         <table className="w-full text-left border-collapse min-w-[1300px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-300 text-[10px] font-bold uppercase tracking-widest text-gray-600">
-              <th onClick={() => handleSort('name')} className="w-[20%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors">
+              <th onClick={() => handleSort('name')} className="w-[22%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors">
                 <div className="flex items-center justify-between">Product Details <SortIcon column="name" /></div>
               </th>
-              <th onClick={() => handleSort('is_archived')} className="w-[10%] px-6 py-4 border-r border-gray-300 text-center cursor-pointer hover:bg-gray-100">
-                <div className="flex items-center justify-center gap-2">Status <SortIcon column="is_archived" /></div>
+              <th onClick={() => handleSort('is_active')} className="w-[10%] px-6 py-4 border-r border-gray-300 text-center cursor-pointer hover:bg-gray-100">
+                <div className="flex items-center justify-center gap-2">Status <SortIcon column="is_active" /></div>
               </th>
               <th onClick={() => handleSort('stock_level')} className="w-[11%] px-6 py-4 border-r border-gray-300 cursor-pointer hover:bg-gray-100 text-center">
                 <div className="flex items-center justify-center gap-2">Stock Level <SortIcon column="stock_level" /></div>
@@ -216,23 +218,58 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
               
               return (
                 <tr key={item.inventory_id} className="transition-colors hover:bg-gray-50/80 even:bg-gray-50/30">
-                  {/* image */}
+                  {/* Product Details Cell */}
                   <td className="px-6 py-4 border-r border-gray-300">
                     <div className="flex items-center gap-3">
-                      <img src={item.prod_pic ? `${API_URL}/${item.prod_pic}` : NoImage} className="object-cover w-10 h-10 border border-gray-200 rounded-lg" onError={(e) => e.target.src = NoImage} />
-                      <div>
-                        <p className="font-bold leading-tight text-gray-800 capitalize">{item.name}</p>
-                        <span className="px-2 py-0.5 bg-gray-100 text-[8px] font-black text-gray-400 rounded uppercase border border-gray-200">{item.category}</span>
+                      <img 
+                        src={item.prod_pic ? `${API_URL}/${item.prod_pic}` : NoImage} 
+                        className="object-cover w-12 h-12 border border-gray-200 rounded-lg shadow-sm" 
+                        onError={(e) => e.target.src = NoImage} 
+                      />
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold leading-tight text-gray-800 capitalize text-xs">
+                            {item.name || "Unnamed"}
+                          </p>
+                          
+                          {/* DOSAGE: Only show for Medication or Supplies */}
+                          {(item.category === 'Medication' || item.category === 'Supplies') && item.dosage && (
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-50 text-(--clr-primary)">
+                              {item.dosage}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* BRAND INFO: Conditional Display */}
+                        <div className="text-[10px] font-bold text-gray-500 uppercase italic">
+                          {item.brand_name ? (
+                            <span>
+                              {item.brand_name}
+                              {/* BRAND TYPE: Only show (Generic/Branded) if it's Medicine/Supplies and not 'N/A' */}
+                              {(item.category === 'Medication' || item.category === 'Supplies') && item.brand_type !== 'N/A' && (
+                                <> • {item.brand_type}</>
+                              )}
+                            </span>
+                          ) : (
+                            <span>No Brand</span>
+                          )}
+                        </div>
+                        
+                        <span className="w-fit px-2 py-0.5 bg-gray-100 text-[8px] font-black text-gray-400 rounded uppercase border border-gray-200 mt-1">
+                          {item.category}
+                        </span>
                       </div>
                     </div>
                   </td>
-                  {/* status */}
+
+                  {/* Status Cell */}
                   <td className="px-6 py-4 text-center border-r border-gray-300">
                     <span className={`px-2 py-1 rounded text-[9px] font-black uppercase border ${isArchived ? 'bg-red-100 text-red-500 border-red-300' : 'bg-green-50 text-(--clr-primary) border-green-200'}`}>
                       {isArchived ? 'Archived' : 'Active'}
                     </span>
                   </td>
-                  {/* stocks */}
+
+                  {/* Stock Level Cell */}
                   <td className="px-6 py-4 text-center border-r border-gray-300">
                     <span className={`text-sm font-black ${
                       Number(item.stock_level) === 0 
@@ -253,11 +290,12 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
                       </p>
                     )}
                   </td>
-                  {/* unit price */}
+
+                  {/* Financials */}
                   <td className="px-6 py-4 font-bold text-gray-600 border-r border-gray-300">₱{Number(item.unit_cost).toLocaleString()}</td>
-                  {/* price */}
                   <td className="px-6 py-4 border-r border-gray-300 font-bold text-(--clr-primary)">₱{Number(item.price).toLocaleString()}</td>
-                  {/* date */}
+
+                  {/* Expiry Date Cell */}
                   <td className="px-6 py-4 text-center border-r border-gray-300">
                     <p className={`text-[11px] font-bold uppercase ${expiryStatus.color}`}>
                       {formatDate(item.expiry_date, item.category)}
@@ -268,21 +306,21 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
                       </p>
                     )}
                   </td>
-                  {/* supplier  */}
+
+                  {/* Supplier Cell */}
                   <td className="px-6 py-4 border-r border-gray-300">
                     <p className="text-xs font-bold text-gray-700 truncate max-w-[120px]">{item.supplier_name || 'N/A'}</p>
                     <p className="text-[9px] text-gray-400 italic">{item.supplier_contact || ''}</p>
                   </td>
-                  {/* btn */}
+
+                  {/* Actions Cell */}
                   <td className="px-6 py-4 text-center">
                     <div className="flex justify-center gap-2">
-                      {/* edit */}
                       <SubscriptionGate type="inventory" iconOnly={true}>
                         <button onClick={() => onEdit(item)} className="p-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:border-(--clr-primary) hover:text-(--clr-primary) transition-all">
                           <HiPencilAlt size={16}/>
                         </button>
                       </SubscriptionGate>
-                      {/* archive */}
                       <SubscriptionGate type="inventory" iconOnly={true}>
                         <button 
                           onClick={() => onToggleStatus(item)} 
@@ -333,9 +371,9 @@ export default function InventoryTable({ data = [], onEdit, onToggleStatus, onCr
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center h-[64px]">
         <span className="text-[11px] text-gray-500 font-black uppercase">Total: {filteredAndSorted.length}</span>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20"><HiChevronLeft/></button>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20 transition-opacity"><HiChevronLeft/></button>
           <span className="px-4 text-xs font-black">{currentPage} / {totalPages || 1}</span>
-          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20"><HiChevronRight/></button>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage >= totalPages} className="p-2 bg-white border rounded-lg cursor-pointer disabled:opacity-20 transition-opacity"><HiChevronRight/></button>
         </div>
       </div>
     </div>

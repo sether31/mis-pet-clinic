@@ -7,7 +7,7 @@ import NoImage from '../../../../assets/images/no-image.jpg'
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function MedicalRecordTable({ data = [], onView }) {
+export default function MedicalRecordTable({ data = [], branchesList = [], onView, userRole }) {
   const [activeTab, setActiveTab] = useState("all"); 
   const [recordTypeFilter, setRecordTypeFilter] = useState("all"); 
   const [branchFilter, setBranchFilter] = useState("all");
@@ -22,14 +22,21 @@ export default function MedicalRecordTable({ data = [], onView }) {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '?')}&background=${bg}&color=${color}&bold=true`;
   };
 
-  // Dynamic Branch List with ID to handle same-name branches
   const branches = useMemo(() => {
+    if (branchesList && branchesList.length > 0) {
+      return branchesList; 
+    }
+    
     const uniqueMap = new Map();
     data.forEach(item => {
       if (item.branch_id) uniqueMap.set(item.branch_id, item.branch_name);
     });
-    return Array.from(uniqueMap.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [data]);
+    
+    return Array.from(uniqueMap.entries()).map(([id, name]) => ({
+      branch_id: id,
+      name: name
+    }));
+}, [data, branchesList]);
 
   const handleSort = (key) => {
     let direction = 'desc'; 
@@ -40,7 +47,6 @@ export default function MedicalRecordTable({ data = [], onView }) {
   const filteredAndSorted = useMemo(() => {
     return data
       .filter(r => {
-        // 1. TOP TAB FILTER (Status-based)
         const rawStatus = r.status?.toLowerCase().trim() || "unrecorded";
         const isRecorded = rawStatus === "recorded";
         
@@ -49,13 +55,10 @@ export default function MedicalRecordTable({ data = [], onView }) {
         return true;
       })
       .filter(r => {
-        // 2. DROPDOWN FILTER (Type-based)
         if (recordTypeFilter === "all") return true;
         
         const rType = r.record_type?.toLowerCase().trim() || "";
         
-        // If user selects "Medical", ONLY show "medical"
-        // If user selects "Non-Medical", ONLY show "non_medical"
         if (recordTypeFilter === "medical") return rType === "medical";
         if (recordTypeFilter === "non_medical") return rType === "non_medical";
         
@@ -135,23 +138,6 @@ export default function MedicalRecordTable({ data = [], onView }) {
             >
               {[5, 10, 20, 50].map(v => <option key={v} value={v}>Show {v}</option>)}
             </select>
-
-            {/* branch */}
-            <div className="relative">
-              <select 
-                value={branchFilter} 
-                onChange={(e) => setBranchFilter(e.target.value)} 
-                className="border border-gray-300 rounded-lg pl-8 pr-3 py-1.5 text-xs font-bold bg-gray-50 outline-none cursor-pointer hover:border-black transition-all w-[160px] truncate"
-              >
-                <option value="all">All Branches</option>
-                {branches.map(([branch_id, name]) => (
-                  <option title={name} key={branch_id} value={branch_id}>
-                    (ID: {branch_id}) {name.length > 20 ? `${name.substring(0, 20)}...` : name}
-                  </option>
-                ))}
-              </select>
-              <HiLocationMarker className="absolute text-gray-400 -translate-y-1/2 left-2.5 top-1/2" size={14} />
-            </div>
 
             {/* record type */}
             <div className="relative">
