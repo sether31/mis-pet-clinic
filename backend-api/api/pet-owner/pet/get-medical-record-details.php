@@ -50,7 +50,10 @@ try {
     if (!empty($record['order_id'])) {
       $stmtItems = $pdo->prepare(
         "SELECT oi.quantity, oi.price, oi.subtotal,
-        COALESCE(prod.name, serv.custom_name, 'Unknown Item') as item_name
+        COALESCE(prod.name, serv.custom_name, 'Unknown Item') as item_name,
+        prod.brand_name,
+        prod.brand_type,
+        prod.dosage
         FROM order_items_tb oi
         LEFT JOIN products_tb prod ON oi.product_id = prod.product_id
         LEFT JOIN branch_service_tb serv ON oi.service_id = serv.branch_service_id

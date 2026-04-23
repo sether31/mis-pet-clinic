@@ -17,7 +17,7 @@ try {
   $database = new Database();
   $pdo = $database->pdo;
 
-  // 2. FETCH PLATFORM DETAILS (Same as your original)
+  // 2. FETCH PLATFORM DETAILS
   $platformStmt = $pdo->query("SELECT platform_name, platform_logo FROM platform_settings_tb LIMIT 1");
   $platform = $platformStmt->fetch();
   $platformName = $platform['platform_name'] ?? 'Our Platform';
@@ -34,7 +34,6 @@ try {
   }
 
   // 3. DYNAMIC QUERY BUILDING
-  // 3. DYNAMIC QUERY BUILDING
   $query = "SELECT 
       o.order_id as transaction_id,
       o.total_amount as gross_amount,
@@ -45,6 +44,8 @@ try {
       c.name as clinic_name, 
       b.logo_picture as clinic_logo,
       pay.payment_method,
+      pay.cash_received,
+      pay.cash_change,
       p.name as pet_name,
       CONCAT(u.first_name, ' ', u.last_name) as owner_name,
       CONCAT(s_user.first_name, ' ', s_user.last_name) as assigned_staff,
@@ -64,8 +65,6 @@ try {
     WHERE 1=1";
 
   $params = [];
-
-  // IDENTITY FILTER
   if ($transaction_id && $transaction_id !== 'undefined') {
     $query .= " AND o.order_id = :id";
     $params[':id'] = $transaction_id;
@@ -74,14 +73,11 @@ try {
     $params[':uid'] = $user_id;
   }
 
-  // BRANCH FILTER (The Fix)
-  // Only apply this if a specific branch ID is passed. Ignore if 'all' or empty.
   if (!empty($branch_id) && $branch_id !== 'all' && $branch_id !== 'undefined') {
     $query .= " AND o.branch_id = :bid";
     $params[':bid'] = $branch_id;
   }
 
-  // TYPE FILTER
   if ($type_filter === 'product') {
     $query .= " AND (o.pickup_date IS NOT NULL AND o.pickup_date != '')";
   } else if ($type_filter === 'appointment') {
@@ -89,21 +85,15 @@ try {
   }
 
   $query .= " ORDER BY o.created_at DESC";
-  
   $stmt = $pdo->prepare($query);
   $stmt->execute($params);
   $all_transactions = $stmt->fetchAll();
 
   if (!$all_transactions) {
-      // Better error handling than just "die"
-      echo "<div style='font-family:sans-serif; text-align:center; margin-top:50px;'>
-              <h2>No Transactions Found</h2>
-              <p>We couldn't find any billing records for this criteria.</p>
-            </div>";
+      echo "<div style='font-family:sans-serif; text-align:center; margin-top:50px;'><h2>No Transactions Found</h2></div>";
       exit;
   }
 
-  // 4. PREPARE HTML WRAPPER
   $html = "<html><head><meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
   <style>
     body { font-family: 'DejaVu Sans', sans-serif; color: #333; margin: 0; padding: 0; }
@@ -116,18 +106,9 @@ try {
     .total-box { margin-top: 30px; background: #1a1a1a; color: white; padding: 20px; border-radius: 8px; }
   </style></head><body>";
 
-  // 5. LOOP THROUGH EACH TRANSACTION (Preserving your exact design)
   foreach ($all_transactions as $trx) {
-    
-    // Fetch items for this specific transaction
     $itemStmt = $pdo->prepare("
-        SELECT 
-            oi.*, 
-            s.custom_name as service_name, 
-            prod.name as product_name,
-            prod.brand_name,
-            prod.brand_type,
-            prod.dosage
+        SELECT oi.*, s.custom_name as service_name, prod.name as product_name, prod.brand_name, prod.brand_type, prod.dosage
         FROM order_items_tb oi 
         LEFT JOIN branch_service_tb s ON oi.service_id = s.branch_service_id 
         LEFT JOIN products_tb prod ON oi.product_id = prod.product_id 
@@ -138,18 +119,14 @@ try {
 
     $itemsHtml = '';
     foreach ($items as $item) {
-        $name = ucwords(strtolower($item['service_name'] ?: $item['product_name']));
+        $name = ucwords(strtolower($item['service_name'] ?: $item['product_name'] ?? 'Item'));
         if(strlen($name) > 35) $name = substr($name, 0, 32) . '...';
         $type = $item['service_id'] ? 'Service' : 'Product';
         $unitPrice = $item['subtotal'] / ($item['quantity'] ?: 1);
-
-        // PRODUCT DETAILS LOGIC: Filter out empty or "N/A" values
         $details = [];
         if (!empty($item['brand_name']) && strtoupper($item['brand_name']) !== 'N/A') $details[] = $item['brand_name'];
         if (!empty($item['brand_type']) && strtoupper($item['brand_type']) !== 'N/A') $details[] = $item['brand_type'];
         if (!empty($item['dosage']) && strtoupper($item['dosage']) !== 'N/A') $details[] = $item['dosage'];
-        
-        // Join details with a dot separator (e.g., Brand • Tablet • 10mg)
         $detailsText = !empty($details) ? implode(' • ', $details) : $type;
 
         $itemsHtml .= "
@@ -158,17 +135,13 @@ try {
                 <strong>" . htmlspecialchars($name) . "</strong><br>
                 <small style='color:#666; text-transform: uppercase; font-size: 8px;'>$detailsText</small>
             </td>
-            <td align='center' style='padding: 10px; border-bottom: 1px solid #eee; font-size: 10px;'>
-                " . number_format($unitPrice, 2) . "
-            </td>
+            <td align='center' style='padding: 10px; border-bottom: 1px solid #eee; font-size: 10px;'>" . number_format($unitPrice, 2) . "</td>
             <td align='center' style='padding: 10px; border-bottom: 1px solid #eee;'>{$item['quantity']}</td>
-            <td align='right' style='padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;'>
-                " . number_format($item['subtotal'], 2) . "
-            </td>
+            <td align='right' style='padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;'>" . number_format($item['subtotal'], 2) . "</td>
         </tr>";
     }
 
-    $ownerName = trim($trx['owner_name']);
+    $ownerName = trim($trx['owner_name'] ?? '');
     $displayName = empty($ownerName) ? 'Guest Walk-in' : $ownerName;
     $petHtml = !empty($trx['pet_name']) ? "<span style='font-size: 11px; color: #555;'>Pet: " . htmlspecialchars($trx['pet_name']) . "</span>" : "";
     $assistedBy = trim($trx['assigned_staff'] ?: $trx['cashier_name'] ?: 'Staff');
@@ -181,7 +154,16 @@ try {
       $appointmentInfo = "<div style='margin-top: 8px; padding: 8px; border: 1px dashed #ccc; border-radius: 4px; background-color: #fafafa;'><small style='color: #999; text-transform: uppercase; font-size: 8px;'>Service Schedule</small><br><strong style='font-size: 10px;'>$date</strong><br><span style='font-size: 10px; color: #555;'>$start - $end</span></div>";
     }
 
-    // YOUR EXACT LAYOUT
+    // CASH LOGIC: Only Products default to exact amount. Appointments/Services show change.
+    $isProduct = ($type_filter === 'product' || !empty($trx['pickup_date']));
+    if ($isProduct) {
+        $displayCashReceived = $trx['gross_amount'];
+        $displayChange = 0;
+    } else {
+        $displayCashReceived = $trx['cash_received'] ?? 0;
+        $displayChange = $trx['cash_change'] ?? 0; // Using cash_change per request
+    }
+
     $html .= "
       <div class='container'>
         <div class='header'>
@@ -213,13 +195,25 @@ try {
         <div class='total-box'>
           <table width='100%'>
             <tr>
-              <td valign='middle'>
+              <td width='50%' valign='middle'>
                 <small style='opacity:0.7; font-size: 10px; text-transform: uppercase;'>Payment Method</small><br>
                 <strong style='font-size: 14px; text-transform: uppercase;'>" . htmlspecialchars($trx['payment_method'] ?: 'CASH') . "</strong>
               </td>
-              <td align='right' valign='middle'>
-                <span style='font-size:10px; opacity:0.7; text-transform: uppercase;'>Gross Amount Due</span><br>
-                <strong style='font-size:22px'>PHP " . number_format($trx['gross_amount'], 2) . "</strong>
+              <td width='50%' align='right'>
+                <table align='right'>
+                  <tr>
+                    <td align='right' style='font-size: 10px; opacity:0.8;'>TOTAL DUE:</td>
+                    <td align='right' style='padding-left: 20px; font-size: 12px; font-weight: bold;'>PHP " . number_format($trx['gross_amount'], 2) . "</td>
+                  </tr>
+                  <tr>
+                    <td align='right' style='font-size: 10px; opacity:0.8;'>CASH RECEIVED:</td>
+                    <td align='right' style='padding-left: 20px; font-size: 12px;'>PHP " . number_format($displayCashReceived, 2) . "</td>
+                  </tr>
+                  <tr>
+                    <td align='right' style='font-size: 10px; opacity:0.8;'>CHANGE:</td>
+                    <td align='right' style='padding-left: 20px; font-size: 12px;'>PHP " . number_format($displayChange, 2) . "</td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
@@ -237,7 +231,6 @@ try {
 
   $html .= "</body></html>";
 
-  // 6. RENDER
   $options = new Options();
   $options->set('isHtml5ParserEnabled', true);
   $options->set('isRemoteEnabled', true);
