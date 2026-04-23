@@ -119,13 +119,13 @@ export default function PetProfile() {
 
   const validateField = (name, value) => {
     let error = null;
-    const optionalFields = ['weight', 'medical_conditions', 'pet_picture']; 
+    // Included 'breed' and 'birthdate' here
+    const optionalFields = ['weight', 'medical_conditions', 'pet_picture', 'breed', 'birthdate']; 
+    
     if (!value?.toString().trim() && !optionalFields.includes(name)) {
       if (name === 'name') error = "Pet name is required";
       else if (name === 'species') error = "Species is required";
-      else if (name === 'breed') error = "Breed is required";
       else if (name === 'sex') error = "Sex is required";
-      else if (name === 'birthdate') error = "Date of Birth is required";
     }
     setErrors(prev => ({ ...prev, [name]: error }));
     return error;
@@ -226,10 +226,13 @@ export default function PetProfile() {
       formData.append('pet_id', id);
       formData.append('name', form.name);
       formData.append('species', form.species);
-      formData.append('breed', form.breed);
       formData.append('sex', form.sex);
-      formData.append('birthdate', form.birthdate);
-      if (form.weight) formData.append('weight', form.weight);
+      
+      // 2. ONLY append these if they have a value, otherwise send empty string
+      formData.append('breed', form.breed || '');
+      formData.append('birthdate', form.birthdate || '');
+      formData.append('weight', form.weight || '');
+      
       if (form.medical_conditions) formData.append('medical_conditions', form.medical_conditions);
 
       if (newImage) {
@@ -246,7 +249,14 @@ export default function PetProfile() {
 
       if (data?.success) {
         Toast.show({ type: 'success', text1: 'Updated Successfully!' });
-        setPet({ ...form, pet_picture: data.new_image_path || pet.pet_picture }); 
+        // Update local state with the new data
+        const updatedPet = { 
+            ...form, 
+            pet_picture: data.new_image_path || pet.pet_picture,
+            breed: form.breed || null, // Keep it null/empty in state if not provided
+            birthdate: form.birthdate || null
+        };
+        setPet(updatedPet); 
         setIsEditing(false); 
       }
     } catch(error) {
@@ -266,6 +276,10 @@ export default function PetProfile() {
 
   // 👇 FIX: Bulletproof boolean check to ensure it reads DB data perfectly
   const isDeceased = Number(pet?.is_deceased) === 1 || pet?.is_deceased === true;
+  const displayPet = {
+    ...pet,
+    breed: pet?.breed?.trim() ? pet.breed : 'N/A'
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -300,7 +314,7 @@ export default function PetProfile() {
           )}
 
           <PetAvatarSection 
-            pet={pet} 
+            pet={displayPet} 
             newImage={newImage} 
             isEditing={isEditing} 
             activeTab={activeTab} 

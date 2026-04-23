@@ -157,7 +157,7 @@ export default function PetsIndex() {
                       
                       {/* 👇 UPDATED: Added age to the bottom string */}
                       <AppText numberOfLines={1} style={styles.petBreed}>
-                        {pet.breed} • {pet.species} {ageString ? `• ${ageString}` : ''}
+                        {pet?.species} • {pet?.breed || 'N/A'} {ageString ? `• ${ageString}` : ''}
                       </AppText>
 
                     </View>

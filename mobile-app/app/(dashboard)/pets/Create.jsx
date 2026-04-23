@@ -8,7 +8,6 @@ import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker'; 
 import { Colors } from '../../../constants/Color';
 
-// NEW: Import your brilliant authFetch wrapper
 import { authFetch } from '../../../utils/auth'; 
 
 // Components
@@ -54,10 +53,11 @@ export default function CreatePet() {
     if (Platform.OS === 'android') setShowDatePicker(false); 
     
     if (selectedDate) {
+      // Standardize to YYYY-MM-DD for the database
+      const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
-      const year = selectedDate.getFullYear();
-      const formattedDate = `${month}/${day}/${year}`;
+      const formattedDate = `${year}-${month}-${day}`;
       
       setForm({ ...form, birthdate: formattedDate });
       validateField('birthdate', formattedDate);
@@ -66,14 +66,13 @@ export default function CreatePet() {
 
   const validateField = (name, value) => {
     let error = null;
-    const optionalFields = ['weight', 'medical_conditions', 'pet_picture']; 
+    // 1. ADDED 'breed' AND 'birthdate' TO OPTIONAL FIELDS
+    const optionalFields = ['weight', 'medical_conditions', 'pet_picture', 'breed', 'birthdate']; 
 
     if (!value?.trim() && !optionalFields.includes(name)) {
       if (name === 'name') error = "Pet name is required";
       else if (name === 'species') error = "Species is required";
-      else if (name === 'breed') error = "Breed is required";
       else if (name === 'sex') error = "Sex is required";
-      else if (name === 'birthdate') error = "Date of Birth is required";
     }
 
     setErrors(prev => ({ ...prev, [name]: error }));
@@ -89,13 +88,12 @@ export default function CreatePet() {
   const handleSavePet = async () => {
     const finalSpecies = form.species === 'Other' ? customSpecies : form.species;
     
+    // 2. VALIDATE ONLY THE STRICTLY REQUIRED FIELDS
     const nError = validateField('name', form.name);
     const sError = validateField('species', finalSpecies);
-    const bError = validateField('breed', form.breed);
     const sexError = validateField('sex', form.sex);
-    const birthdateError = validateField('birthdate', form.birthdate);
     
-    if (nError || sError || bError || sexError || birthdateError) {
+    if (nError || sError || sexError) {
       Toast.show({ type: 'error', text1: 'Please fill in all required inputs correctly.' });
       return;
     }
@@ -106,12 +104,13 @@ export default function CreatePet() {
       const formData = new FormData();
       formData.append('name', form.name);
       formData.append('species', finalSpecies);
-      formData.append('breed', form.breed);
       formData.append('sex', form.sex);
-      formData.append('birthdate', form.birthdate);
       
-      if (form.weight) formData.append('weight', form.weight);
-      if (form.medical_conditions) formData.append('medical_conditions', form.medical_conditions);
+      // 3. APPEND OPTIONALS ONLY IF THEY HAVE VALUES
+      formData.append('breed', form.breed || ''); 
+      formData.append('birthdate', form.birthdate || ''); 
+      formData.append('weight', form.weight || '');
+      formData.append('medical_conditions', form.medical_conditions || '');
 
       if (form.pet_picture) {
         const filename = form.pet_picture.split('/').pop();
@@ -191,7 +190,7 @@ export default function CreatePet() {
           </AnimatedWrapper>
 
           <View style={styles.form}>
-            {/* Pet Name */}
+            {/* Pet Name - REQUIRED */}
             <AnimatedWrapper index={1} style={styles.inputGroup}>
               <AppText style={styles.label}>Pet Name <AppText style={{color: '#EF4444'}}>*</AppText></AppText>
               <View style={[styles.inputWrapper, getWrapperStyle('name')]}>
@@ -206,7 +205,7 @@ export default function CreatePet() {
               {errors.name && <AppText style={styles.errorText}>{errors.name}</AppText>}
             </AnimatedWrapper>
 
-            {/* Species */}
+            {/* Species - REQUIRED */}
             <AnimatedWrapper index={2} style={styles.inputGroup}>
               <AppText style={styles.label}>Species <AppText style={{color: '#EF4444'}}>*</AppText></AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipContainer}>
@@ -234,9 +233,9 @@ export default function CreatePet() {
               {errors.species && <AppText style={styles.errorText}>{errors.species}</AppText>}
             </AnimatedWrapper>
 
-            {/* Breed */}
+            {/* Breed - OPTIONAL */}
             <AnimatedWrapper index={3} style={styles.inputGroup}>
-              <AppText style={styles.label}>Breed <AppText style={{color: '#EF4444'}}>*</AppText></AppText>
+              <AppText style={styles.label}>Breed</AppText>
               <View style={[styles.inputWrapper, getWrapperStyle('breed')]}>
                 <Ionicons name="color-filter-outline" size={20} color={errors.breed ? '#EF4444' : '#9CA3AF'} />
                 <TextInput 
@@ -249,7 +248,7 @@ export default function CreatePet() {
               {errors.breed && <AppText style={styles.errorText}>{errors.breed}</AppText>}
             </AnimatedWrapper>
 
-            {/* Sex */}
+            {/* Sex - REQUIRED */}
             <AnimatedWrapper index={4} style={styles.inputGroup}>
               <AppText style={styles.label}>Sex <AppText style={{color: '#EF4444'}}>*</AppText></AppText>
               <View style={styles.sexRow}>
@@ -272,10 +271,10 @@ export default function CreatePet() {
               {errors.sex && <AppText style={styles.errorText}>{errors.sex}</AppText>}
             </AnimatedWrapper>
 
-            {/* Date and Weight */}
+            {/* Date and Weight - OPTIONAL */}
             <AnimatedWrapper index={5} style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1.5 }]}>
-                <AppText style={styles.label}>Date of Birth <AppText style={{color: '#EF4444'}}>*</AppText></AppText>
+                <AppText style={styles.label}>Date of Birth</AppText>
                 <TouchableOpacity 
                   style={[styles.inputWrapper, getWrapperStyle('birthdate')]}
                   onPress={() => setShowDatePicker(true)}
@@ -298,7 +297,6 @@ export default function CreatePet() {
                 )}
               </View>
 
-              {/* FIXED WEIGHT INPUT */}
               <View style={[styles.inputGroup, { flex: 1 }]}>
                 <AppText style={styles.label}>Weight (kg)</AppText>
                 <View style={styles.inputWrapper}>
@@ -341,6 +339,7 @@ export default function CreatePet() {
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Colors.bg50 },

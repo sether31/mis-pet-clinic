@@ -35,8 +35,10 @@ export default function PetAvatarSection({ pet, newImage, isEditing, activeTab, 
         <>
           <AppText style={styles.petMainId}>#{pet?.pet_id}</AppText>
           <AppText style={styles.petMainName}>{pet?.name}</AppText>
-          <AppText style={styles.petSubText}>{pet?.breed} • {pet?.species}</AppText>
-          
+          <AppText style={styles.petSubText}>
+            {pet?.species} • {pet?.breed && pet.breed.trim() !== "" ? pet.breed : 'N/A'}
+          </AppText>
+                
           <View style={styles.tabContainer}>
             <Pressable 
               style={[styles.tabBtn, activeTab === 'profile' && styles.tabBtnActive]} 
