@@ -2,7 +2,7 @@
   "expo": {
     "name": "SwiftVet",
     "slug": "SwiftVet",
-    "version": "1.0.5",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/new-logo.png",
     "scheme": "swiftvet",
@@ -12,7 +12,7 @@
       "supportsTablet": true
     },
     "android": {
-      "versionCode": 6,
+      "versionCode":7,
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
