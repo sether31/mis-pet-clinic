@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/super-admin",
-      "destination": "https://swift-vet-super-admin-dnsdunal9-seth-hernandezs-projects.vercel.app/"
+      "destination": "https://swift-vet-super-admin.vercel.app/"
     },
     {
       "source": "/super-admin/:match*",
-      "destination": "https://swift-vet-super-admin-dnsdunal9-seth-hernandezs-projects.vercel.app/:match*"
+      "destination": "https://swift-vet-super-admin.vercel.app/:match*"
     }
   ]
 }
