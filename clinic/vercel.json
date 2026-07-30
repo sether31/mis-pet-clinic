@@ -7,6 +7,10 @@
     {
       "source": "/super-admin/:match*",
       "destination": "https://swift-vet-super-admin.vercel.app/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
