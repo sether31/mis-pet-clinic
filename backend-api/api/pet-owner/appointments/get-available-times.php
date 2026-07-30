@@ -28,7 +28,7 @@ try {
     $placeholders = implode(',', array_fill(0, count($service_ids), '?'));
     
     // Note: Using branch_service_Tb as per your schema
-    $stmtSrv = $pdo->prepare("SELECT duration FROM branch_service_Tb WHERE branch_service_id IN ($placeholders)");
+    $stmtSrv = $pdo->prepare("SELECT duration FROM branch_service_tb WHERE branch_service_id IN ($placeholders)");
     $stmtSrv->execute(array_values($service_ids));
     $services = $stmtSrv->fetchAll(PDO::FETCH_ASSOC);
 
