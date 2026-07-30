@@ -1,5 +1,5 @@
 import { useContext } from "react"
-import { UIContext } from "../contexts/UiProvider"
+import { UIContext } from "../contexts/UIProvider"
 
 export const useUI = () => {
   const context = useContext(UIContext);
