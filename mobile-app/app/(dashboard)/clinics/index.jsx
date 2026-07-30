@@ -20,10 +20,10 @@ import { Image } from 'react-native'; // Make sure Image is imported at the top!
 const ClinicParentCard = ({ clinic, index, onSelect, getMediaUrl }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () => Animated.timing(scaleAnim, { toValue: 1.01, duration: 150, useNativeDriver: true }).start();
+  // Slightly increased the scale effect for a bigger card
+  const handlePressIn = () => Animated.timing(scaleAnim, { toValue: 1.02, duration: 150, useNativeDriver: true }).start();
   const handlePressOut = () => Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
 
-  // Handle the logo URL (using your branch_logo column)
   const logoUrl = getMediaUrl(clinic.brand_logo);
   const logoSource = logoUrl ? { uri: logoUrl } : NO_IMAGE;
 
@@ -36,18 +36,19 @@ const ClinicParentCard = ({ clinic, index, onSelect, getMediaUrl }) => {
       >
         <Animated.View style={[styles.clinicParentCard, { transform: [{ scale: scaleAnim }] }]}>
           
-          {/* Updated: Clinic Logo Container */}
-          <View style={styles.clinicIconBg}>
+          {/* Big Image Container on Top */}
+          <View style={styles.clinicImageContainer}>
             <Image source={logoSource} style={styles.clinicLogoImage} />
           </View>
 
+          {/* Clinic Name and Details Below */}
           <View style={styles.clinicParentInfo}>
-            <AppText style={styles.clinicParentName}>{clinic.clinic_name}</AppText>
+            <AppText style={styles.clinicParentName} numberOfLines={1}>{clinic.clinic_name}</AppText>
             <AppText style={styles.clinicParentSub}>
               {clinic.branches.length} {clinic.branches.length === 1 ? 'Branch' : 'Branches'} Available
             </AppText>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+
         </Animated.View>
       </Pressable>
     </AnimatedWrapper>
@@ -396,14 +397,41 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', paddingHorizontal: 40, lineHeight: 22 },
 
   // --- Clinic Parent Card Styles ---
-  clinicParentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#D1D5DB' },
-  // Make sure overflow is hidden so the image respects the border radius
-  clinicIconBg: { width: 48, height: 48, borderRadius: 10, backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', marginRight: 16, overflow: 'hidden' },
-  // New style for the actual image
-  clinicLogoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  clinicParentInfo: { flex: 1 },
-  clinicParentName: { fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 4 },
-  clinicParentSub: { fontSize: 13, color: Colors.primary, fontWeight: '600' },
+  clinicParentCard: { 
+    backgroundColor: Colors.white, 
+    borderRadius: 12, 
+    marginBottom: 16, 
+    borderWidth: 1, 
+    borderColor: '#D1D5DB', 
+    overflow: 'hidden' // Ensures the image doesn't bleed over the rounded corners
+  },
+  clinicImageContainer: { 
+    width: '100%', 
+    height: 140, // Height of the big logo area
+    backgroundColor: '#E5E7EB' 
+  },
+  clinicLogoImage: { 
+    width: '100%', 
+    height: '100%', 
+    resizeMode: 'cover' // Tip: Change to 'contain' if your logos are getting cut off
+  },
+  clinicParentInfo: { 
+    padding: 16, 
+    alignItems: 'center' // Centers the text below the image
+  },
+  clinicParentName: { 
+    fontSize: 20, 
+    fontWeight: '800', 
+    color: '#111827', 
+    marginBottom: 4,
+    textAlign: 'center'
+  },
+  clinicParentSub: { 
+    fontSize: 14, 
+    color: Colors.primary, 
+    fontWeight: '600',
+    textAlign: 'center'
+  },
 
   // --- Drill-Down Header Styles ---
   backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, alignSelf: 'flex-start' },
