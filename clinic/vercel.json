@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/super-admin/:match*",
+      "destination": "https://swift-fpwoowdyg-seth-hernandezs-projects.vercel.app/:match*"
+    }
+  ]
+}
