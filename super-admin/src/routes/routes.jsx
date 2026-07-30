@@ -4,7 +4,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 // context
 import PlatformProvider from "../contexts/PlatformProvider";
 import UserProvider from "../contexts/UserProvider";
-import UIProvider from "../contexts/UiProvider";
+import UIProvider from "../contexts/UIProvider";
 // layout
 import DashboardLayout from "../layouts/DashboardLayout";
 // pages
