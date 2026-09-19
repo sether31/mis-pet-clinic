@@ -347,12 +347,12 @@ export default function Register() {
     <>
       <div className='mb-20 container-xl bg-gray-50'>
         <div className='flex flex-col items-center justify-between gap-4 my-5 md:flex-row'>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {platformData?.platform_logo && (
               <img 
                 src={`${API_URL}/${platformData.platform_logo}`} 
                 alt="Logo" 
-                className="object-contain w-auto h-6 rounded-sm"
+                className="object-contain w-auto h-8 rounded-sm"
                 onError={(e) => (e.target.style.display = 'none')} 
               />
             )}
