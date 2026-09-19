@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import Lenis from "lenis";
 // components
 import Slider from "./components/Slider";
 import InfiniteBanner from "./components/InfiniteBanner";
@@ -39,6 +40,24 @@ export default function LandingPage() {
   const [platformStats, setPlatformStats] = useState([]);
   const [services, setServices] = useState([]);
   const [faqs, setFaqs] = useState([]);
+
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.5,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -195,7 +214,7 @@ export default function LandingPage() {
               <img src={`${API_URL}/${platformData?.platform_logo}`} className="w-auto h-8" alt="Logo" />
             )}
             <span className="text-2xl font-black tracking-tighter text-(--clr-primary)">
-              {platformData?.platform_name || "SwiftVet"}
+              {platformData?.platform_name || "Faunex"}
             </span>
           </div>
 
@@ -272,53 +291,61 @@ export default function LandingPage() {
 
       <main>
         {/* hero section */}
-        <section 
-          id="home" 
-          className="relative flex items-center justify-center px-6 pt-32 pb-12 lg:pt-36 lg:pb-20"
+        <section
+          id="home"
+          className="relative flex items-center px-6 pt-28 pb-16 lg:min-h-[calc(100vh-80px)] lg:pt-32 lg:pb-20"
         >
-          <div className="grid items-center grid-cols-1 gap-12 container-xl lg:grid-cols-2">
-            <motion.div 
+          <div className="grid items-center w-full grid-cols-1 gap-10 mx-auto container-xl lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+
+            {/* Hero Image */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="relative w-full"
             >
-              <div className="overflow-hidden aspect-square md:aspect-[4/3] rounded-3xl">
-                <img 
-                  src={HeroImage} 
-                  alt="hero image" 
-                  className="object-cover w-full h-full transition-transform duration-700 hover:scale-105" 
+              <div className="relative overflow-hidden aspect-[4/3] rounded-[2rem]">
+                <img
+                  src={HeroImage}
+                  alt="Pets"
+                  className="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
                 />
               </div>
-              <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-(--clr-primary)/10 blur-[100px] rounded-full"></div>
+
+              {/* Soft background glow */}
+              <div className="absolute -z-10 inset-8 bg-(--clr-primary)/10 blur-[80px] rounded-full" />
             </motion.div>
 
-            <motion.div 
+            {/* Hero Content */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-center lg:text-left"
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="max-w-xl text-center lg:text-left"
             >
-              <h1 className="mb-6 text-4xl font-black leading-tight text-slate-900 md:text-6xl lg:text-7xl">
-                Next-Gen Care for <br className="hidden md:block" />
-                <span className="text-(--clr-primary)">Furry Friends</span>
+              <h1 className="mb-5 text-5xl font-black leading-[1.05] tracking-normal text-slate-900 md:text-6xl lg:text-[4.25rem]">
+                Better Care
+                <br />
+                <span className="text-(--clr-primary)">Starts Here.</span>
               </h1>
-              
-              <p className="max-w-xl mx-auto mb-8 text-lg font-medium text-slate-600 md:text-xl lg:mx-0">
-                Managing your clinic has never been this fast. Secure, reliable, and built specifically for modern veterinary practices.
+
+              <p className="max-w-lg mx-auto mb-8 text-base font-medium leading-relaxed text-slate-600 md:text-lg lg:mx-0">
+                SwiftVet connects veterinary clinics and pet owners in one place,
+                making it easier to manage care, book appointments, and keep track
+                of your pet’s health.
               </p>
 
-              <div className="flex flex-col items-center justify-center gap-4 md:flex-row lg:justify-start">
-                <button 
-                  onClick={(e) => scrollToSection(e, 'manuals')}
-                  className="px-10 py-4 text-lg font-bold text-white transition-all bg-(--clr-primary) cursor-pointer rounded-xl  hover:-translate-y-1 active:scale-95 w-full md:w-auto"
+              <div className="flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
+                <button
+                  onClick={(e) => scrollToSection(e, "manuals")}
+                  className="w-full px-8 py-3.5 text-base font-bold text-white transition-all bg-(--clr-primary) cursor-pointer rounded-xl hover:-translate-y-0.5 hover:shadow-lg active:scale-95 sm:w-auto"
                 >
                   Get Started
                 </button>
-                
-                <button 
-                  onClick={(e) => scrollToSection(e, 'download')}
-                  className="px-10 py-4 text-lg font-bold text-(--clr-primary) transition-all border-2 border-(--clr-primary)/20 cursor-pointer rounded-xl hover:bg-(--clr-primary)/5 w-full md:w-auto"
+
+                <button
+                  onClick={(e) => scrollToSection(e, "download")}
+                  className="w-full px-8 py-3.5 text-base font-bold text-(--clr-primary) transition-all border-2 border-(--clr-primary)/20 cursor-pointer rounded-xl hover:bg-(--clr-primary)/5 sm:w-auto"
                 >
                   Download App
                 </button>
@@ -372,12 +399,10 @@ export default function LandingPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  // Removed the hardcoded background, added relative and z-index
                   className={`relative px-8 py-3 rounded-xl font-bold transition-colors duration-300 cursor-pointer z-10 ${
                     activeTab === tab ? "text-white" : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
-                  {/* The Twist: Sliding animated background */}
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTabIndicator"
@@ -463,7 +488,7 @@ export default function LandingPage() {
                     <span>Get the APK</span>
                     <LuDownload size={26} />
                   </a>
-                  <span className="font-mono text-xs text-center text-emerald-200/60">v2.0.0 • Approx. 110.4MB</span>
+                  <span className="font-mono text-xs text-center text-emerald-200/60">v1.0.0 • Approx. 111.0MB</span>
                 </div>
 
                 {/* qr*/}
@@ -523,10 +548,10 @@ export default function LandingPage() {
               <h4 className="text-white font-bold mb-6 text-xs uppercase tracking-[0.2em]">Contact us</h4>
               <ul className="space-y-4 text-sm">
                 <a href={`mailto:${platformData?.platform_email}`}>
-                  <li className="flex items-center gap-3 underline underline-offset-4"><LuMail className="text-blue-500" /> {platformData?.platform_email}</li>
+                  <li className="flex items-center gap-3"><LuMail className="text-blue-500" /> {platformData?.platform_email}</li>
                 </a>
                 <a href={`tel:${platformData?.contact_phone}`}>
-                  <li className="flex items-center gap-3 underline underline-offset-4"><LuPhone className="text-blue-500" /> {platformData?.contact_phone}</li>
+                  <li className="flex items-center gap-3"><LuPhone className="text-blue-500" /> {platformData?.contact_phone}</li>
                 </a>
               </ul>
             </div>
