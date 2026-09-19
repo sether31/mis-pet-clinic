@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 // components
 import ProtectedRoute from "../components/ProtectedRoute";
 // context
@@ -39,7 +40,6 @@ import Notifications from "../pages/navigation/notifications/Notifications";
 import Analytics from "../pages/portal/analytics/Analytics";
 import LandingPage from "../pages/landing-page/LandingPage";
 
-
 export const routes = createBrowserRouter([
   { 
     path: "/", 
@@ -66,7 +66,11 @@ export const routes = createBrowserRouter([
     ),
     children: [
       // authentication
-      { path: "login", element: <Login /> },
+      { path: "login", element: (
+        <GoogleOAuthProvider clientId={`${import.meta.env.VITE_GOOGLE_CLIENT_ID}`}>
+          <Login />
+        </GoogleOAuthProvider>
+      ) },
       { path: "register", element: <Register /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "pending-user", element: <PendingUser /> },
