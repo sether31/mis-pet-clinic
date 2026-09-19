@@ -1,5 +1,5 @@
 <?php
-header("Access-Control-Allow-Origin: *"); 
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -16,9 +16,9 @@ try {
 
   if ($platform && (int)$platform['is_maintenance'] === 1) {
     // Crucial: 503 tells the app to swap to the maintenance screen
-    http_response_code(503); 
+    http_response_code(503);
     echo json_encode([
-      "success" => false, 
+      "success" => false,
       "message" => "System maintenance is in progress."
     ]);
     exit;
@@ -44,8 +44,8 @@ try {
   // check role
   $allowedRoles = ['pet_owner'];
 
-  if(!in_array($user['role_name'], $allowedRoles)) {
-    throw new Exception("Access not allowed for this platform.");
+  if (!in_array($user['role_name'], $allowedRoles)) {
+    throw new Exception("Access not allowed on this platform. Please use the appropriate app or portal.");
   }
 
   // generate otp
@@ -53,10 +53,10 @@ try {
 
   // send email
   sendMailOTP(
-    $user['email'], 
-    $otpData['otp'], 
-    $user['first_name'], 
-    'password_reset', 
+    $user['email'],
+    $otpData['otp'],
+    $user['first_name'],
+    'password_reset',
     $otpData['expires_at']
   );
 
@@ -64,11 +64,10 @@ try {
   log_audit($pdo, $user['user_id'], null, null, 'PASSWORD_RESET_REQ', 'USER', $user['user_id']);
 
   echo json_encode([
-    "success" => true, 
-    "user_id" => $user['user_id'], 
+    "success" => true,
+    "user_id" => $user['user_id'],
     "message" => "Reset code sent to your email."
   ]);
-
 } catch (Throwable $e) {
   echo json_encode(["success" => false, "message" => $e->getMessage()]);
 }
