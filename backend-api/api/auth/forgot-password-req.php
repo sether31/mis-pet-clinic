@@ -1,9 +1,9 @@
 <?php
-header("Access-Control-Allow-Origin: *"); 
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-if($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
   http_response_code(200);
   exit();
 }
@@ -19,9 +19,9 @@ $pdo = (new Database())->pdo;
 $dataInput = json_decode(file_get_contents("php://input"), true);
 
 $email = $dataInput["email"] ?? null;
-$platform = "web"; 
+$platform = "web";
 
-if(!$email) {
+if (!$email) {
   echo json_encode(["success" => false, "message" => "Email is required"]);
   exit;
 }
@@ -44,8 +44,8 @@ if (!$user) {
 // only allowed roles
 $allowedRoles = ['clinic_admin', 'branch_admin', 'veterinarian', 'groomer', 'staff'];
 
-if(!in_array($user['role_name'], $allowedRoles)) {
-  echo json_encode(["success" => false, "message" => "Access not allowed for this platform"]);
+if (!in_array($user['role_name'], $allowedRoles)) {
+  echo json_encode(["success" => false, "message" => "Access not allowed on this platform. Please use the appropriate app or portal."]);
   exit;
 }
 
@@ -65,7 +65,7 @@ sendMailOTP(
 log_audit($pdo, $user['user_id'], null, null, 'PASSWORD_RESET_REQ', 'USER', $user['user_id']);
 
 echo json_encode([
-  "success" => true, 
-  "user_id" => $user['user_id'], 
+  "success" => true,
+  "user_id" => $user['user_id'],
   "message" => "Reset code sent to your email."
 ]);
