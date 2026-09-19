@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { jwtDecode } from 'jwt-decode';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useGoogleLogin } from "@react-oauth/google"
 // hooks
 import { useUI } from '../../hooks/useUI';
 import { useUser } from '../../hooks/useUser';
@@ -20,6 +21,7 @@ import loginPic from '../../assets/images/login-pic.png';
 // icons
 import { MdOutlineMail } from 'react-icons/md';
 import { SlLock } from 'react-icons/sl';
+import { FcGoogle } from "react-icons/fc";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -220,6 +222,62 @@ export default function Login() {
     visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100 } },
   };
 
+
+  const handleGoogleLogin = useGoogleLogin({
+    flow: "auth-code",
+    onSuccess: async (codeResponse) => {
+      showLoader('Verifying Google Login...');
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/google-login-clinic.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: codeResponse.code })
+        });
+        
+        const data = await res.json();
+
+        if (!data.success) {
+          hideLoader();
+          toast.error(data.message || 'Google login failed');
+          return;
+        }
+
+        sessionStorage.setItem("access_token", data.access_token);
+        const decoded = jwtDecode(data.access_token);
+        setUser(decoded);
+        toast.success(data.message);
+        
+        const { role, status, branch_id } = decoded;
+
+        if (role === "clinic_admin") {
+          if (status === "pending") {
+            navigate("/clinic/pending-user", { replace: true });
+          } else {
+            navigate("/clinic/select-branch", { replace: true });
+          }
+        } else {
+          if (branch_id) {
+            navigate(`/clinic/${branch_id}/portal/dashboard`, { replace: true });
+          } else {
+            toast.error("Access denied: No branch assigned to this account.");
+            navigate("/clinic/login");
+          }
+        }
+
+      } catch (error) {
+        console.log('Failed to login google: ', error);
+        toast.error(error.message || 'Something went wrong with Google Login');
+      } finally {
+        hideLoader();
+      }
+    },
+    onError: (error) => {
+      console.error("Google Login Hook Error:", error);
+      toast.error('Google login popup closed or failed');
+    }
+  });
+
   return (
     <>
       <div className="relative flex items-center min-h-screen px-0 bg-gray-50 container-2xl">
@@ -249,12 +307,12 @@ export default function Login() {
               initial="hidden"
               animate="visible"
             >
-              <motion.div variants={formItemVariants} className="flex items-center gap-2 my-2">
+              <motion.div variants={formItemVariants} className="flex items-center gap-1 my-2">
                 {platformData?.platform_logo && (
                   <img 
                     src={`${API_URL}/${platformData.platform_logo}`} 
                     alt="Logo" 
-                    className="object-contain w-auto h-6 rounded-sm"
+                    className="object-contain w-auto h-8 rounded-sm"
                     onError={(e) => (e.target.style.display = 'none')} 
                   />
                 )}
@@ -309,23 +367,33 @@ export default function Login() {
                 </motion.div>
               </form>
 
-              <motion.p variants={formItemVariants}>
-                <Link to="/clinic/forgot-password" className="block mt-2 text-base font-medium text-right text-gray-700 hover:text-gray-600">
+              <motion.p className="block mt-2 ml-auto w-max" variants={formItemVariants}>
+                <Link to="/clinic/forgot-password" className="mt-2 text-sm text-(--clr-text-header) active:scale-95 ">
                   Forgot Password?
                 </Link>
               </motion.p>
 
+            <motion.div variants={formItemVariants} className="flex items-center gap-4 my-4 text-sm">
+              <span className="flex-1 h-[1px] bg-gray-200"></span>
+              <span>Or Sign In With</span>
+              <span className="flex-1 h-[1px] bg-gray-200"></span>
+            </motion.div>
 
-              <motion.div variants={formItemVariants} className="flex items-center w-full gap-2 my-8">
-                <div className="flex-1 h-[1px] bg-gray-500"></div>
-                <p className="text-sm">OR</p>
-                <div className="flex-1 h-[1px] bg-gray-500"></div>
-              </motion.div>
+            <motion.div variants={formItemVariants}>
+              <button 
+                onClick={() => handleGoogleLogin()}
+                className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm duration-300 ease-in-out bg-white border border-gray-300 rounded-md cursor-pointer active:scale-95 hover:bg-black/5"
+              >
+                <FcGoogle />
+                <span>Continue with Google</span>
+              </button>
+            </motion.div>
 
-              <motion.p variants={formItemVariants} className='flex justify-center gap-1 text-base'>
-                Dont have an account? 
-                <Link to="/clinic/register" className='underline text-(--clr-text-header) hover:opacity-75'>Sign up</Link>
-              </motion.p>
+            
+            <motion.p variants={formItemVariants} className="flex justify-center gap-1 my-2 text-sm">
+              <span>Don't have an account?</span> 
+              <Link to="/clinic/register" className="duration-300 ease-in-out active:scale-95 text-(--clr-text-header)">Sign up</Link>
+            </motion.p>
             </motion.div>
           </section>
         </div>
