@@ -1,0 +1,16 @@
+RewriteEngine On
+RewriteBase /
+
+# 1. Do NOT interfere with the PHP backend API
+RewriteCond %{REQUEST_URI} ^/backend-api [NC]
+RewriteRule ^ - [L]
+
+# 2. Do NOT interfere with the super-admin React app
+RewriteCond %{REQUEST_URI} ^/super-admin [NC]
+RewriteRule ^ - [L]
+
+# 3. Main Clinic App React Router Fallback
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteRule . /index.html [L]
