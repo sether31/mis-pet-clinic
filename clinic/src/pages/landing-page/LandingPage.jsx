@@ -214,7 +214,7 @@ export default function LandingPage() {
               <img src={`${API_URL}/${platformData?.platform_logo}`} className="w-auto h-8" alt="Logo" />
             )}
             <span className="text-2xl font-black tracking-tighter text-(--clr-primary)">
-              {platformData?.platform_name || "Faunex"}
+              {platformData?.platform_name || "Swiftvet"}
             </span>
           </div>
 

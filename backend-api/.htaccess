@@ -1,0 +1,7 @@
+# Force Apache to pass the Authorization header to PHP
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Enable error display for debugging
+php_flag display_errors On
+php_value error_reporting E_ALL
